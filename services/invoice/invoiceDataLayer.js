@@ -1,0 +1,211 @@
+const models = require('../../models');
+const {sequelize,Sequelize} = models;
+const {useFormatFilters} = require('../../helper')
+
+const createInvoice = async({
+    data,
+    options
+}) => {
+    try{    
+        return await models.invoices_cleared_hdr.bulkCreate(
+            data
+        ,{
+            ...options
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const createInvoiceDtl = async ({
+    data,
+    options
+}) => {
+    try{    
+        return await models.invoices_dtl_tbl.bulkCreate(data,{
+            ...options
+        })
+
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const createInvoiceTransaction = async({
+    invoices,
+    details
+}) => {
+    try{
+        // console.log(invoices,details)
+        return await sequelize.transaction(async t => {
+            await createInvoice({
+                data:invoices,
+                options:{
+                    transaction: t,
+                    updateOnDuplicate:['updatedAt','location','trip_no','cleared_date']
+                }
+            })
+
+            await createInvoiceDtl({
+                data:details,
+                options:{
+                    transaction: t,
+                    updateOnDuplicate:['updatedAt']
+                }
+            })
+        })
+        
+    }
+    catch(e){
+        throw e
+    }
+}   
+
+const getLatestInvoice = async() => {
+    try{
+        return await models.invoices_tbl.findOne({
+            where:{},
+            order:[['createdAt','DESC']]
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const getAllInvoice = async({filters}) => {
+    try{
+        return await models.invoices_cleared_hdr.findAll({
+            include:[
+                {
+                    model:models.invoices_dtl_tbl,
+                    attributes:['trip_no','br_no','class_of_store','uom','planned_qty','planned_weight','planned_cbm','actual_qty','actual_weight','actual_cbm','return_qty'],
+                    as:"details"
+                },
+                {
+                    model:models.contract_hdr_tbl,
+                    attributes:["contract_id"],
+                    where:{
+                        contract_status:'APPROVED'
+                    },
+                    required:false,
+                    as:"contract"
+                },
+                {
+                    model:models.ship_point_tbl,
+                    attributes:['stc_description','stc_name','stc_address','country','region','province','city','barangay'],
+                    required:false,
+                    as:'ship_point_from'
+                },
+                {
+                    model:models.ship_point_tbl,
+                    attributes:['stc_description','stc_name','stc_address','country','region','province','city','barangay'],
+                    required:false,
+                    as:'ship_point_to'
+                }
+            ],
+            where:{
+                ...filters 
+            }
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const updateInvoice = async({data,options,filters}) => {
+    try{
+        return await models.invoices_cleared_hdr.update(
+            {   
+                ...data
+            },
+            {
+                where:{
+                    ...filters
+                },
+                ...options
+            }
+        )
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const createRevenueLeak = async({
+    data,
+    options
+}) => {
+    try{    
+        return await models.invoices_rev_leak_tbl.bulkCreate(
+            data
+        ,{
+            ...options
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+
+const getPaginatedRevenueLeak = async({
+    filters,
+    orderBy,
+    page,
+    totalPage
+})=>{
+    try{
+        const attributes = Object.keys(models.invoices_cleared_hdr.rawAttributes)
+        let where = useFormatFilters.revenueLeakFilter({
+            model:models.invoices_cleared_hdr.rawAttributes,
+            filters
+        })
+        
+        const {count,rows} = await models.invoices_rev_leak_tbl.findAndCountAll({
+            include:[
+                {
+                    model:models.invoices_cleared_hdr,
+                    attributes:attributes.filter(item => !['id','invoice_no','is_processed_sell','is_processed_buy','created_by','updated_by','createdAt','updatedAt'].includes(item)),
+                    as:"invoice"
+                }
+            ],
+            where:{
+                ...where,
+            },
+            offset:parseInt(page) * parseInt(totalPage),
+            limit:parseInt(totalPage),
+            //order: [[orderBy,desc]]
+            order:[orderBy]
+        })
+        .then(result => {
+            let {count,rows} = JSON.parse(JSON.stringify(result))
+            return {
+                count,
+                rows
+            }
+        })
+
+        return {
+            count,
+            rows
+        }
+    }
+    catch(e){
+        throw e
+    }
+}
+
+module.exports = {
+    createInvoice,
+    createInvoiceDtl,
+    createInvoiceTransaction,
+    getLatestInvoice,
+    getAllInvoice,
+    updateInvoice,
+    createRevenueLeak,
+    getPaginatedRevenueLeak
+}

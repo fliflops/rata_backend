@@ -1,0 +1,16 @@
+module.exports={
+    users:require('./users'),
+    auth:require('./auth'),
+    geography:require('./geography'),
+    principal:require('./principal'),
+    shipPoint: require('./shipPoint'),
+    quickCode: require('./quickCodes'),
+    location: require('./location'),
+    invoice: require('./invoice'),
+    helios: require('./Helios'),
+    draftBill: require('./draftBill'),
+    tariff: require('./tariff'),
+    contract: require('./contract'),
+    aggregation:require('./aggregation'),
+    vendor:require('./vendor')
+}

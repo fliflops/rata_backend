@@ -1,0 +1,2 @@
+tariff_id,tariff_desc,class_of_store,service_type,vehicle_type,min_billable_unit,min_value,sub_service_type,equipment_type,division,location,from_geo_type,from_geo,to_geo_type,to_geo
+Tariff ID,Tariff Description,Class of Store,Service Type,Vehicle Type,Minimum Billable Unit,Minimum Value,Sub Service Type,Equipment Type,Division,Location,From Geo Type,From Geo,To Geo Type,To Geo
