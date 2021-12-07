@@ -121,12 +121,14 @@ router.get('/tariff',async(req,res)=>{
     try{    
         const {
             page,
-            totalPage
+            totalPage,
+            ...filters
         } = req.query;
 
         const {count,rows} = await tariff.getPaginatedTariff({
             page,
-            totalPage
+            totalPage,
+            filters
         })
 
         res.status(200).json({
@@ -144,16 +146,26 @@ router.get('/tariff',async(req,res)=>{
 
 router.get('/contract',async(req,res)=>{
     try{
-        const {
+        /*Filters
+            filters,
+            orderBy,
             page,
             totalPage
-        } = req.query;
+        */
 
-        const {filters} = req.body
+        // const {
+        //     page,
+        //     totalPage
+        // } = req.query;
+
+
+        const {page,totalPage,...filters} = JSON.parse(JSON.stringify(req.query))
+       
+    //    console.log(filters)
         const {count,rows} = await contract.getPaginatedContract({
             page,
             totalPage,
-            filters
+            filters:filters
         })
 
         res.status(200).json({

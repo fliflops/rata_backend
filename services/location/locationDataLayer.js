@@ -3,7 +3,7 @@ const {sequelize,Sequelize} = model
 const getAllLocation = async () => {
     try{
         return await sequelize.query(`
-            Select * from wh_location_tbl where is_active = 1`,{
+            Select * from location_tbl where loc_status = 'ACTIVE'`,{
             type:Sequelize.QueryTypes.SELECT
         })
     }

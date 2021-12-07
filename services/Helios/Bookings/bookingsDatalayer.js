@@ -2,17 +2,16 @@ const {podDB} = require('../../../database');
 const {sequelize,Sequelize} = podDB
 
 const getInvoices = async({
-    dateFrom,
-    dateTo
+    rdd,
+    location
 }) => {
     try{
-        return await sequelize.query('EXEC sp_get_rb_invoices :dateFrom, :dateTo',{
+        return await sequelize.query('EXEC sp_get_rb_invoices :rdd, :location',{
             type:Sequelize.QueryTypes.SELECT,
             replacements:{
-                dateFrom,
-                dateTo
+                rdd,
+                location
             }
-            
         })
     }
     catch(e){
@@ -21,15 +20,15 @@ const getInvoices = async({
 }
 
 const getInvoicesDtl = async({
-    dateFrom,
-    dateTo
+    rdd,
+    location
 }) => {
     try{
-        return await sequelize.query('sp_get_rb_invoices_dtl :dateFrom, :dateTo',{
+        return await sequelize.query('sp_get_rb_invoices_dtl :rdd, :location',{
             type:Sequelize.QueryTypes.SELECT,
             replacements:{
-                dateFrom,
-                dateTo
+                rdd,
+                location
             }
         })
     }

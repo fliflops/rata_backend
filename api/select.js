@@ -40,8 +40,8 @@ router.get('/location',async(req,res) => {
         const data = await location.getAllLocation()
         const selectData = data.map(item => {
             return {
-                label:item.wh_name,
-                value:item.wh_code
+                label:item.loc_name,
+                value:item.loc_code
             }
         })
 

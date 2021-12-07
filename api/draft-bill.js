@@ -1,5 +1,6 @@
 const router = require('express').Router();
-const {draftBill,invoice} = require('../services')
+const {draftBill,invoice, helios,ascii} = require('../services')
+const {bookings} = helios
 
 router.get('/',async(req,res)=>{
     try{
@@ -79,5 +80,131 @@ router.get('/leakage',async(req,res)=>{
         res.status(500).json({message:`${e}`})    
     }
 })
+
+router.post('/:contract_type/invoice',async(req,res)=>{
+    try{
+        const {contract_type} = req.params;
+        const {location,rdd} = req.query
+        let draftBills;
+
+        if(contract_type==='SELL'){
+            draftBills = await draftBill.generateDraftBill({
+                deliveryDate:rdd,
+                location
+            })
+
+            //revenue leak
+            await invoice.createRevenueLeak({
+                data:draftBills.revenueLeak
+            })
+        }   
+        else if(contract_type==='BUY'){
+            draftBills = await draftBill.generateDraftBillBuy({
+                rdd,
+                location
+            })
+
+            //revenue leak
+            await invoice.createRevenueLeak({
+                data:draftBills.revenueLeak
+            })
+
+        }
+
+        const create = await draftBill.createDraftBill(draftBills.draftBill)
+     
+        res.status(200).json({
+            data:draftBills.draftBill,
+            revenue_leak:draftBills.revenueLeak
+        })
+
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({message:`${e}`})
+    }
+})
+
+router.post('/:contract_type/revenue-leak',async(req,res)=>{
+    try{
+        const {contract_type} = req.params;
+        res.status(200).end()
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({message:`${e}`})
+    }
+})
+
+router.post('/helios',async(req,res)=>{
+    try{
+        const {rdd,location}=req.query;  
+
+        const getInvoices   = await bookings.getInvoices({rdd,location})
+        const getDetails    = await bookings.getInvoicesDtl({rdd,location})
+
+        await invoice.createInvoiceTransaction({
+            invoices:getInvoices,
+            details:getDetails
+        })
+
+        res.status(200).json({
+            data:getInvoices,
+            details:getDetails
+        })
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({message:`${e}`})
+    }
+})
+
+router.post('/ascii/sales-order',async(req,res)=>{
+    try{
+        const {rdd} = req.query
+        //get the access token
+        const token = await ascii.loginService()
+        
+        const data = await ascii.getDraftBill({
+            rdd
+        })
+
+        const result = await ascii.createAsciiSalesOrder({
+            token,
+            data: JSON.parse(JSON.stringify(data))
+        })
+
+        // console.log(result.data)
+
+        res.status(200).json({
+            result: result.data,
+            data
+            
+        })
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({message:`${e}`})
+    }
+})
+
+router.post('/ascii/confirmation-receipt',async(req,res)=>{
+    try{
+        const {rdd} = req.query
+
+        const data = await ascii.getDraftBillBuy({
+            rdd
+        })
+
+        res.status(200).json({
+            data
+        })
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({message:`${e}`})
+    }
+})
+
 
 module.exports = router;

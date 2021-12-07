@@ -9,6 +9,9 @@ module.exports = (sequelize, DataTypes) => {
         tariff_desc:{
             type:DataTypes.STRING(255)
         },  
+        vehicle_type:{
+            type:DataTypes.STRING(50)
+        },
         // tariff_type:{
         //     type:DataTypes.STRING(50)
         // },

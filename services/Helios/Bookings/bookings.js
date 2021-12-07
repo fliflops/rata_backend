@@ -1,13 +1,23 @@
 const dataLayer = require('./bookingsDatalayer');
 
 exports.getInvoices = async({
-    dateFrom,
-    dateTo
+    rdd,
+    location
 }) => {
     try{
-        return await dataLayer.getInvoices({
-            dateFrom: typeof dateFrom === 'undefined'?'' : dateFrom,
-            dateTo:   typeof dateTo === 'undefined' ? ''   : dateTo
+        const invoices= await dataLayer.getInvoices({
+            rdd:        typeof rdd      === 'undefined' ?''     : rdd,
+            location:   typeof location === 'undefined' ? ''    : location
+        })
+
+        return invoices.map(item => {
+            const invoice = String(item.invoice_no).split('|')
+            return {
+                ...item,
+                is_billable: item.reason_code === null ? true : item.is_billable,
+                invoice_no: invoice[0],
+                redel_remarks: typeof invoice[1] === 'undefined' ? null : invoice[1]
+            }
         })
     }
     catch(e){
@@ -16,13 +26,13 @@ exports.getInvoices = async({
 }
 
 exports.getInvoicesDtl = async({
-    dateFrom,
-    dateTo
+    rdd,
+    location
 }) => {
     try{
         return await dataLayer.getInvoicesDtl({
-            dateFrom: typeof dateFrom === 'undefined'?'' : dateFrom,
-            dateTo:   typeof dateTo === 'undefined' ? ''   : dateTo
+            rdd:        typeof rdd      === 'undefined' ?   '' : rdd,
+            location:   typeof location === 'undefined' ?   '' : location
         })
     }
     catch(e){

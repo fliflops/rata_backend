@@ -1,5 +1,5 @@
-const model = require('../../models');
-const {sequelize,Sequelize} = model;
+const models = require('../../models');
+const {sequelize,Sequelize} = models;
 
 const getShipPoint = async({
     page,
@@ -21,6 +21,21 @@ const getShipPoint = async({
     }
 }
 
+const bulkCreateShipPoint = async({
+    data,
+    options
+})=>{
+    try{
+        return await models.ship_point_tbl.bulkCreate(data,{
+            ...options
+        })
+    } 
+    catch (e) {
+        throw e
+    }
+}
+
 module.exports={
-    getShipPoint
+    getShipPoint,
+    bulkCreateShipPoint
 }

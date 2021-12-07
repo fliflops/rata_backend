@@ -12,5 +12,6 @@ module.exports={
     tariff: require('./tariff'),
     contract: require('./contract'),
     aggregation:require('./aggregation'),
-    vendor:require('./vendor')
+    vendor:require('./vendor'),
+    ascii: require('./ascii')
 }

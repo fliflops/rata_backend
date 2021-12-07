@@ -12,10 +12,6 @@ module.exports = (sequelize, DataTypes) => {
             allowNull:false,
             type: DataTypes.STRING(50)
        },
-       tariff_type:{
-            allowNull:false,
-            type: DataTypes.STRING(50)
-       },
        tariff_id:{
             allowNull:false,
             type: DataTypes.STRING(50)
@@ -32,12 +28,12 @@ module.exports = (sequelize, DataTypes) => {
           type: DataTypes.STRING(36)
        },
        valid_from:{
-            allowNull:false,
-            type: DataTypes.STRING(50)
+          allowNull:false,
+          type: DataTypes.STRING(50)
        },
        valid_to:{
-        allowNull:false,
-        type: DataTypes.STRING(50)
+          allowNull:false,
+          type: DataTypes.STRING(50)
        },
        status:{
         allowNull:false,

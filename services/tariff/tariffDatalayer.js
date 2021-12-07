@@ -2,6 +2,34 @@ const models = require('../../models');
 const {sequelize,Sequelize} = models;
 const moment = require('moment');
 
+const formatFilters = ({
+    model,
+    filters
+}) => {
+    try{
+        let formattedFilters = filters;
+        const attributes = Object.keys(model)
+        Object.keys(filters).map(field => {
+            if(field==='search'){
+                let fields = {}
+                attributes.map(item => (fields[item] = filters.search))
+                formattedFilters={
+                    ...formattedFilters,
+                    [Sequelize.Op.or]:fields
+                }
+
+                delete formattedFilters["search"]
+            }
+        })
+
+        return formattedFilters
+
+    }
+    catch(e){
+        throw e
+    }
+}
+
 const createTariffTypeHeader = async({
     data,
     options
@@ -76,14 +104,16 @@ const getTariff = async({filter,options}) => {
         return await models.tariff_sell_hdr_tbl.findOne({
             where:{
                 ...filter
-            }
+            },
+            logging:false
         })
         .then(result => result.toJSON())
     }
     catch(e){
-
+        throw e
     }
 }
+
 
 const updateTariff = async({filter,data,option}) => {
     try{
@@ -170,9 +200,19 @@ const getPaginatedTariff = async({
 })=>{
     try{
 
+        console.log(filters)
+        let newFilter=formatFilters({
+            model:models.tariff_sell_hdr_tbl.rawAttributes,
+            filters:{
+                ...filters
+            }
+        });
+
+        
+
         const {count,rows} = await models.tariff_sell_hdr_tbl.findAndCountAll({
             where:{
-                ...filters
+                ...newFilter
             },
             offset:parseInt(page) * parseInt(totalPage),
             limit:parseInt(totalPage)
@@ -202,7 +242,8 @@ const getAllTariff = async({filters}) => {
         return await models.tariff_sell_hdr_tbl.findAll({
             where:{
                 ...filters
-            }
+            },
+            logging:false
         })
     }
     catch(e){

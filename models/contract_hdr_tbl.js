@@ -21,6 +21,9 @@ module.exports = (sequelize, DataTypes) => {
         trucker_id:{
             type:DataTypes.STRING(50)
         },
+        vendor_group:{
+            type:DataTypes.STRING(50)
+        },
         valid_from:{
             type:DataTypes.STRING(50)
         },

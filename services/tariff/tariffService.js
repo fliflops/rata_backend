@@ -34,12 +34,14 @@ exports.bulkCreateTariff = async({data})=>{
             data: data.map(item => {
                 return {
                     ...item,
+                    from_geo_type:String(item.from_geo_type).toLowerCase(),
+                    to_geo_type:String(item.to_geo_type).toLowerCase(),
                     tariff_status:'DRAFT'
                 }
             }),
             options:{
                 logging:false,
-                updateOnDuplicate:['updatedAt']
+                updateOnDuplicate:['updatedAt','vehicle_type']
             }
         })
     }

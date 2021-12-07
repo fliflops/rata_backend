@@ -22,3 +22,18 @@ exports.getShipPoint = async({
         throw e
     }
 }
+
+exports.bulkCreateShipPoint = async({data}) => {
+    try{
+        return await dataLayer.bulkCreateShipPoint({
+            data,
+            options:{
+                logging:false,
+                updateOnDuplicate:['updatedAt','country','stc_address','long','lat','region','province','city','barangay','zip_code']
+            }
+        })
+    }
+    catch(e){
+        throw e
+    }
+}

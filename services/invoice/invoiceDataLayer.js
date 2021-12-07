@@ -44,7 +44,7 @@ const createInvoiceTransaction = async({
                 data:invoices,
                 options:{
                     transaction: t,
-                    updateOnDuplicate:['updatedAt','location','trip_no','cleared_date']
+                    updateOnDuplicate:['updatedAt','location','trip_no','cleared_date','remarks']
                 }
             })
 
@@ -82,13 +82,15 @@ const getAllInvoice = async({filters}) => {
                 {
                     model:models.invoices_dtl_tbl,
                     attributes:['trip_no','br_no','class_of_store','uom','planned_qty','planned_weight','planned_cbm','actual_qty','actual_weight','actual_cbm','return_qty'],
+                    required:false,
                     as:"details"
                 },
                 {
                     model:models.contract_hdr_tbl,
-                    attributes:["contract_id"],
+                    attributes:["contract_id","contract_type"],
                     where:{
-                        contract_status:'APPROVED'
+                        contract_status:'APPROVED',
+                        contract_type:'SELL'
                     },
                     required:false,
                     as:"contract"
@@ -104,11 +106,18 @@ const getAllInvoice = async({filters}) => {
                     attributes:['stc_description','stc_name','stc_address','country','region','province','city','barangay'],
                     required:false,
                     as:'ship_point_to'
+                },
+                {
+                    model:models.vendor_group_dtl_tbl,
+                    attributes:['vg_code'],
+                    required:false,
+                    as:'vendor_group'
                 }
             ],
             where:{
                 ...filters 
-            }
+            },
+            // logging:false
         })
     }
     catch(e){

@@ -1,13 +1,19 @@
 const router = require('express').Router();
-const {tariff,contract,vendor} = require('../services');
+const {tariff,contract,vendor,shipPoint} = require('../services');
 const path = require('path');
 
 router.post('/tariff',async(req,res)=>{
     try{
         let {data} = req.body;
         // console.log(data)
+        if(typeof data.tariff === 'undefined'){
+            return res.status(400).json({
+                message:'Invalid File!'
+            })
+        }
+
         await tariff.bulkCreateTariff({
-            data:data.filter(item => item.tariff_id)
+            data:data.tariff
         })
 
         res.status(200).end()
@@ -26,7 +32,13 @@ router.post('/contract',async(req,res)=>{
         const {data}=req.body
         const contracts = data.contracts;
         const details = data.contract_details;
-        //console.log(data)
+
+        if(typeof data.contracts === 'undefined' || typeof data.contract_details === 'undefined'){
+            return res.status(400).json({
+                message:'Invalid File!'
+            })
+        }
+
         await contract.bulkCreateContractDetails({
             contract:contracts.filter(item => item.contract_id),
             details: details.filter(item => item.contract_id)
@@ -45,18 +57,19 @@ router.post('/contract',async(req,res)=>{
 router.post('/vendor',async(req,res)=>{
     try{
         const {data} = JSON.parse(JSON.stringify(req.body));
-        // console.log(req.body)
 
-        if(typeof data.vendor === 'undefined'){
+        if(typeof data.vendor === 'undefined' || typeof data.vendor_group === 'undefined' || typeof data.vendor_group_details === 'undefined'){
             return res.status(400).json({
                 message:'Invalid File!'
             })
         }
 
-        await vendor.bulkCreateVendor({
-            data:data.vendor
+        await vendor.bulkCreateTransaction({
+            vendor: data.vendor,
+            vendorGroup:data.vendor_group,
+            vendorGroupDetails:data.vendor_group_details
         })
-
+    
         res.status(200).end()
     }
     catch(e){
@@ -69,7 +82,20 @@ router.post('/vendor',async(req,res)=>{
 
 router.post('/ship-point',async(req,res)=>{
     try{
+        const {data}=req.body
+        if(typeof data.ship_point === 'undefined'){
+            return res.status(400).json({
+                message:'Invalid File!'
+            })
+        }
 
+        await shipPoint.bulkCreateShipPoint({
+            data:data.ship_point
+        })
+
+        // console.log(data.ship_point)
+
+        res.status(200).end()
     }
     catch(e){
         console.log(e)
@@ -81,23 +107,17 @@ router.post('/ship-point',async(req,res)=>{
 
 router.get('/template',async(req,res)=>{
     try{
-        const {type} = req.query
+        const {type} = req.query    
+       
 
         let pathName = null;
-
-        if(type === 'tariff'){
-            pathName =  path.join(path.resolve(__dirname,'..'),'/assets/templates/tariff_upload_template.csv')
-        }
-
-        if(type === 'contract'){
-            pathName =  path.join(path.resolve(__dirname,'..'),'/assets/templates/contract_upload_template.xlsx')
-        }
-
-        if(type === 'vendor'){
-            pathName =  path.join(path.resolve(__dirname,'..'),'/assets/templates/vendor_upload_template.csv')
-        
-        }
-
+        if(type === '' || type === null || typeof type === 'undefined' ){
+            return res.status(400).json({
+                message:'Invalid Template Type'
+            })
+        }   
+    
+        pathName = path.join(path.resolve(__dirname,'..'),`/assets/templates/${type}_upload_template.xlsx`)
         res.download(pathName)
 
     }

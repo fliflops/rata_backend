@@ -26,12 +26,14 @@ exports.createContract = async({contract,details}) => {
 
 exports.getPaginatedContract = async({
     page,
-    totalPage
+    totalPage,
+    filters
 }) => {
     try{
         return await dataLayer.getPaginatedContract({
             page,
-            totalPage
+            totalPage,
+            filters
         })
     }
     catch(e){

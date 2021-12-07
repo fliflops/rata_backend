@@ -2,6 +2,34 @@ const models = require('../../models');
 const moment = require('moment');
 const {sequelize,Sequelize} = models;
 
+const formatFilters = ({
+    model,
+    filters
+}) => {
+    try{
+        let formattedFilters = filters;
+        const attributes = Object.keys(model)
+        Object.keys(filters).map(field => {
+            if(field==='search'){
+                let fields = {}
+                attributes.map(item => (fields[item] = filters.search))
+                formattedFilters={
+                    ...formattedFilters,
+                    [Sequelize.Op.or]:fields
+                }
+
+                delete formattedFilters["search"]
+            }
+        })
+
+        return formattedFilters
+
+    }
+    catch(e){
+        throw e
+    }
+}
+
 const getContract = async({
     filters,
     options
@@ -48,6 +76,20 @@ const getContractDetails = async({filters,options}) => {
                     attributes:['agg_name','with_agg','parameter','group_by'],
                     required:false,
                     as:"agg_rule"
+                },
+                {
+                    model:models.tariff_sell_hdr_tbl,
+                    where:{
+                        tariff_status:'APPROVED'
+                    },
+                    required:false,
+                    as:"tariff"
+                },
+                {
+                    model:models.contract_hdr_tbl,
+                    attributes:['vendor_group','contract_type'],
+                    required:false,
+                    as:'contract'
                 }
             ],
             where:{
@@ -58,7 +100,6 @@ const getContractDetails = async({filters,options}) => {
         .then(result => {
             const data = result.map(i => {
                 const {agg_rule,...item} = i.toJSON()
-
 
                 return {
                     ...item,
@@ -84,9 +125,18 @@ const getPaginatedContract = async({
     totalPage
 }) => {
     try{
+        //console.log(filters)
+
+        let newFilter=formatFilters({
+            model:models.contract_hdr_tbl.rawAttributes,
+            filters:{
+                ...filters
+            }
+        });
+
         const {count,rows} = await models.contract_hdr_tbl.findAndCountAll({
             where:{
-                ...filters
+               ...newFilter
             },
             offset:parseInt(page) * parseInt(totalPage),
             limit:parseInt(totalPage)
@@ -181,7 +231,6 @@ const bulkCreateContract = async({data,options}) => {
         throw e
     }
 }
-
 
 const transactionCreateContract = async({contract,details}) => {
     try{

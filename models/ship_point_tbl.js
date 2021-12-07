@@ -24,8 +24,8 @@ module.exports = (sequelize,DataTypes) => {
         is_active:{
             type:Sequelize.DataTypes.BOOLEAN
         },
-        created_date:Sequelize.DATE,
-        modified_date:Sequelize.DATE,
+        createdAt:Sequelize.DATE,
+        updatedAt:Sequelize.DATE,
         modified_by:{
             type:DataTypes.STRING(50)
         },
@@ -35,6 +35,5 @@ module.exports = (sequelize,DataTypes) => {
     },
     {
         freezeTableName : true,
-        timestamps : false
     })
 }

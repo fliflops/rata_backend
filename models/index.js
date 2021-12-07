@@ -23,17 +23,6 @@ db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
 //Associations
-// db.geo_country_tbl.hasOne(db.geo_region_tbl,{
-// 	foreignKey: "country_code",
-// 	sourceKey:'country_code',
-// 	as:"region"
-// })
-
-
-
-// db.geo_region_tbl.belongsTo(db.geo_country_tbl,{
-// 	foreignKey:"country_code",
-// })
 
 //Baranagay Table Association
 db.geo_barangay_tbl.hasOne(db.geo_country_tbl,{
@@ -76,7 +65,27 @@ db.agg_tbl.belongsTo(db.contract_tariff_dtl,{
 	foreignKey:'id'
 })
 
-//Invoice Assoications
+db.contract_tariff_dtl.hasOne(db.tariff_sell_hdr_tbl,{
+	foreignKey:'tariff_id',
+	sourceKey:'tariff_id',
+	as:'tariff'
+})
+
+db.tariff_sell_hdr_tbl.belongsTo(db.contract_tariff_dtl,{
+	foreignKey:'tariff_id',
+})
+
+db.contract_tariff_dtl.hasOne(db.contract_hdr_tbl,{
+	foreignKey:'contract_id',
+	sourceKey:'contract_id',
+	as:'contract'
+})
+
+db.contract_hdr_tbl.belongsTo(db.contract_tariff_dtl,{
+	foreignKey:'contract_id'
+})
+
+//Invoice Associations
 db.invoices_cleared_hdr.hasMany(db.invoices_dtl_tbl,{
 	foreignKey:'br_no',
 	sourceKey:'br_no',
@@ -86,6 +95,7 @@ db.invoices_cleared_hdr.hasMany(db.invoices_dtl_tbl,{
 db.invoices_dtl_tbl.belongsTo(db.invoices_cleared_hdr,{
 	foreignKey:'br_no'
 })
+
 
 db.invoices_cleared_hdr.hasOne(db.contract_hdr_tbl,{
 	foreignKey:'principal_code',
@@ -113,6 +123,16 @@ db.ship_point_tbl.belongsTo(db.invoices_cleared_hdr,{
 	foreignKey:'stc_code'
 })
 
+db.invoices_cleared_hdr.hasOne(db.vendor_group_dtl_tbl,{
+	foreignKey:'vg_vendor_id',
+	sourceKey:'trucker_id',
+	as:'vendor_group'
+})
+
+db.vendor_group_dtl_tbl.belongsTo(db.invoices_cleared_hdr,{
+	foreignKey:'vg_vendor_id'
+})
+
 
 //Agg Associations
 db.agg_tbl.hasMany(db.agg_conditions_tbl,{
@@ -127,7 +147,6 @@ db.agg_conditions_tbl.belongsTo(db.agg_tbl,{
 
 
 //Invoice Revenue Leak Associations
-
 db.invoices_rev_leak_tbl.hasOne(db.invoices_cleared_hdr,{
 	foreignKey:'id',
 	sourceKey:'fk_invoice_id',
@@ -135,6 +154,28 @@ db.invoices_rev_leak_tbl.hasOne(db.invoices_cleared_hdr,{
 })
 db.invoices_cleared_hdr.belongsTo(db.invoices_rev_leak_tbl,{
 	foreignKey:'id'
+})
+
+//Vendor Associations
+db.vendor_group_tbl.hasOne(db.vendor_group_dtl_tbl,{
+	foreignKey:'vg_code',
+	sourceKey:'vg_code',
+	as:'vendors'
+})
+
+db.vendor_group_dtl_tbl.belongsTo(db.vendor_group_tbl,{
+	foreignKey:'vg_code',
+})
+
+//Draft Bill Association 
+db.draft_bill_hdr_tbl.hasOne(db.location_tbl,{
+	foreignKey:'loc_code',
+	sourceKey:'location',
+	as:'location_tbl'
+})
+
+db.location_tbl.belongsTo(db.draft_bill_hdr_tbl,{
+	foreignKey:'loc_code'
 })
 
 module.exports = db;

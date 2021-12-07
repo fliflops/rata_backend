@@ -56,14 +56,14 @@ const formatFilters = ({
         let formattedFilters = filters;
         const attributes = Object.keys(model)
         Object.keys(filters).map(field => {
-            if(field === 'delivery_date'){
-                formattedFilters={
-                    ...formattedFilters,
-                    delivery_date: {
-                        [Sequelize.Op.between]:filters.delivery_date.split(',')
-                    }
-                }
-            }
+            // if(field === 'delivery_date'){
+            //     formattedFilters={
+            //         ...formattedFilters,
+            //         delivery_date: {
+            //             [Sequelize.Op.between]:filters.delivery_date.split(',')
+            //         }
+            //     }
+            // }
             if(field==='search'){
                 let fields = {}
                 attributes.map(item => (fields[item] = filters.search))
@@ -89,7 +89,7 @@ const getPaginatedDraftBill = async({
     orderBy,
     page,
     totalPage
-}) => {
+}) => { 
     try {
         
         let newFilter=formatFilters({
@@ -97,7 +97,6 @@ const getPaginatedDraftBill = async({
             filters:filters
         });
 
-        
         const {count,rows} = await models.draft_bill_hdr_tbl.findAndCountAll({
             where:{
                 ...newFilter
@@ -167,11 +166,28 @@ const getAllInvoices = async({filters})=>{
 const getAllDraftBills = async({filters})=>{
     try{
         return await models.draft_bill_hdr_tbl.findAll({
+            include:[{
+                model:models.location_tbl,
+                attributes:['ascii_loc_code'],
+                required:false,
+                as:'location_tbl'
+            }],
             where:{
                 ...filters
             }
         })
-        .then(result=>JSON.parse(JSON.stringify(result)))
+        .then(result=>{
+            data = JSON.parse(JSON.stringify(result))
+
+            return data.map(item => {
+                const {location_tbl,...newItem} = item
+
+                return {
+                    ...newItem,
+                    ascii_loc_code: typeof location_tbl?.ascii_loc_code === 'undefined' ? null :location_tbl?.ascii_loc_code 
+                }
+            })
+        })
     }
     catch(e){
         throw e

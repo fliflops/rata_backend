@@ -14,3 +14,30 @@ exports.bulkCreateVendor = async({data})=>{
     }
 }
 
+exports.getAllVendorGroup = async({filters})=>{
+    try{
+        return await dataLayer.getAllVendorGroup({
+            filters
+        })
+    }   
+    catch(e){
+        throw e
+    }
+}
+
+exports.bulkCreateTransaction = async({
+    vendor,
+    vendorGroup,
+    vendorGroupDetails
+})=>{
+    try {
+        return await dataLayer.bulkCreateTransaction({
+            vendor,
+            vendorGroup,
+            vendorGroupDetails
+        })
+        
+    } catch (e) {
+        throw e
+    }
+}

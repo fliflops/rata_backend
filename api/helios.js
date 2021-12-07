@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const {bookings} = require('../services/Helios');
 const {draftBill, invoice} = require('../services');
+
 const _ = require('lodash');
 
 router.post('/invoices',async(req,res) => {
@@ -64,7 +65,7 @@ router.get('/draft-bill',async(req,res) => {
         })
 
 
-        res.status(200).json(bill)
+        res.status(200).json(createDraftBill)
 
     }
     catch(e){
@@ -73,6 +74,28 @@ router.get('/draft-bill',async(req,res) => {
             message:`${e}`
         })
     }
+})
+
+router.get('/draft-bill/buy',async(req,res)=>{
+    try {
+        const {rdd} = req.query;
+        //get invoices 
+
+        const buy = await draftBill.generateDraftBillBuy({
+            rdd
+        })
+        
+        res.status(200).json({
+            buy
+        })
+    } 
+    catch (e) {
+        console.log(e)
+        res.status(500).json({
+            message:`${e}`
+        })
+    }
+
 })
 
 module.exports = router
