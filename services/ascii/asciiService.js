@@ -1,6 +1,7 @@
 const axios = require('axios').default;
 const draftBill = require('../draftBill')
-
+const dataMaster = require('../dataMaster')
+const _ = require('lodash')
 const api = axios.create({
     baseURL:process.env.ASCII_API,
     // timeout:1000,
@@ -35,6 +36,8 @@ exports.getDraftBillBuy = async({
     rdd
 }) => {
     try{
+
+        const serviceTypes = await dataMaster.getServiceTypes();
         const header = await draftBill.getAllDraftBills({
             filters:{
                 delivery_date:rdd,
@@ -50,15 +53,16 @@ exports.getDraftBillBuy = async({
 
         const draftBills = await header.map(item => {
             const invoices = details.filter(inv => inv.draft_bill_no === item.draft_bill_no)
-            
+            const serviceType = _.find(serviceTypes,['service_type_code',item.service_type])
+                
             const CONFIRMATION_RECEIPT_DETAIL = invoices.map((inv,index)=>{
                 let quantity = 0
                 return {
-                    COMPANY_CODE:       '0001',
+                    COMPANY_CODE:       '00001',
                     CR_CODE:            inv.trip_plan,
-                    ITEM_CODE:          '',
+                    ITEM_CODE:          serviceType?.ascii_item_code,
                     LINE_NO:            index+1,
-                    SERVICE_TYPE_CODE:  inv.service_type,
+                    SERVICE_TYPE_CODE:  serviceType?.ascii_service_type,
                     PRINCIPAL_CODE:     item.customer,
                     LOCATION_CODE:      item.ascii_loc_code,
                     UM_CODE:            inv.vehicle_type,
@@ -69,14 +73,14 @@ exports.getDraftBillBuy = async({
             })
 
             return {
-                COMPANY_CODE:   '0001',
+                COMPANY_CODE:   '00001',
                 CR_CODE:        invoices[0].trip_plan,
-                REF_CODE:       '',
+                REF_CODE:       invoices[0].trip_plan,
                 CR_DATE:        item.draft_bill_date,
                 DATE_CONFIRMED: item.draft_bill_date,
                 ITEM_TYPE:      'S',
                 SUPPLIER_CODE:  item.vendor,
-                DEPARTMENT_CODE:'',
+                DEPARTMENT_CODE:serviceType?.ascii_service_type,
                 PARTICULAR:     '',
                 REF_SI_NO:      null,
                 REF_CROSS:      item.contract_id,
@@ -96,6 +100,7 @@ exports.getDraftBill = async({
     rdd
 }) => {
     try{
+        const serviceTypes = await dataMaster.getServiceTypes();
         const header = await draftBill.getAllDraftBills({
             filters:{
                 delivery_date:rdd,
@@ -111,6 +116,7 @@ exports.getDraftBill = async({
 
         const draftBills = header.map(item => {
             const invoices = details.filter(inv => inv.draft_bill_no === item.draft_bill_no)
+            const serviceType = _.find(serviceTypes,['service_type_code',item.service_type])
             
             const SALES_ORDER_DETAIL = invoices.map((inv,index) => {
                 let quantity = 0
@@ -119,21 +125,23 @@ exports.getDraftBill = async({
                     quantity = 1
                 }
                 else {
-                    if(inv.min_billable_unit === 'cbm'){
+                    if(String(inv.min_billable_unit).toLowerCase() === 'cbm'){
                         quantity = inv.actual_cbm
+                        //console.log(inv.actual_cbm)
                     }
-                    if(inv.min_billable_unit === 'weigth'){
+                    if(String(inv.min_billable_unit).toLowerCase() === 'weigth'){
                         quantity = inv.actual_weight
                     }
-                    if(['CASE','PIECE'].includes( inv.min_billable_unit)){
+                    if(['CASE','PIECE'].includes( String(inv.min_billable_unit).toUpperCase())){
                         quantity=inv.actual_qty
                     }
+
                 }
 
                 return {
                     COMPANY_CODE:   '00001',
                     SO_CODE:        inv.draft_bill_no,
-                    ITEM_CODE:      inv.service_type,
+                    ITEM_CODE:      serviceType?.ascii_service_type,
                     LINE_NO:        index+1,
                     LOCATION_CODE:  item.ascii_loc_code,
                     UM_CODE:        inv.service_type === '2003'? inv.vehicle_type :inv.min_billable_unit,
@@ -185,3 +193,21 @@ exports.createAsciiSalesOrder = async({
         throw e
     }
 }   
+
+exports.createAsciiConfirmationReceipt = async({
+    token,
+    data
+}) => {
+    try{
+        return await api.post(`/get/confirm-receipt`,data,{
+            headers:{
+                ['Content-Type']: 'application/json',
+                ['Authorization']: `Bearer ${token}`
+            }
+        })
+
+    }
+    catch(e){
+        throw e
+    }
+}

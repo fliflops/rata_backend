@@ -13,5 +13,6 @@ module.exports={
     contract: require('./contract'),
     aggregation:require('./aggregation'),
     vendor:require('./vendor'),
-    ascii: require('./ascii')
+    ascii: require('./ascii'),
+    dataMaster: require('./dataMaster')
 }

@@ -105,11 +105,12 @@ router.post('/:contract_type/invoice',async(req,res)=>{
             })
 
             //revenue leak
-            await invoice.createRevenueLeak({
-                data:draftBills.revenueLeak
-            })
-
+            // await invoice.createRevenueLeak({
+            //     data:draftBills.revenueLeak
+            // })
         }
+
+        //console.log(draftBills)
 
         const create = await draftBill.createDraftBill(draftBills.draftBill)
      
@@ -179,7 +180,6 @@ router.post('/ascii/sales-order',async(req,res)=>{
         res.status(200).json({
             result: result.data,
             data
-            
         })
     }
     catch(e){
@@ -192,11 +192,18 @@ router.post('/ascii/confirmation-receipt',async(req,res)=>{
     try{
         const {rdd} = req.query
 
+        const token = await ascii.loginService()
         const data = await ascii.getDraftBillBuy({
             rdd
         })
 
+        const result = await ascii.createAsciiConfirmationReceipt({
+            token,
+            data
+        })
+
         res.status(200).json({
+            result: result.data,
             data
         })
     }

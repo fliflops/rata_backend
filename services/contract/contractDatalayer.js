@@ -87,7 +87,7 @@ const getContractDetails = async({filters,options}) => {
                 },
                 {
                     model:models.contract_hdr_tbl,
-                    attributes:['vendor_group','contract_type'],
+                    attributes:['vendor_group','contract_type','valid_from','valid_to'],
                     required:false,
                     as:'contract'
                 }

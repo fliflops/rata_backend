@@ -12,6 +12,10 @@ module.exports = (sequelize, DataTypes) => {
             allowNull:false,
             type: DataTypes.STRING(255)
         },
+        algo_description:{
+            allowNull:false,
+            type: DataTypes.STRING(255)
+        },
         with_agg:{
             allowNull:false,
             type:DataTypes.BOOLEAN

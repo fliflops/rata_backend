@@ -21,7 +21,14 @@ exports.createInvoiceTransaction = async({
 
         }
 
-        // console.log(inv_details)
+        // console.log(invoices.filter(item => {
+        //     return !inv_details.map(i => i.fk_invoice_id).includes(item.id)
+        // }))
+
+        // return {
+        //     invoices,
+        //     inv_details
+        // }
 
         return await dataLayer.createInvoiceTransaction({
             invoices,
