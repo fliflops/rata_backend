@@ -95,9 +95,7 @@ exports.getPaginatedRevenueLeak = async({
 })=>{
     try{
         let {orderBy,page,totalPage,...newFilters} = filters
-        
-
-
+    
         return  await dataLayer.getPaginatedRevenueLeak({
             orderBy:orderBy.split(','),
             page,
@@ -123,8 +121,29 @@ exports.getPaginatedRevenueLeak = async({
                 count
             }
         })
+    }
+    catch(e){
+        throw e
+    }
+}
 
-
+exports.getAllRevenueLeak = async({
+    filters
+})=>{
+    try{
+        return await dataLayer.getAllRevenueLeak({
+            filters
+        })
+        .then(res => {
+            return res.map(item => {
+                const {invoice,...newItem} = item
+                return {
+                    ...newItem,
+                    ...invoice,
+                    is_draft_bill: item.is_draft_bill === 0 ? false : true
+                }
+            })
+        })
     }
     catch(e){
         throw e

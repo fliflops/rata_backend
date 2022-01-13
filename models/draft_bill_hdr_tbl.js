@@ -31,6 +31,10 @@ module.exports = (sequelize, DataTypes) => {
             allowNull:false,
             type: DataTypes.STRING(50)
         },
+        trip_no:{
+            allowNull:true,
+            type: DataTypes.STRING(50)
+        },
         vendor:{
             allowNull:true,
             type: DataTypes.STRING(50)

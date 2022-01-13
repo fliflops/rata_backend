@@ -208,6 +208,30 @@ const getPaginatedRevenueLeak = async({
     }
 }
 
+const getAllRevenueLeak = async({filters}) => {
+    try{
+        const attributes = Object.keys(models.invoices_cleared_hdr.rawAttributes)
+        return await models.invoices_rev_leak_tbl.findAll({
+            include:[
+                {
+                    model:models.invoices_cleared_hdr,
+                    attributes:attributes.filter(item => !['id','invoice_no','is_processed_sell','is_processed_buy','created_by','updated_by','createdAt','updatedAt','principal_name','trucker_name','stc_from_name','stc_to_name'].includes(item)),
+                    as:"invoice"
+                }
+            ],
+            where:{
+                ...filters  
+            }
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
+    catch(e){
+        throw e
+    }
+}
+
+
+
 module.exports = {
     createInvoice,
     createInvoiceDtl,
@@ -216,5 +240,6 @@ module.exports = {
     getAllInvoice,
     updateInvoice,
     createRevenueLeak,
-    getPaginatedRevenueLeak
+    getPaginatedRevenueLeak,
+    getAllRevenueLeak
 }

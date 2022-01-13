@@ -14,11 +14,7 @@ global.appRoot = path.resolve(__dirname);
 
 app.use(morgan('dev'))
 app.use(express.json({limit: '50mb'}));
-app.use(express.urlencoded({
-    limit: '50mb',
-    extended:true,
-    parameterLimit:50000
-}));
+app.use(express.urlencoded({limit: '50mb'}));
 app.use(cors({
     credentials:true,
     origin: process.env.ORIGIN

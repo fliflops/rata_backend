@@ -14,5 +14,6 @@ module.exports={
     aggregation:require('./aggregation'),
     vendor:require('./vendor'),
     ascii: require('./ascii'),
-    dataMaster: require('./dataMaster')
+    dataMaster: require('./dataMaster'),
+    dataDownload:require('./dataDownload')
 }

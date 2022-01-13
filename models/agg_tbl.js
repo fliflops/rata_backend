@@ -3,10 +3,12 @@ const Sequelize = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
     return sequelize.define('agg_tbl',{
         id:{
-            allowNull: false,
+            // allowNull: false,
             primaryKey: true,
-            type: DataTypes.UUID,
-            defaultValue: DataTypes.UUIDV4
+            // type: DataTypes.UUID,
+            // defaultValue: DataTypes.UUIDV4
+            allowNull:false,
+            type: DataTypes.STRING(255)
         },
         agg_name:{
             allowNull:false,

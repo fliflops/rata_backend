@@ -167,6 +167,7 @@ db.vendor_group_dtl_tbl.belongsTo(db.vendor_group_tbl,{
 	foreignKey:'vg_code',
 })
 
+
 //Draft Bill Association 
 db.draft_bill_hdr_tbl.hasOne(db.location_tbl,{
 	foreignKey:'loc_code',
@@ -176,6 +177,26 @@ db.draft_bill_hdr_tbl.hasOne(db.location_tbl,{
 
 db.location_tbl.belongsTo(db.draft_bill_hdr_tbl,{
 	foreignKey:'loc_code'
+})
+
+db.draft_bill_hdr_tbl.hasOne(db.vendor_tbl,{
+	foreignKey:'vendor_id',
+	sourceKey:'vendor',
+	as:'vendor_tbl'
+})
+
+db.vendor_tbl.belongsTo(db.draft_bill_hdr_tbl,{
+	foreignKey:'vendor_id'
+})
+
+db.draft_bill_hdr_tbl.hasOne(db.principal_tbl,{
+	foreignKey:'principal_code',
+	sourceKey:'customer',
+	as:'principal_tbl'
+})
+
+db.principal_tbl.belongsTo(db.draft_bill_hdr_tbl,{
+	foreignKey:'principal_code'
 })
 
 module.exports = db;

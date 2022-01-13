@@ -41,6 +41,9 @@ module.exports = (sequelize, DataTypes) => {
         zip_code:{
             type: DataTypes.STRING(255)
         },
+        ascii_vendor_code:{
+            type: DataTypes.STRING(255)
+        },
         createdAt:Sequelize.DATE,
         created_by:{
             type: DataTypes.STRING(255)

@@ -9,11 +9,11 @@ const moment = require('moment');
 const {Op} = require('sequelize')
 
 const sumByQty = ({data,uom,field}) => {
-    return _.sumBy(data.filter(item => item.uom === uom),item =>item[field]).toFixed(4)
+    return _.sumBy(data.filter(item => item.uom === uom),item =>item[field]).toFixed(2)
 }
 
 const sumBy = ({data,field}) => {
-    return _.sumBy(data,item => parseFloat(item[field])).toFixed(4)
+    return _.sumBy(data,item => parseFloat(item[field])).toFixed(2)
 }
 
 const getAggCondition = async(aggId)=>{
@@ -33,8 +33,8 @@ const groupWithAgg = async(data) => {
     try{
         let grouped = []
 
-        const allConditions = await getAggCondition(_.uniq(data.map(item => item.tariff.fk_agg_id)))// 
-        
+        const allConditions = await getAggCondition(_.uniq(data.map(item => item.tariff.fk_agg_id))) 
+        //console.log(allConditions)
         const raw_group = _.groupBy(data,(item)=>{
             return item.group_id
         })
@@ -45,9 +45,8 @@ const groupWithAgg = async(data) => {
             const invoice = raw_group[item][0]
 
             //get conditions
-            let conditions = allConditions.filter(item => item.agg_id = invoice.tariff.fk_agg_id)
-            //await getAggCondition(invoice.tariff.fk_agg_id)
-            
+            let conditions = allConditions.filter(item => item.agg_id === invoice.tariff.fk_agg_id)
+            //console.log(conditions)
             //convert the paremeters into array
             const parameters = invoice.tariff.parameter ?  invoice.tariff.parameter.split(',') : null
             
@@ -100,6 +99,7 @@ const groupWithAgg = async(data) => {
                 contract_type:      invoice.tariff.contract_type,
                 service_type:       invoice.service_type,
                 draft_bill_date:    null,
+                trip_no:            invoice.trip_no,
                 contract_id:        invoice.contract_id,
                 tariff_id:          invoice.tariff.tariff_id,
                 customer:           invoice.principal_code,
@@ -170,7 +170,7 @@ const groupWithAgg = async(data) => {
                 if(fn(tariff,invoice) || fn(tariff,invoice) === null){
                     const formula = cnd.raw_formula.split(',').join('')
                     const fnFormula = new Function(['tariff','invoice'],'return '+formula)
-                    total_charges = parseFloat(fnFormula(tariff,invoice)).toFixed(4)
+                    total_charges = parseFloat(fnFormula(tariff,invoice)).toFixed(2)
                     aggCondition = {
                         ...aggCondition,
                         condition:conditon,
@@ -183,6 +183,7 @@ const groupWithAgg = async(data) => {
             grouped[item] = {
                 draft_bill_no:      null,
                 contract_type:      df.tariff.contract_type,
+                trip_no:            df.trip_no,
                 service_type:       df.service_type,
                 draft_bill_date:    null,
                 contract_id:        df.contract_id,
@@ -216,17 +217,16 @@ const groupWithAgg = async(data) => {
                     
                     else {
                         if(index === df.invoices.length - 1){
-                            billing=Math.floor(total_charges/df.invoices.length) + (total_charges%df.invoices.length)
+                            billing=Math.floor(total_charges/df.invoices.length)  + (total_charges%df.invoices.length)
                         }   
                         else{
                             billing=Math.floor(total_charges/df.invoices.length)
-                        }
-                       
+                        }  
                     }
 
                     return {
                         ...item,
-                        billing: billing.toFixed(4)
+                        billing: billing.toFixed(2)
                     }
                 })
                 
@@ -388,14 +388,7 @@ const assignTariff = ({invoices,contracts}) => {
                 && String(inv_stc_to).toLowerCase() === String(to_geo).toLowerCase())
                 && service_type === invoice.service_type){
                
-                    // console.log({
-                    //     class_of_store,
-                    //     invoice: invoice.class_of_store,
-                    //     veh_invoice:invoice.vehicle_type,
-                    //     veh_tariff:vehicle_type,
-                    //     tariff_id,
-                        
-                    // })
+                
                 //if tariff has vehicle type maintained
                 if(vehicle_type){
                     // console.log({
@@ -811,7 +804,7 @@ exports.generateDraftBill = async({
         let {data,noContracts} = await getAllInvoice({
             filters:{
                 rdd:deliveryDate,
-                is_processed_sell:false,
+                // is_processed_sell:false,
                 location
             }
         })
@@ -1015,3 +1008,21 @@ const getContracts = async(data) => {
     }
 }
 /*#SELL Process Ends Here*/
+
+
+exports.updateDraftBill = async({
+    data,
+    filters
+})=>{
+    try{
+
+        return await dataLayer.updateDraftBill({
+            filters,
+            data
+        })
+
+    }
+    catch(e){
+        throw e
+    }
+}

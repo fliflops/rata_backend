@@ -105,9 +105,9 @@ router.post('/:contract_type/invoice',async(req,res)=>{
             })
 
             //revenue leak
-            // await invoice.createRevenueLeak({
-            //     data:draftBills.revenueLeak
-            // })
+            await invoice.createRevenueLeak({
+                data:draftBills.revenueLeak
+            })
         }
 
         //console.log(draftBills)
@@ -160,14 +160,16 @@ router.post('/helios',async(req,res)=>{
     }
 })
 
-router.post('/ascii/sales-order',async(req,res)=>{
+router.post('/ascii/sell',async(req,res)=>{
     try{
-        const {rdd} = req.query
+        const {rdd,location} = req.query;
+
         //get the access token
         const token = await ascii.loginService()
         
         const data = await ascii.getDraftBill({
-            rdd
+            rdd,
+            location
         })
 
         const result = await ascii.createAsciiSalesOrder({
@@ -175,10 +177,18 @@ router.post('/ascii/sales-order',async(req,res)=>{
             data: JSON.parse(JSON.stringify(data))
         })
 
-        // console.log(result.data)
+        //update draft bills
+        await draftBill.updateDraftBill({
+            data:{
+                status:'DRAFT_BILL_POSTED'
+            },
+            filters:{
+                draft_bill_no: result.success.map(item => item.SO_CODE)
+            }
+        })
 
         res.status(200).json({
-            result: result.data,
+            result: result,
             data
         })
     }
@@ -188,13 +198,14 @@ router.post('/ascii/sales-order',async(req,res)=>{
     }
 })
 
-router.post('/ascii/confirmation-receipt',async(req,res)=>{
+router.post('/ascii/buy',async(req,res)=>{
     try{
-        const {rdd} = req.query
+        const {rdd,location} = req.query
 
         const token = await ascii.loginService()
         const data = await ascii.getDraftBillBuy({
-            rdd
+            rdd,
+            location
         })
 
         const result = await ascii.createAsciiConfirmationReceipt({
@@ -202,8 +213,19 @@ router.post('/ascii/confirmation-receipt',async(req,res)=>{
             data
         })
 
+          //update draft bills
+          await draftBill.updateDraftBill({
+            data:{
+                status:'DRAFT_BILL_POSTED'
+            },
+            filters:{
+                trip_no: result.success.map(item => item.CR_CODE),
+                contract_type:'BUY'
+            }
+        })
+      
         res.status(200).json({
-            result: result.data,
+            result,
             data
         })
     }

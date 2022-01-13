@@ -33,7 +33,8 @@ exports.loginService = async() => {
 }
 
 exports.getDraftBillBuy = async({
-    rdd
+    rdd,
+    location
 }) => {
     try{
 
@@ -41,7 +42,8 @@ exports.getDraftBillBuy = async({
         const header = await draftBill.getAllDraftBills({
             filters:{
                 delivery_date:rdd,
-                contract_type:'BUY'
+                contract_type:'BUY',
+                location
             }
         })
 
@@ -63,7 +65,7 @@ exports.getDraftBillBuy = async({
                     ITEM_CODE:          serviceType?.ascii_item_code,
                     LINE_NO:            index+1,
                     SERVICE_TYPE_CODE:  serviceType?.ascii_service_type,
-                    PRINCIPAL_CODE:     item.customer,
+                    PRINCIPAL_CODE:     item.ascii_principal_code,
                     LOCATION_CODE:      item.ascii_loc_code,
                     UM_CODE:            inv.vehicle_type,
                     QUANTITY:           1,
@@ -79,10 +81,10 @@ exports.getDraftBillBuy = async({
                 CR_DATE:        item.draft_bill_date,
                 DATE_CONFIRMED: item.draft_bill_date,
                 ITEM_TYPE:      'S',
-                SUPPLIER_CODE:  item.vendor,
+                SUPPLIER_CODE:  item.ascii_vendor_code,
                 DEPARTMENT_CODE:serviceType?.ascii_service_type,
-                PARTICULAR:     '',
-                REF_SI_NO:      null,
+                PARTICULAR:     invoices.map(i => i.invoice_no).join(','),
+                REF_SI_NO:      'n/a',
                 REF_CROSS:      item.contract_id,
                 CR_AMT:         parseFloat(item.total_charges).toFixed(2),
                 CONFIRMATION_RECEIPT_DETAIL
@@ -97,13 +99,15 @@ exports.getDraftBillBuy = async({
 }
 
 exports.getDraftBill = async({
-    rdd
+    rdd,
+    location
 }) => {
     try{
         const serviceTypes = await dataMaster.getServiceTypes();
         const header = await draftBill.getAllDraftBills({
             filters:{
                 delivery_date:rdd,
+                location,
                 contract_type:'SELL'
             }
         })
@@ -114,20 +118,27 @@ exports.getDraftBill = async({
             }
         })
 
-        const draftBills = header.map(item => {
-            const invoices = details.filter(inv => inv.draft_bill_no === item.draft_bill_no)
-            const serviceType = _.find(serviceTypes,['service_type_code',item.service_type])
-            
-            const SALES_ORDER_DETAIL = invoices.map((inv,index) => {
-                let quantity = 0
+        const draftBills        = header.map(item => {
+            const invoices      = details.filter(inv => inv.draft_bill_no === item.draft_bill_no)
+            const serviceType   = _.find(serviceTypes,['service_type_code',item.service_type])
+            const SO_AMT        =         parseFloat(item.total_charges).toFixed(2)
 
+            const SALES_ORDER_DETAIL = invoices.map((inv,index) => {
+                let quantity = 1
+                let price = 0
+
+                if(index === invoices.length -1 ){
+                    price=Math.floor(SO_AMT/invoices.length) + (SO_AMT%invoices.length)
+                }
+                else{
+                    price=Math.floor(SO_AMT/invoices.length)
+                }
                 if(inv.service_type === '2003'){
-                    quantity = 1
+                    quantity=1
                 }
                 else {
                     if(String(inv.min_billable_unit).toLowerCase() === 'cbm'){
                         quantity = inv.actual_cbm
-                        //console.log(inv.actual_cbm)
                     }
                     if(String(inv.min_billable_unit).toLowerCase() === 'weigth'){
                         quantity = inv.actual_weight
@@ -135,7 +146,6 @@ exports.getDraftBill = async({
                     if(['CASE','PIECE'].includes( String(inv.min_billable_unit).toUpperCase())){
                         quantity=inv.actual_qty
                     }
-
                 }
 
                 return {
@@ -145,9 +155,9 @@ exports.getDraftBill = async({
                     LINE_NO:        index+1,
                     LOCATION_CODE:  item.ascii_loc_code,
                     UM_CODE:        inv.service_type === '2003'? inv.vehicle_type :inv.min_billable_unit,
-                    QUANTITY:       quantity ? parseFloat(quantity).toFixed(2) : 0,  
-                    UNIT_PRICE:     parseFloat(inv.billing).toFixed(2),
-                    EXTENDED_AMT:   parseFloat(inv.billing).toFixed(2)
+                    QUANTITY:       quantity ? parseFloat(quantity).toFixed(2) : 1,  
+                    UNIT_PRICE:     parseFloat(price).toFixed(2),//parseFloat(inv.billing).toFixed(2),
+                    EXTENDED_AMT:   parseFloat(price).toFixed(2)//parseFloat(inv.billing).toFixed(2)
                     //parseFloat(item.total_charges).toFixed(2)
                 }
             })
@@ -159,10 +169,10 @@ exports.getDraftBill = async({
                 ITEM_TYPE:      'S',
                 SO_DATE:        item.draft_bill_date,
                 CUSTOMER_CODE:  item.customer,
-                PARTICULAR:     null,
+                PARTICULAR:     invoices.map(i => i.invoice_no).join(','),
                 REF_EUPO:       invoices[0].trip_plan,
                 REF_CROSS:      item.contract_id,
-                SO_AMT:         parseFloat(item.total_charges).toFixed(2),
+                SO_AMT,
                 SALES_ORDER_DETAIL
             }
 
@@ -188,6 +198,17 @@ exports.createAsciiSalesOrder = async({
                 ['Authorization']: `Bearer ${token}`
             }
         })
+        .then(result => {    
+
+            // const errors =result.data.ERROR.map(item => item.HEADER[0].REF_CODE) 
+            // const success = data.filter(item => !errors.includes(item.SO_CODE))
+            
+            return {
+                errors:result.data.ERROR,
+                success:result.data.SUMMARY
+                //success
+            }
+        })
     }
     catch(e){
         throw e
@@ -204,6 +225,19 @@ exports.createAsciiConfirmationReceipt = async({
                 ['Content-Type']: 'application/json',
                 ['Authorization']: `Bearer ${token}`
             }
+        })
+        .then(result => {            
+            //const errors =result.data.ERROR.map(item => item.HEADER[0].REF_CODE) 
+            //const success = data.filter(item => !errors.includes(item.SO_CODE))
+            
+            return {
+                errors:result.data.ERROR,
+                success:result.data.SUMMARY
+            }
+            // {
+                // errors:[]//result.data.ERROR,
+                // success
+            //}
         })
 
     }

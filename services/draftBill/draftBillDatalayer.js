@@ -166,12 +166,26 @@ const getAllInvoices = async({filters})=>{
 const getAllDraftBills = async({filters})=>{
     try{
         return await models.draft_bill_hdr_tbl.findAll({
-            include:[{
-                model:models.location_tbl,
-                attributes:['ascii_loc_code'],
-                required:false,
-                as:'location_tbl'
-            }],
+            include:[
+                {
+                    model:models.location_tbl,
+                    attributes:['ascii_loc_code'],
+                    required:false,
+                    as:'location_tbl'
+                },
+                {
+                    model:models.vendor_tbl,
+                    attributes:['ascii_vendor_code'],
+                    required:false,
+                    as:'vendor_tbl'
+                },
+                {
+                    model:models.principal_tbl,
+                    attributes:['ascii_principal_code'],
+                    required:false,
+                    as:'principal_tbl'
+                }
+            ],
             where:{
                 ...filters
             }
@@ -180,14 +194,39 @@ const getAllDraftBills = async({filters})=>{
             data = JSON.parse(JSON.stringify(result))
 
             return data.map(item => {
-                const {location_tbl,...newItem} = item
+                const {location_tbl,vendor_tbl,principal_tbl,...newItem} = item
 
                 return {
                     ...newItem,
-                    ascii_loc_code: typeof location_tbl?.ascii_loc_code === 'undefined' ? null :location_tbl?.ascii_loc_code 
+                    ascii_vendor_code: typeof  vendor_tbl?.ascii_vendor_code === 'undefined' ? null: vendor_tbl?.ascii_vendor_code,
+                    ascii_loc_code: typeof location_tbl?.ascii_loc_code === 'undefined' ? null :location_tbl?.ascii_loc_code, 
+                    ascii_principal_code: typeof principal_tbl?.ascii_principal_code === 'undefined' ? null : principal_tbl?.ascii_principal_code
                 }
             })
         })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const updateDraftBill = async({
+    filters,
+    options,
+    data
+}) => {
+    try{
+        return await models.draft_bill_hdr_tbl.update(
+            {
+                ...data
+            },
+            {
+                where:{
+                    ...filters
+                },
+                ...options
+            }
+        )
     }
     catch(e){
         throw e
@@ -202,5 +241,6 @@ module.exports =  {
     getPaginatedDraftBill,
     rawGetDraftBillCount,
     getAllInvoices,
-    getAllDraftBills
+    getAllDraftBills,
+    updateDraftBill
 }
