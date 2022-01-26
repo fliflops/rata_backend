@@ -637,7 +637,7 @@ exports.generateDraftBillBuy = async({rdd,location}) => {
         noVendorGroup.map(item => {
             revenueLeak.push({
                 invoice_no:     item.invoice_no,
-                draft_bill_type:'SELL',
+                draft_bill_type:'BUY',
                 fk_invoice_id:  item.id,
                 reason:         item.reason
             })
@@ -804,7 +804,7 @@ exports.generateDraftBill = async({
         let {data,noContracts} = await getAllInvoice({
             filters:{
                 rdd:deliveryDate,
-                // is_processed_sell:false,
+                is_processed_sell:false,
                 location
             }
         })

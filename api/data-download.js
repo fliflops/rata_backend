@@ -38,7 +38,7 @@ router.get('/revenue-leak', async(req,res)=> {
 
         const data = await dataDownload.exportRevenueLeak({
             location,
-            delivery_date:rdd,
+            delivery_date:rdd, 
             contract_type:type
         })
         

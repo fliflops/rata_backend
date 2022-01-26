@@ -75,11 +75,11 @@ const bulkCreateTransaction = async({
 const getAllVendorGroup = async({filters,options}) => {
     try {
         return await models.vendor_group_tbl.findAll({
-            include:[
-                {
+            // include:[
+            //     {
 
-                }
-            ],
+            //     }
+            // ],
             where:{
                 ...filters
             }

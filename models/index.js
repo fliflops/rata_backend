@@ -85,6 +85,18 @@ db.contract_hdr_tbl.belongsTo(db.contract_tariff_dtl,{
 	foreignKey:'contract_id'
 })
 
+//Tariff Associations
+db.tariff_sell_hdr_tbl.hasOne(db.contract_tariff_dtl,{
+	foreignKey:'tariff_id',
+	sourceKey:'tariff_id',
+	as:'contract'
+})
+
+db.contract_tariff_dtl.belongsTo(db.tariff_sell_hdr_tbl,{
+	foreignKey:'tariff_id'
+})
+
+
 //Invoice Associations
 db.invoices_cleared_hdr.hasMany(db.invoices_dtl_tbl,{
 	foreignKey:'br_no',
@@ -145,7 +157,6 @@ db.agg_conditions_tbl.belongsTo(db.agg_tbl,{
 	foreignKey:'agg_id'
 })
 
-
 //Invoice Revenue Leak Associations
 db.invoices_rev_leak_tbl.hasOne(db.invoices_cleared_hdr,{
 	foreignKey:'id',
@@ -166,7 +177,6 @@ db.vendor_group_tbl.hasOne(db.vendor_group_dtl_tbl,{
 db.vendor_group_dtl_tbl.belongsTo(db.vendor_group_tbl,{
 	foreignKey:'vg_code',
 })
-
 
 //Draft Bill Association 
 db.draft_bill_hdr_tbl.hasOne(db.location_tbl,{

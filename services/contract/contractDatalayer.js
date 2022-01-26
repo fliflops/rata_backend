@@ -35,7 +35,6 @@ const getContract = async({
     options
 }) => {
     try{
-        
         return await models.contract_hdr_tbl.findOne({
             include:[
                 {
@@ -50,10 +49,8 @@ const getContract = async({
             ...options
         })
         .then(result => {
-          
             if(result){
                 const {principal,...newItem} = result.toJSON()
-                // console.log(principal)
                 return {
                     ...newItem,
                     principal_name: principal  === null ? null : principal.principal_name
@@ -66,6 +63,7 @@ const getContract = async({
         throw e
     }
 }
+
 
 const getContractDetails = async({filters,options}) => {
     try{    
@@ -118,6 +116,71 @@ const getContractDetails = async({filters,options}) => {
         throw e
     }
 }
+
+const getPaginatedContractTariff = async({
+    filters,
+    page,
+    totalPage
+    })=>{
+        try{    
+            return await models.contract_tariff_dtl.findAndCountAll({
+                include:[
+                    {
+                        model:models.agg_tbl,
+                        attributes:['agg_name','with_agg','parameter','group_by'],
+                        required:false,
+                        as:"agg_rule"
+                    },
+                    {
+                        model:models.tariff_sell_hdr_tbl,
+                        where:{
+                            tariff_status:'APPROVED'
+                        },
+                        required:false,
+                        as:"tariff"
+                    },
+                    {
+                        model:models.contract_hdr_tbl,
+                        attributes:['vendor_group','contract_type','valid_from','valid_to'],
+                        required:false,
+                        as:'contract'
+                    }
+                ],
+                where:{
+
+                    ...filters
+                },
+                offset:parseInt(page) * parseInt(totalPage),
+                limit:parseInt(totalPage)
+            })
+            .then(result => {
+                let {count,rows} = JSON.parse(JSON.stringify(result))
+                
+                rows = rows.map(i => {
+                    const {agg_rule,...item} = i
+                    
+                    return {
+                        ...item,
+                        agg_rule:agg_rule === null ? null : agg_rule.agg_name,
+                        with_agg:agg_rule?.with_agg,
+                        formula:agg_rule?.formula,
+                        parameter:agg_rule?.parameter,
+                        group_by:agg_rule?.group_by
+                    }  
+                })
+               
+                return {
+                    count,
+                    rows
+                }
+            })
+        }
+        catch(e){
+            throw e
+        }
+    
+}
+
 
 const getPaginatedContract = async({
     filters,
@@ -206,14 +269,14 @@ const createContract = async({data,options}) => {
     }
 }
 
-const createContractDetail = async({
+const bulkCreateContractDetail = async({
     data,
     options
 }) => {
     try{
 
-        return await models.contract_tariff_dtl.bulkCreate(data,{
-            ...options
+        return await models.contract_tariff_dtl.create({
+            ...data
         })
     }
     catch(e){
@@ -241,7 +304,7 @@ const transactionCreateContract = async({contract,details}) => {
                     transaction: t
                 }
             })
-            console.log(details)
+            //console.log(details)
 
             await createContractDetail({
                 data:details,
@@ -277,7 +340,59 @@ const updateContract = async({
     }
 }
 
-const bulkCreateContractDetails = async({contract,details}) => {
+const updateContractDetails = async({
+    filters,
+    data,
+    options
+})=>{
+    try{
+        return await models.contract_tariff_dtl.update({
+            ...data
+        },{
+            where:{
+                ...filters
+            },
+            ...options
+        })
+
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const createContractTariff = async({
+    data
+})=>{
+    try{
+        return await models.contract_tariff_dtl.create({
+            ...data
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const updateContractTariff = async({
+    data,
+    filters
+}) => {
+    try{
+        return await models.contract_tariff_dtl.update({
+            ...data
+        },{
+            where:{
+                ...filters
+            }
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const bulkCreateContractDetailsTransaction = async({contract,details}) => {
     try{
         return await sequelize.transaction(async t => {
             await bulkCreateContract({
@@ -288,7 +403,7 @@ const bulkCreateContractDetails = async({contract,details}) => {
                 }
             })
 
-            await createContractDetail({
+            await bulkCreateContractDetail({
                 data:details,
                 options:{
                     logging:false,
@@ -309,6 +424,11 @@ module.exports={
     updateContract,
     getContractDetails,
     transactionCreateContract,
-    bulkCreateContractDetails,
-    bulkCreateContract
+    bulkCreateContractDetailsTransaction,
+    bulkCreateContract,
+    getPaginatedContractTariff,
+    updateContractDetails,
+    bulkCreateContractDetail,
+    createContractTariff,
+    updateContractTariff
 }

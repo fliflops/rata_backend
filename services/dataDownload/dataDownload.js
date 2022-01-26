@@ -1,12 +1,14 @@
 const {getAllDraftBills, getAllInvoices} = require('../draftBill');
 const {getAllRevenueLeak} = require('../invoice')
 const xlsx = require('xlsx');
-const { dataDownload } = require('..');
+
 
 const generateExcel = (data) => {
-    try{        
+    try{
+        //create work book        
         const wb = xlsx.utils.book_new();
       
+        //get the object name 
         Object.keys(data).map(item => {
             const ws = xlsx.utils.json_to_sheet(data[item]);
             xlsx.utils.book_append_sheet(wb,ws,item);
@@ -70,7 +72,6 @@ exports.exportRevenueLeak = async({
 }) => {
     try {
 
-        
         const data = await getAllRevenueLeak({
             filters:{
                 draft_bill_type: contract_type,

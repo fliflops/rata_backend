@@ -105,7 +105,14 @@ const getTariff = async({filter,options}) => {
             where:{
                 ...filter
             },
-            logging:false
+            include:[
+                {
+                    model:models.contract_tariff_dtl,
+                    attributes:['tariff_id','contract_id'],
+                    as:'contract'
+                }
+            ],
+            // logging:false
         })
         .then(result => result.toJSON())
     }
@@ -115,7 +122,7 @@ const getTariff = async({filter,options}) => {
 }
 
 
-const updateTariff = async({filter,data,option}) => {
+const updateTariff = async({filters,data,option}) => {
     try{
         return await models.tariff_sell_hdr_tbl.update(
             {
@@ -123,7 +130,7 @@ const updateTariff = async({filter,data,option}) => {
             },
             {
                 where:{
-                    ...filter
+                    ...filters
                 }
             }
         )
@@ -208,8 +215,6 @@ const getPaginatedTariff = async({
             }
         });
 
-        
-
         const {count,rows} = await models.tariff_sell_hdr_tbl.findAndCountAll({
             where:{
                 ...newFilter
@@ -237,6 +242,7 @@ const getPaginatedTariff = async({
 
 }
 
+
 const getAllTariff = async({filters}) => {
     try{
         return await models.tariff_sell_hdr_tbl.findAll({
@@ -250,9 +256,6 @@ const getAllTariff = async({filters}) => {
         throw e
     }
 }
-
-
-
 
 module.exports = {
     createTariffCondition,

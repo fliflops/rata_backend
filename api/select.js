@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const {principal,shipPoint,quickCode,location,tariff,geography,aggregation} = require('../services')
+const {principal,shipPoint,quickCode,location,tariff,geography,aggregation,vendor} = require('../services')
 
 router.get('/principal',async(req,res) => {
     try{
@@ -123,21 +123,20 @@ router.get('/tariff',async(req,res)=>{
         const {type} = req.query;
         let data = null;
 
-        if(type === 'SELL'){
-            data= await tariff.getAllTariff({
-                filters:{
-                    tariff_status:'APPROVED'
+        data= await tariff.getAllTariff({
+            filters:{
+                tariff_status:'APPROVED'
+            }
+        })
+        .then(result => {
+            return result.map(i => {
+                return {
+                    label:`${i.tariff_id}:${i.tariff_desc}`,
+                    value:i.tariff_id
                 }
             })
-            .then(result => {
-                return result.map(i => {
-                    return {
-                        label:`${i.tariff_id}:${i.tariff_desc}`,
-                        value:i.tariff_id
-                    }
-                })
-            })
-        }
+        })
+     
 
         res.status(200).json({
             data
@@ -247,6 +246,36 @@ router.get('/aggregation',async(req,res)=>{
         res.status(500).json({
             message:`${e}`
         }) 
+    }
+})
+
+router.get('/vendor-group',async(req,res)=>{
+    try{
+        let data
+        
+        data = await vendor.getAllVendorGroup({
+            filters:{
+                vg_status:'ACTIVE'
+            }
+        })
+
+
+        res.status(200).json({
+            data:data.map(i => {
+                return {
+                    label:i.vg_code,
+                    value:i.vg_desc
+                }
+            })
+        })
+        
+
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({
+            message:`${e}`
+        })
     }
 })
 

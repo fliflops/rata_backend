@@ -111,10 +111,20 @@ exports.getAllTariff = async({filters}) => {
         .then(result => {
             return result.map(item => item.toJSON())
         })
-        
     }
     catch(e){
         throw e
     }
 }
 
+exports.updateTariff = async({filters,data})=>{
+    try{
+        return await dataLayer.updateTariff({
+            filters,
+            data
+        })
+    }
+    catch(e){
+        throw e
+    }
+}

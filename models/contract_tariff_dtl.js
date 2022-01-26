@@ -17,7 +17,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING(50)
        },
        line_no:{
-            allowNull:false,
+            allowNull:true,
             type: DataTypes.INTEGER
        },
        tariff_rate:{
@@ -25,6 +25,7 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.DECIMAL(18,9)
        },
        fk_agg_id:{
+          allowNull:false,
           type: DataTypes.STRING(36)
        },
        valid_from:{
@@ -40,11 +41,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(50)
        },
        created_by:{
-        allowNull:false,
+        //allowNull:false,
         type: DataTypes.STRING(50)
        },
        modified_by:{
-        allowNull:false,
+        //allowNull:false,
         type: DataTypes.STRING(50)
        },
        createdAt:Sequelize.DATE,
