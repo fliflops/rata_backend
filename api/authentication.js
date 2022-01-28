@@ -16,6 +16,8 @@ router.post('/sign-out',(req,res) => {
 
 router.post('/connection',async(req,res) => {
     try{
+
+        req.session.save()
         // console.log(req.session)
         if(!req.session.userId){
             return res.status(400).json({
