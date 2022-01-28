@@ -13,7 +13,12 @@ router.post('/tariff',async(req,res)=>{
         }
 
         await tariff.bulkCreateTariff({
-            data:data.tariff
+            data:data.tariff.map(item => {
+                return {
+                    ...item,
+                    created_by:req.session.userId
+                }
+            })
         })
 
         res.status(200).end()
@@ -40,8 +45,18 @@ router.post('/contract',async(req,res)=>{
         }
 
         await contract.bulkCreateContractDetails({
-            contract:contracts.filter(item => item.contract_id),
-            details: details.filter(item => item.contract_id)
+            contract:contracts.filter(item => item.contract_id).map(item => {
+                return {
+                    ...item,
+                    created_by:req.session.userId
+                }
+            }),
+            details: details.filter(item => item.contract_id).map(item => {
+                return {
+                    ...item,
+                    created_by:req.session.userId
+                }
+            })
         })
 
         res.status(200).end()
@@ -65,9 +80,24 @@ router.post('/vendor',async(req,res)=>{
         }
 
         await vendor.bulkCreateTransaction({
-            vendor: data.vendor,
-            vendorGroup:data.vendor_group,
-            vendorGroupDetails:data.vendor_group_details
+            vendor: data.vendor.map(item => {
+                return {
+                    ...item,
+                    created_by:req.session.userId
+                }
+            }),
+            vendorGroup:data.vendor_group.map(item => {
+                return {
+                    ...item,
+                    created_by:req.session.userId
+                }
+            }),
+            vendorGroupDetails:data.vendor_group_details.map(item => {
+                return {
+                    ...item,
+                    created_by:req.session.userId
+                }
+            })
         })
     
         res.status(200).end()
@@ -90,7 +120,12 @@ router.post('/ship-point',async(req,res)=>{
         }
 
         await shipPoint.bulkCreateShipPoint({
-            data:data.ship_point
+            data:data.ship_point.map(item => {
+                return {
+                    ...item,
+                    created_by:req.session.userId
+                }
+            })
         })
 
         // console.log(data.ship_point)

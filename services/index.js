@@ -15,5 +15,6 @@ module.exports={
     vendor:require('./vendor'),
     ascii: require('./ascii'),
     dataMaster: require('./dataMaster'),
-    dataDownload:require('./dataDownload')
+    dataDownload:require('./dataDownload'),
+    roles: require('./roles')
 }

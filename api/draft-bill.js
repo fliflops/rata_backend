@@ -145,8 +145,18 @@ router.post('/helios',async(req,res)=>{
         const getDetails    = await bookings.getInvoicesDtl({rdd,location})
 
         await invoice.createInvoiceTransaction({
-            invoices:getInvoices,
-            details:getDetails
+            invoices:getInvoices.map(item => {
+                return {
+                    ...item,
+                    created_by:req.session.userId
+                }
+            }),
+            details:getDetails.map(item => {
+                return {
+                    ...item,
+                    created_by:req.session.userId
+                }
+            })
         })
 
         res.status(200).json({
@@ -180,10 +190,12 @@ router.post('/ascii/sell',async(req,res)=>{
         //update draft bills
         await draftBill.updateDraftBill({
             data:{
-                status:'DRAFT_BILL_POSTED'
+                status:'DRAFT_BILL_POSTED',
+                updated_by:req.session.userId
             },
             filters:{
-                draft_bill_no: result.success.map(item => item.SO_CODE)
+                draft_bill_no: result.success.map(item => item.SO_CODE),
+                
             }
         })
 
@@ -216,7 +228,8 @@ router.post('/ascii/buy',async(req,res)=>{
           //update draft bills
           await draftBill.updateDraftBill({
             data:{
-                status:'DRAFT_BILL_POSTED'
+                status:'DRAFT_BILL_POSTED',
+                updated_by:req.session.userId
             },
             filters:{
                 trip_no: result.success.map(item => item.CR_CODE),

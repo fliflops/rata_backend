@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const bcrypt = require('bcryptjs');
-const {users,auth} = require('../services');
+const {users,auth,roles} = require('../services');
+
  
 router.post('/sign-out',(req,res) => {
     console.log(req.session)
@@ -10,6 +11,13 @@ router.post('/sign-out',(req,res) => {
 
 router.post('/connection',async(req,res) => {
     try{
+        // console.log(req.session)
+        if(!req.session.userId){
+            return res.status(400).json({
+                message:'Session Expired!'
+            })
+        }
+
         res.status(200).end()
     }
     catch(e){
@@ -45,12 +53,24 @@ router.post('/token', async(req,res) => {
         const token = await auth.generateToken({
             email
         })
-        
+
+        const rawModules = await roles.getRoleModule({
+            filters:{
+                role_id:getUsers.user_role_id,
+                has_access:1
+            }
+        })
+
+       const modules = await roles.formatRoleModules({data:rawModules})
+        // console.log(modules)
 
         req.session.userId = getUsers.id
         req.session.token_expiry = token.expiry
-        console.log(req.session.userId)
-        res.status(200).json(token)
+        // console.log(req.session.userId)
+        res.status(200).json({
+            token,
+            modules
+        })
     }
     catch(e){
         console.log(e);

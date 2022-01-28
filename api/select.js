@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const {principal,shipPoint,quickCode,location,tariff,geography,aggregation,vendor} = require('../services')
+const {principal,shipPoint,quickCode,location,tariff,geography,aggregation,vendor,roles} = require('../services')
 
 router.get('/principal',async(req,res) => {
     try{
@@ -269,6 +269,34 @@ router.get('/vendor-group',async(req,res)=>{
             })
         })
         
+
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({
+            message:`${e}`
+        })
+    }
+})
+
+router.get('/roles',async(req,res)=>{
+    try{    
+        let data 
+
+        data = await roles.getAllRoles({
+            filters:{
+                role_status:'ACTIVE'
+            }
+        })
+
+        res.status(200).json({
+            data:data.map(i => {
+                return {
+                    label:i.role_name,
+                    value:i.role_id
+                }
+            })
+        })
 
     }
     catch(e){

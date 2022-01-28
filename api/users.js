@@ -3,11 +3,13 @@ const {users} = require('../services');
  
 router.post('/',async(req,res) => {
     try{
+        const {data} = req.body
         //const {email,first_name,last_name,status,remarks,role_id} = req.body
         const created = await users.createUser({
             data:{
-                ...req.body,
-                password:'secret'
+                ...data,
+                password:'secret',
+                created_by:req.session.userId
             }
         })
 

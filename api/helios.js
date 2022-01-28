@@ -19,7 +19,12 @@ router.post('/invoices',async(req,res) => {
         })
 
         await invoice.createInvoiceTransaction({
-            invoices:getInvoices,
+            invoices:getInvoices.map(item => {
+                return {
+                    ...item,
+                    created_by:req.session.userId
+                }
+            }),
             details:getDetails
         })
 

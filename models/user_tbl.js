@@ -13,11 +13,11 @@ module.exports = (sequelize, DataTypes) => {
 			type: DataTypes.STRING(255)
         },
         first_name:{
-            allowNull:false,
+            // allowNull:false,
             type: DataTypes.STRING(50)
         },
         last_name:{
-            allowNull:false,
+            // allowNull:false,
             type: DataTypes.STRING(50)
         },
         status:{
@@ -27,7 +27,7 @@ module.exports = (sequelize, DataTypes) => {
         remarks:{
             type: DataTypes.STRING(50)
         },
-        role_id:{
+        user_role_id:{
             type: DataTypes.STRING(50)
         },
         password:{

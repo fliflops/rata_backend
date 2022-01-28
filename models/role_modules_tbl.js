@@ -1,34 +1,42 @@
 const Sequelize = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
-    return sequelize.define('agg_tbl',{
+    return sequelize.define('role_modules_tbl',{
         id:{
+            allowNull: false,
             primaryKey: true,
-            // type: DataTypes.UUID,
-            // defaultValue: DataTypes.UUIDV4
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4
+        }, 
+        role_id:{
             allowNull:false,
             type: DataTypes.STRING(255)
         },
-        agg_name:{
+        module_name:{
             allowNull:false,
             type: DataTypes.STRING(255)
         },
-        algo_description:{
+        module_label:{
             allowNull:false,
             type: DataTypes.STRING(255)
         },
-        with_agg:{
+        route:{
             allowNull:false,
-            type:DataTypes.BOOLEAN
-        },
-        parameter:{
             type: DataTypes.STRING(255)
         },
-        group_by:{
+        sub_module_name:{
+            allowNull:false,
             type: DataTypes.STRING(255)
-
         },
-        status:{
+        sub_module_label:{
+            allowNull:false,
+            type: DataTypes.STRING(255)
+        },
+        sub_module_route:{
+            allowNull:false,
+            type: DataTypes.STRING(255)
+        },
+        has_access:{
             allowNull:false,
             type: DataTypes.STRING(255)
         },
@@ -42,6 +50,6 @@ module.exports = (sequelize, DataTypes) => {
         }
     },
     {
-        freezeTableName : true
+        freezeTableName : true   
     })
 }

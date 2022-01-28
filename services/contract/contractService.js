@@ -113,7 +113,7 @@ exports.getContract = async({filters}) => {
 
 exports.bulkCreateContractDetails = async({contract,details}) => {
     try{
-        return await dataLayer.bulkCreateContractDetails({
+        return await dataLayer.bulkCreateContractDetailsTransaction({
             contract,
             details
         })
