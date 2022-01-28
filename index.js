@@ -26,7 +26,7 @@ app.use(sessions({
     secret:process.env.TOKEN_SECRET,
     saveUninitialized:true,
     cookie:{maxAge: oneDay},
-    resave:false
+    resave:true
 }));
 
 app.use(cookieParser());
