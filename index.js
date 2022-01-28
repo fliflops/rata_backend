@@ -3,6 +3,9 @@ const helmet        = require('helmet');
 const morgan        = require('morgan');
 const cors          = require('cors');
 const path          = require('path');
+// const redis         = require('redis');
+// const connectRedis = require('connect-redis');
+
 // const cookieSession = require('cookie-session');
 const cookieParser = require("cookie-parser");
 const sessions = require('express-session');
@@ -22,11 +25,34 @@ app.use(cors({
 
 app.use(helmet());
 app.set('trust proxy',1)
+
+
+// const redisStore = connectRedis(sessions)
+
+// const redisClient = redis.createClient({
+//     host:'localhost',
+//     port:'6379'
+// })
+
+// redisClient.on('error', function (err) {
+//     console.log('Could not establish a connection with redis. ' + err);
+// });
+// redisClient.on('connect', function (err) {
+//     console.log('Connected to redis successfully');
+// });
+
+
+
 app.use(sessions({
     secret:process.env.TOKEN_SECRET,
     saveUninitialized:true,
-    cookie:{maxAge: oneDay},
-    resave:true
+    resave:false,
+    cookie:{
+        secure:false,
+        httpOnly:false,
+        //maxAge: oneDay
+    },
+   
 }));
 
 app.use(cookieParser());
