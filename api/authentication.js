@@ -5,8 +5,13 @@ const {users,auth,roles} = require('../services');
  
 router.post('/sign-out',(req,res) => {
     console.log(req.session)
-    req.session = null;
-    res.status(200).end();
+    req.session.destroy(err => {
+        if(err){
+            return res.status(400).end()
+        }
+        res.status(200).end();
+    });
+   
 })
 
 router.post('/connection',async(req,res) => {
@@ -66,7 +71,7 @@ router.post('/token', async(req,res) => {
 
         req.session.userId = getUsers.id
         req.session.token_expiry = token.expiry
-        // console.log(req.session.userId)
+        
         res.status(200).json({
             token,
             modules
