@@ -5,7 +5,8 @@ const path = require('path');
 router.post('/tariff',async(req,res)=>{
     try{
         let {data} = req.body;
-        // console.log(data)
+        
+        //console.log(data)        
         if(typeof data.tariff === 'undefined'){
             return res.status(400).json({
                 message:'Invalid File!'
@@ -58,6 +59,13 @@ router.post('/contract',async(req,res)=>{
                 }
             })
         })
+
+        // console.log(details.filter(item => item.contract_id).map(item => {
+        //             return {
+        //                 ...item,
+        //                 created_by:req.session.userId
+        //             }
+        //         }))
 
         res.status(200).end()
     }

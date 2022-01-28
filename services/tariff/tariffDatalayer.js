@@ -173,8 +173,10 @@ const createTariff = async({data,options}) => {
                 }
             }
 
+            // console.log(newData)
+            // console.log(data.tariff_id)
             await updateTariff({
-                filter:{
+                filters:{
                     tariff_id: data.tariff_id
                 },
                 data:{

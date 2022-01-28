@@ -275,8 +275,8 @@ const bulkCreateContractDetail = async({
 }) => {
     try{
 
-        return await models.contract_tariff_dtl.create({
-            ...data
+        return await models.contract_tariff_dtl.bulkCreate(data,{
+            ...options
         })
     }
     catch(e){
@@ -304,7 +304,6 @@ const transactionCreateContract = async({contract,details}) => {
                     transaction: t
                 }
             })
-            //console.log(details)
 
             await createContractDetail({
                 data:details,
@@ -394,6 +393,8 @@ const updateContractTariff = async({
 
 const bulkCreateContractDetailsTransaction = async({contract,details}) => {
     try{
+
+        console.log(details)
         return await sequelize.transaction(async t => {
             await bulkCreateContract({
                 data:contract,
