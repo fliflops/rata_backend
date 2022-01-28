@@ -7,7 +7,7 @@ const path          = require('path');
 // const connectRedis = require('connect-redis');
 
 // const cookieSession = require('cookie-session');
-const cookieParser = require("cookie-parser");
+// const cookieParser = require("cookie-parser");
 const sessions = require('express-session');
 const api           = require('./api');
 const app           = express();
@@ -55,7 +55,7 @@ app.use(sessions({
    
 }));
 
-app.use(cookieParser());
+// app.use(cookieParser());
 
 // app.use(middleware.sessionAuthentication);
 
