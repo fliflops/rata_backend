@@ -61,7 +61,7 @@ exports.getDraftBillBuy = async({
                 let quantity = 0
                 return {
                     COMPANY_CODE:       '00001',
-                    CR_CODE:            inv.trip_plan,
+                    CR_CODE:            item.draft_bill_no,
                     ITEM_CODE:          serviceType?.ascii_item_code,
                     LINE_NO:            index+1,
                     SERVICE_TYPE_CODE:  serviceType?.ascii_service_type,
@@ -70,13 +70,13 @@ exports.getDraftBillBuy = async({
                     UM_CODE:            inv.vehicle_type,
                     QUANTITY:           1,
                     UNIT_PRICE:         parseFloat(inv.billing).toFixed(2),
-                    EXTENDED_AMT:       parseFloat(inv.billing).toFixed(2)
+                    EXTENDED_AMT:       parseFloat(inv.billing).toFixed(2), 
                 }
             })
 
             return {
                 COMPANY_CODE:   '00001',
-                CR_CODE:        invoices[0].trip_plan,
+                CR_CODE:        item.draft_bill_no,
                 REF_CODE:       invoices[0].trip_plan,
                 CR_DATE:        item.draft_bill_date,
                 DATE_CONFIRMED: item.draft_bill_date,
@@ -94,6 +94,7 @@ exports.getDraftBillBuy = async({
         return draftBills
     }
     catch(e){
+        console.log(e)
         throw e
     }
 }

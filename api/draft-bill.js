@@ -225,15 +225,17 @@ router.post('/ascii/buy',async(req,res)=>{
             data
         })
 
-          //update draft bills
-          await draftBill.updateDraftBill({
+        
+        
+        //update draft bills
+        await draftBill.updateDraftBill({
             data:{
                 status:'DRAFT_BILL_POSTED',
                 updated_by:req.session.userId
             },
             filters:{
-                trip_no: result.success.map(item => item.CR_CODE),
-                contract_type:'BUY'
+                draft_bill_no:result.success.map(item => item.CR_CODE),
+                // contract_type:'BUY'
             }
         })
       
