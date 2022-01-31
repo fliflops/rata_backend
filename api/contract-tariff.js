@@ -49,9 +49,9 @@ router.post('/tariff',async(req,res) => {
         await tariff.createTariff({
             data:{
                 ...data,
-                created_by:req.session.userId,
-                modified_by:req.session.userId,
-                approved_by:req.session.userId
+                // created_by:req.session.userId,
+                // modified_by:req.session.userId,
+                // approved_by:req.session.userId
             } 
         })
         res.status(200).end()
@@ -71,9 +71,9 @@ router.post('/contract',async(req,res) => {
         await contract.createContract({
             contract:{
                 ...data.contract,
-                created_by:req.session.userId,
-                modified_by:req.session.userId,
-                approved_by:req.session.userId
+                // created_by:req.session.userId,
+                // modified_by:req.session.userId,
+                // approved_by:req.session.userId
             }
             //details:data.details
         })
@@ -93,7 +93,7 @@ router.post('/contract/:contract_id',async (req,res)=>{
         const {data} = req.body;
         const {contract_id} = req.params;
 
-        const userId = req.session.userId;
+        // const userId = req.session.userId;
 
         if(contract_id === '' || !contract_id){
             return res.status(400).json({
@@ -123,7 +123,7 @@ router.post('/contract/:contract_id',async (req,res)=>{
             data:{
                 ...data,
                 contract_id,
-                created_by:req.session.userId
+                // created_by:req.session.userId
             }
         })
 
@@ -153,7 +153,7 @@ router.post('/aggregation',async(req,res)=>{
         await aggregation.createAggRules({
             header:{
                 ...header,
-                created_by:req.session.userId
+                // created_by:req.session.userId
             },
             conditions:conditions.map((item,index) => {
                 return {
@@ -381,7 +381,7 @@ router.put('/tariff/:tariff_id',async(req,res)=>{
             },
             data:{
                 ...req.body,
-                modified_by:req.session.userId
+                // modified_by:req.session.userId
             }
         })
 
@@ -406,7 +406,7 @@ router.put('/contract/:contract_id/:tariff_id', async(req,res)=>{
         await contract.updateContractTariff({
             data:{
                 ...req.body,
-                modified_by:req.session.userId
+                // modified_by:req.session.userId
             },
             filters:{
                 status:'ACTIVE',

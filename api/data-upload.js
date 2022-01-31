@@ -17,7 +17,7 @@ router.post('/tariff',async(req,res)=>{
             data:data.tariff.map(item => {
                 return {
                     ...item,
-                    created_by:req.session.userId
+                    // created_by:req.session.userId
                 }
             })
         })
@@ -49,13 +49,13 @@ router.post('/contract',async(req,res)=>{
             contract:contracts.filter(item => item.contract_id).map(item => {
                 return {
                     ...item,
-                    created_by:req.session.userId
+                    // created_by:req.session.userId
                 }
             }),
             details: details.filter(item => item.contract_id).map(item => {
                 return {
                     ...item,
-                    created_by:req.session.userId
+                    // created_by:req.session.userId
                 }
             })
         })
@@ -91,19 +91,19 @@ router.post('/vendor',async(req,res)=>{
             vendor: data.vendor.map(item => {
                 return {
                     ...item,
-                    created_by:req.session.userId
+                    // created_by:req.session.userId
                 }
             }),
             vendorGroup:data.vendor_group.map(item => {
                 return {
                     ...item,
-                    created_by:req.session.userId
+                    // created_by:req.session.userId
                 }
             }),
             vendorGroupDetails:data.vendor_group_details.map(item => {
                 return {
                     ...item,
-                    created_by:req.session.userId
+                    // created_by:req.session.userId
                 }
             })
         })
@@ -131,7 +131,7 @@ router.post('/ship-point',async(req,res)=>{
             data:data.ship_point.map(item => {
                 return {
                     ...item,
-                    created_by:req.session.userId
+                    // created_by:req.session.userId
                 }
             })
         })

@@ -5,7 +5,7 @@ const {roles} = require('../services');
 router.post('/',async(req,res)=>{
     try{
         const {data} = req.body;
-        const userId=req.session.userId
+        // const userId=req.session.userId
         await roles.createRole({
             data,
             userId

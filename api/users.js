@@ -9,7 +9,7 @@ router.post('/',async(req,res) => {
             data:{
                 ...data,
                 password:'secret',
-                created_by:req.session.userId
+                // created_by:req.session.userId
             }
         })
 

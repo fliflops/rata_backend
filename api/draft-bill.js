@@ -148,13 +148,13 @@ router.post('/helios',async(req,res)=>{
             invoices:getInvoices.map(item => {
                 return {
                     ...item,
-                    created_by:req.session.userId
+                    // created_by:req.session.userId
                 }
             }),
             details:getDetails.map(item => {
                 return {
                     ...item,
-                    created_by:req.session.userId
+                    // created_by:req.session.userId
                 }
             })
         })
@@ -191,7 +191,7 @@ router.post('/ascii/sell',async(req,res)=>{
         await draftBill.updateDraftBill({
             data:{
                 status:'DRAFT_BILL_POSTED',
-                updated_by:req.session.userId
+                // updated_by:req.session.userId
             },
             filters:{
                 draft_bill_no: result.success.map(item => item.SO_CODE),
@@ -231,7 +231,7 @@ router.post('/ascii/buy',async(req,res)=>{
         await draftBill.updateDraftBill({
             data:{
                 status:'DRAFT_BILL_POSTED',
-                updated_by:req.session.userId
+                // updated_by:req.session.userId
             },
             filters:{
                 draft_bill_no:result.success.map(item => item.CR_CODE),

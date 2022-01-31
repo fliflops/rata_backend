@@ -22,7 +22,7 @@ router.post('/invoices',async(req,res) => {
             invoices:getInvoices.map(item => {
                 return {
                     ...item,
-                    created_by:req.session.userId
+                    // created_by:req.session.userId
                 }
             }),
             details:getDetails
