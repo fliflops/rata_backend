@@ -69,7 +69,7 @@ exports.getDraftBillBuy = async({
                     LOCATION_CODE:      item.ascii_loc_code,
                     UM_CODE:            inv.vehicle_type,
                     QUANTITY:           1,
-                    UNIT_PRICE:         parseFloat(inv.billing).toFixed(2),
+                    UNIT_PRICE:         parseFloat(item.rate).toFixed(2),
                     EXTENDED_AMT:       parseFloat(inv.billing).toFixed(2), 
                 }
             })
@@ -157,7 +157,7 @@ exports.getDraftBill = async({
                     LOCATION_CODE:  item.ascii_loc_code,
                     UM_CODE:        inv.service_type === '2003'? inv.vehicle_type :inv.min_billable_unit,
                     QUANTITY:       quantity ? parseFloat(quantity).toFixed(2) : 1,  
-                    UNIT_PRICE:     parseFloat(price).toFixed(2),//parseFloat(inv.billing).toFixed(2),
+                    UNIT_PRICE:     parseFloat(item.rate).toFixed(2),//parseFloat(inv.billing).toFixed(2),
                     EXTENDED_AMT:   parseFloat(price).toFixed(2)//parseFloat(inv.billing).toFixed(2)
                     //parseFloat(item.total_charges).toFixed(2)
                 }

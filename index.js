@@ -8,11 +8,16 @@ const path          = require('path');
 
 // const cookieSession = require('cookie-session');
 // const cookieParser = require("cookie-parser");
-const sessions = require('express-session');
+// const sessions = require('express-session');
+
+const jwt           = require('jsonwebtoken')
 const api           = require('./api');
 const app           = express();
 const {dbLoader,middleware}       = require('./loaders');
 const oneDay = 1000 * 60 * 60 * 24;
+
+
+
 global.appRoot = path.resolve(__dirname);
 
 app.use(morgan('dev'))
@@ -43,17 +48,17 @@ app.set('trust proxy',1)
 
 
 
-app.use(sessions({
-    secret:process.env.TOKEN_SECRET,
-    saveUninitialized:true,
-    resave:false,
-    cookie:{
-        secure:false,
-        httpOnly:false,
-        //maxAge: oneDay
-    },
+// app.use(sessions({
+//     secret:process.env.TOKEN_SECRET,
+//     saveUninitialized:true,
+//     resave:false,
+//     cookie:{
+//         secure:false,
+//         httpOnly:false,
+//         //maxAge: oneDay
+//     },
    
-}));
+// }));
 
 // app.use(cookieParser());
 
