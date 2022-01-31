@@ -225,8 +225,6 @@ router.post('/ascii/buy',async(req,res)=>{
             data
         })
 
-        
-        
         //update draft bills
         await draftBill.updateDraftBill({
             data:{
