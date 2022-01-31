@@ -4,26 +4,27 @@ const {users,auth,roles} = require('../services');
 
  
 router.post('/sign-out',(req,res) => {
-    console.log(req.session)
-    req.session.destroy(err => {
-        if(err){
-            return res.status(400).end()
-        }
-        res.status(200).end();
-    });
+    // console.log(req.session)
+    // req.session.destroy(err => {
+    //     if(err){
+    //         return res.status(400).end()
+    //     }
+        
+    //});
+    res.status(200).end();
    
 })
 
 router.post('/connection',async(req,res) => {
     try{
 
-        req.session.save()
-        // console.log(req.session)
-        if(!req.session.userId){
-            return res.status(400).json({
-                message:'Session Expired!'
-            })
-        }
+        // req.session.save()
+        // // console.log(req.session)
+        // if(!req.session.userId){
+        //     return res.status(400).json({
+        //         message:'Session Expired!'
+        //     })
+        // }
 
         res.status(200).end()
     }
@@ -71,8 +72,8 @@ router.post('/token', async(req,res) => {
        const modules = await roles.formatRoleModules({data:rawModules})
         // console.log(modules)
 
-        req.session.userId = getUsers.id
-        req.session.token_expiry = token.expiry
+        // req.session.userId = getUsers.id
+        // req.session.token_expiry = token.expiry
         
         res.status(200).json({
             token,
