@@ -7,7 +7,7 @@ exports.generateToken = async({
 }) => {
     try{
         const token = await jwt.sign({email:email},secret,{
-            expiresIn:"2h"
+            expiresIn:"24h"
         })
         const decode = await jwt.verify(token,secret)
 

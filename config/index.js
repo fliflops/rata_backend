@@ -1,9 +1,12 @@
+
+
+
 const podConfig = {
-    username:'sa',
-    password:'R@mc02019!',
-    host:'13.250.206.211',
-    database:'heliosDB',
-    dialect:'mssql',
+    username:       process.env.POD_DB_USER_NAME,
+    password:       process.env.POD_DB_PASSWORD,
+    host:           process.env.POD_DB_HOST,
+    database:       process.env.POD_DB,
+    dialect:        'mssql',
     dialectOptions : {
         options:{
             requestTimeout: 3600000
@@ -22,11 +25,11 @@ const podConfig = {
 }
 
 const dbConfig = {
-    host:'chronos-rds.cy2ay0l1hcaz.ap-southeast-1.rds.amazonaws.com',
-    username:'rb_app',
-    password:'R@t3NB1lling',
-    dialect:'mysql',
-    database:'rbDB',
+    host:       process.env.DB_HOST,
+    username:   process.env.DB_USER,
+    password:   process.env.DB_PASSWORD,
+    dialect:    'mysql',
+    database:   process.env.DB,
     pool:{
         max: 10,
         min: 1,
