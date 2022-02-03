@@ -811,6 +811,8 @@ exports.generateDraftBill = async({
        
         //2. Get contract from the selected invoices
         const contracts = await getContracts(data);
+
+        //console.log(contracts)
         
         //3. Assign Tariff to Invoice using the retrieved contracts
         const dataWithTariff = await assignTariff({
@@ -888,6 +890,8 @@ const getAllInvoice = async ({
                    // vg_code
                 }
             })
+
+            // console.log(data)
             
             //Get the datas with contracts
             const withContracts = data.filter(item => 
@@ -896,7 +900,7 @@ const getAllInvoice = async ({
                 item.ship_point_from &&
                 item.is_billable
                 )
-            // console.log(withContracts)
+            //console.log(withContracts)
             
             //removed the invoices without contract for sell side
             const withoutContracts = data.filter(item => !withContracts.map(item => item.id).includes(item.id)).map( i => {
@@ -904,10 +908,10 @@ const getAllInvoice = async ({
                 if(!i.ship_point_to || !i.ship_point_from){
                     reason = 'NO SHIP POINT INFORMATION'
                 }
-                else if(!i.contract_id){
+                if(i.contract_id === null){
                     reason = 'NO CONTRACT'
                 }
-                else if(!i.is_billable){
+                if(!i.is_billable){
                     reason = 'NOT BILLABLE'
                 }
 
@@ -919,9 +923,11 @@ const getAllInvoice = async ({
            
             return {
                 data:  withContracts ,              
-                noContracts: withoutContracts//data.filter(item => )
+                noContracts: withoutContracts
             }
         })
+
+
 
         //Assign Class of Store into the header
         let invoiceWithClassOfStore = []       
@@ -955,6 +961,8 @@ const getAllInvoice = async ({
             }
         } 
 
+        // console.log(noContracts)
+
         return {
             data:invoiceWithClassOfStore,
             noContracts
@@ -979,12 +987,12 @@ const getContracts = async(data) => {
                 '$contract.valid_to$':{
                     [Op.gte]: moment().toDate()
                 },
-                valid_from:{
-                    [Op.lte]: moment().toDate()
-                },
-                valid_to:{
-                    [Op.gte]: moment().toDate() 
-                }
+                // valid_from:{
+                //     [Op.lte]: moment().toDate()
+                // },
+                // valid_to:{
+                //     [Op.gte]: moment().toDate() 
+                // }
             }
         })
         .then(result => {
@@ -997,6 +1005,8 @@ const getContracts = async(data) => {
                     ...tariff
                 }
             })
+            .filter(item => moment(moment().format('YYYY-MM-DD')).isBetween(item.valid_from,item.valid_to))
+            
             return contract_tariff
         })
 
