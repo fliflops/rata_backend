@@ -744,12 +744,12 @@ const getBuyContracts = async({
                 '$contract.valid_to$':{
                     [Op.gte]: moment().toDate()
                 },
-                valid_from:{
-                    [Op.lte]: moment().toDate()
-                },
-                valid_to:{
-                    [Op.gte]: moment().toDate() 
-                }
+                // valid_from:{
+                //     [Op.lte]: moment().toDate()
+                // },
+                // valid_to:{
+                //     [Op.gte]: moment().toDate() 
+                // }
 
             }
         })
@@ -764,6 +764,8 @@ const getBuyContracts = async({
                     contract_type:contract.contract_type
                 }
             })
+            .filter(item => moment(moment().format('YYYY-MM-DD')).isBetween(item.valid_from,item.valid_to))
+           
             return contract_tariff 
         })
 
