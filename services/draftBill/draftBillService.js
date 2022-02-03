@@ -643,6 +643,8 @@ exports.generateDraftBillBuy = async({rdd,location}) => {
             })
         })
 
+        
+
         //5.1 remove the duplicates
         revenueLeak = _.uniqBy(revenueLeak,'fk_invoice_id')
 
