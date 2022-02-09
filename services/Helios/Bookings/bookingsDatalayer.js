@@ -6,7 +6,7 @@ const getInvoices = async({
     location
 }) => {
     try{
-        return await sequelize.query('EXEC sp_get_rb_invoices :rdd, :location',{
+        return await sequelize.query('sp_get_rb_invoices :rdd, :location',{
             type:Sequelize.QueryTypes.SELECT,
             replacements:{
                 rdd,

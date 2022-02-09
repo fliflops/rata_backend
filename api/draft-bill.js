@@ -5,7 +5,7 @@ const {bookings} = helios
 router.get('/',async(req,res)=>{
     try{
         let query = req.query;
-        /*Filters
+        /*Filtersf
             filters,
             orderBy,
             page,
@@ -143,25 +143,29 @@ router.post('/helios',async(req,res)=>{
 
         const getInvoices   = await bookings.getInvoices({rdd,location})
         const getDetails    = await bookings.getInvoicesDtl({rdd,location})
+        const invoices      = getInvoices.filter(item => !['SHORT_CLOSED'].includes(item.trip_status))
 
-        await invoice.createInvoiceTransaction({
-            invoices:getInvoices.map(item => {
-                return {
-                    ...item,
-                    // created_by:req.session.userId
-                }
-            }),
-            details:getDetails.map(item => {
-                return {
-                    ...item,
-                    // created_by:req.session.userId
-                }
-            })
+       const {inv_details} = await invoice.createInvoiceTransaction({
+            invoices,
+            details:getDetails
+
+            // invoices:getInvoices.map(item => {
+            //     return {
+            //         ...item,
+            //         // created_by:req.session.userId
+            //     }
+            // }),
+            // details:getDetails.map(item => {
+            //     return {
+            //         ...item,
+            //         // created_by:req.session.userId
+            //     }
+            // })
         })
 
         res.status(200).json({
-            data:getInvoices,
-            details:getDetails
+            data:invoices,
+            details:inv_details
         })
     }
     catch(e){

@@ -23,7 +23,9 @@ const createInvoiceDtl = async ({
     options
 }) => {
     try{    
-        return await models.invoices_dtl_tbl.bulkCreate(data,{
+        return await models.invoices_dtl_tbl.bulkCreate(
+            data,
+        {
             ...options
         })
 
@@ -38,13 +40,33 @@ const createInvoiceTransaction = async({
     details
 }) => {
     try{
+            // const created = await createInvoice({
+            //     data:invoices,
+            //     options:{
+            //        // transaction: t,
+            //         updateOnDuplicate:['updatedAt','cleared_date','remarks'],
+            //         logging:false
+            //     }
+            // })
+
+            // console.log(created.length)
+
+            // await createInvoiceDtl({
+            //     data:details,
+            //     options:{
+            //         //transaction: t,
+            //         updateOnDuplicate:['updatedAt'],
+            //         logging:false
+            //     }
+            // })
         // console.log(invoices,details)
         return await sequelize.transaction(async t => {
             await createInvoice({
                 data:invoices,
                 options:{
                     transaction: t,
-                    updateOnDuplicate:['updatedAt','location','trip_no','cleared_date','remarks']
+                    updateOnDuplicate:['updatedAt','cleared_date','remarks'],
+                    logging:false
                 }
             })
 
@@ -52,7 +74,8 @@ const createInvoiceTransaction = async({
                 data:details,
                 options:{
                     transaction: t,
-                    updateOnDuplicate:['updatedAt']
+                    updateOnDuplicate:['updatedAt'],
+                    logging:false
                 }
             })
         })
@@ -116,9 +139,11 @@ const getAllInvoice = async({filters}) => {
             ],
             where:{
                 ...filters 
-            },
+            }
             // logging:false
         })
+        .then(result => JSON.parse(JSON.stringify(result)))
+        
     }
     catch(e){
         throw e

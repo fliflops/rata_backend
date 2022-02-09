@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         fk_invoice_id:{
             allowNull: false,
-            type:DataTypes.STRING(50)
+            type:DataTypes.STRING(255)
         },
         trip_no:{
             allowNull: false,
