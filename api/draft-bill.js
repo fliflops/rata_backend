@@ -119,6 +119,7 @@ router.post('/:contract_type/invoice',async(req,res)=>{
             revenue_leak:draftBills.revenueLeak
         })
 
+        // res.end()
     }
     catch(e){
         console.log(e)

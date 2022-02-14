@@ -12,6 +12,9 @@ module.exports = (sequelize, DataTypes) => {
         vg_status:{
             type: DataTypes.STRING(50)
         },
+        location:{
+            type: DataTypes.STRING(50)
+        },
         createdAt: Sequelize.DATE,
         updatedAt: Sequelize.DATE,
         created_by: {

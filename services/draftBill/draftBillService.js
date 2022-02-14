@@ -609,11 +609,14 @@ exports.generateDraftBillBuy = async({rdd,location}) => {
             }
         })
 
-        //2. Get contract details from the selected invoices
+      
+        // console.log(data)
+
+        // //2. Get contract details from the selected invoices
         const contracts = await getBuyContracts({invoices:data.filter(item => item.vg_code)})
         data = contracts.data
 
-        //3. Assign Tariff to Invoice using the retrieved contracts
+        // //3. Assign Tariff to Invoice using the retrieved contracts
         const dataWithTariff = await assignTariff({
             invoices:data,
             contracts:contracts.contracts
@@ -621,10 +624,10 @@ exports.generateDraftBillBuy = async({rdd,location}) => {
 
         data=dataWithTariff.data
 
-        //4. group the invoices with aggregation flag 
+        // //4. group the invoices with aggregation flag 
         const withAgg = await groupWithAgg(data.filter(item => item.tariff.with_agg));
 
-        //5. push to revenue leak
+        // //5. push to revenue leak
         dataWithTariff.withoutTariff.map(item => {
             revenueLeak.push({
                 invoice_no: item.invoice_no,
@@ -645,18 +648,18 @@ exports.generateDraftBillBuy = async({rdd,location}) => {
 
         
 
-        //5.1 remove the duplicates
+        // //5.1 remove the duplicates
         revenueLeak = _.uniqBy(revenueLeak,'fk_invoice_id')
 
-        //6. Update Invoices
-        await invoiceService.updateInvoice({
-            data:{
-                is_processed_buy:true
-            },
-            filters:{
-                id:revenueLeak.map(item => item.fk_invoice_id).concat(_.uniqBy(data,'fk_invoice_id').map(item => item.fk_invoice_id))
-            }
-        })
+        // //6. Update Invoices
+        // await invoiceService.updateInvoice({
+        //     data:{
+        //         is_processed_buy:true
+        //     },
+        //     filters:{
+        //         id:revenueLeak.map(item => item.fk_invoice_id).concat(_.uniqBy(data,'fk_invoice_id').map(item => item.fk_invoice_id))
+        //     }
+        // })
 
         return {
             draftBill:withAgg,
@@ -673,6 +676,15 @@ const getBuyInvoice =async({
 }) => {
     try {
 
+        const vendorGroups = await vendorService.getAllVendorGroupDtl({
+            filters:{
+                '$vendor_header.vg_status$':'ACTIVE',
+                '$vendor_header.location$':filters.location
+            }
+        })
+
+        // console.log(vendorGroups)
+
         let {noVendorGroup,data} = await invoiceService.getAllInvoice({
             filters:{
                 ...filters
@@ -681,13 +693,14 @@ const getBuyInvoice =async({
         .then(async result => {
             const data =  result.map(item => {
                 let {contract,vendor_group,...newItem} = item
+                const vg_code = _.find(vendorGroups,['vg_vendor_id',newItem.trucker_id])
                 //const contract_id = typeof contract?.contract_id !== 'undefined' ? contract.contract_id : null
-                const vg_code = typeof vendor_group?.vg_code !== 'undefined' ? vendor_group.vg_code:null
+                //const vg_code = typeof vendor_group?.vg_code !== 'undefined' ? vendor_group.vg_code:null
                 
                 return {
                     ...newItem,
                     contract_id:null,
-                    vg_code,
+                    vg_code:vg_code?.vg_code,
                     fk_invoice_id:item.id
                 }
             })
@@ -714,8 +727,8 @@ const getBuyInvoice =async({
             })
             
             return {
-                data:  withVendorGroup ,              
-                noVendorGroup: withoutVendorGroup//data.filter(item => )
+                data:withVendorGroup ,              
+                noVendorGroup:withoutVendorGroup//data.filter(item => )
             }
         })
 
