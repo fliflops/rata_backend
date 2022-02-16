@@ -26,10 +26,12 @@ router.post('/invoices',async(req,res) => {
                 }
             }),
             details:getDetails
-        })
+        })  
+
+       
 
         res.status(200).json({
-            data:getInvoices,
+            data:   getInvoices,
             details:getDetails
         })
 
