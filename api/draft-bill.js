@@ -93,7 +93,7 @@ router.post('/:contract_type/invoice',async(req,res)=>{
                 location
             })
 
-            //revenue leak
+            // // revenue leak
             await invoice.createRevenueLeak({
                 data:draftBills.revenueLeak
             })
@@ -119,6 +119,7 @@ router.post('/:contract_type/invoice',async(req,res)=>{
             revenue_leak:draftBills.revenueLeak
         })
 
+        // res.end()
     }
     catch(e){
         console.log(e)
@@ -162,6 +163,8 @@ router.post('/helios',async(req,res)=>{
             //     }
             // })
         })
+
+        // console.log(invoices)
 
         res.status(200).json({
             data:invoices,

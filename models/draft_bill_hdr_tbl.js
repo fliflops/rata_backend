@@ -79,6 +79,9 @@ module.exports = (sequelize, DataTypes) => {
             allowNull:false,
             type: DataTypes.STRING(50)
         },
+        sub_service_type:{
+            type: DataTypes.STRING(50)
+        },
         created_by:{type: DataTypes.STRING(50)},
         updated_by:{type: DataTypes.STRING(50)},
         createdAt:Sequelize.DATE,
