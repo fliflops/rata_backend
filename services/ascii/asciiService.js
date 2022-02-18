@@ -132,74 +132,52 @@ exports.getDraftBill = async({
             }
         })
 
+        // console.log(details)
+
         const draftBills        = header.map(item => {
             const invoices      = details.filter(inv => inv.draft_bill_no === item.draft_bill_no)
             const serviceType   = _.find(serviceTypes,['service_type_code',item.service_type])
             const SO_AMT        =  parseFloat(item.total_charges).toFixed(2)
 
-            const SALES_ORDER_DETAIL=[{
-                COMPANY_CODE:   '00001',
-                SO_CODE:        item.draft_bill_no,
-                ITEM_CODE:      serviceType?.ascii_item_code,
-                LINE_NO:        1,
-                LOCATION_CODE:  item.ascii_loc_code,
-                UM_CODE:        invoices[0].service_type === '2003'? invoices[0].vehicle_type :invoices[0].min_billable_unit,
-                QUANTITY:       invoices[0].service_type === '2003' ? 1 :     
-                _.sumBy(invoices,(i)=>{
-                    if(String(invoices[0].min_billable_unit).toLowerCase() === 'cbm'){
-                        return parseFloat(i.actual_cbm)
-                    }
-                    if(String(invoices[0].min_billable_unit).toLowerCase() === 'weigth'){
-                        return parseFloat(i.actual_weight)
-                    }
-                    if(['CASE','PIECE'].includes( String(invoices[0].min_billable_unit).toUpperCase())){
-                        return parseFloat(i.actual_qty)
-                    }
-                }),
-                UNIT_PRICE:     parseFloat(item.rate).toFixed(2),   
-                EXTENDED_AMT:   parseFloat(item.total_charges).toFixed(2)                    
-            }] 
+            let SALES_ORDER_DETAIL
 
-            
-            // invoices.map((inv,index) => {
-            //     let quantity = 1
-            //     let price = 0
-
-            //     if(index === invoices.length -1 ){
-            //         price=Math.floor(SO_AMT/invoices.length) + (SO_AMT%invoices.length)
-            //     }
-            //     else{
-            //         price=Math.floor(SO_AMT/invoices.length)
-            //     }
-            //     if(inv.service_type === '2003'){
-            //         quantity=1
-            //     }
-            //     else {
-            //         if(String(inv.min_billable_unit).toLowerCase() === 'cbm'){
-            //             quantity = inv.actual_cbm
-            //         }
-            //         if(String(inv.min_billable_unit).toLowerCase() === 'weigth'){
-            //             quantity = inv.actual_weight
-            //         }
-            //         if(['CASE','PIECE'].includes( String(inv.min_billable_unit).toUpperCase())){
-            //             quantity=inv.actual_qty
-            //         }
-            //     }
-
-            //     return {
-            //         COMPANY_CODE:   '00001',
-            //         SO_CODE:        inv.draft_bill_no,
-            //         ITEM_CODE:      serviceType?.ascii_service_type,
-            //         LINE_NO:        index+1,
-            //         LOCATION_CODE:  item.ascii_loc_code,
-            //         UM_CODE:        inv.service_type === '2003'? inv.vehicle_type :inv.min_billable_unit,
-            //         QUANTITY:       quantity ? parseFloat(quantity).toFixed(2) : 1,  
-            //         UNIT_PRICE:     parseFloat(item.rate).toFixed(2),//parseFloat(inv.billing).toFixed(2),
-            //         EXTENDED_AMT:   parseFloat(price).toFixed(2)//parseFloat(inv.billing).toFixed(2)
-            //         //parseFloat(item.total_charges).toFixed(2)
-            //     }
-            // })
-
+            if(item.customer === '10005' && invoices[0].class_of_store === 'COLD'){
+                SALES_ORDER_DETAIL=[{
+                    COMPANY_CODE:   '00001',
+                    SO_CODE:        item.draft_bill_no,
+                    ITEM_CODE:      serviceType?.ascii_item_code,
+                    LINE_NO:        1,
+                    LOCATION_CODE:  item.ascii_loc_code,
+                    UM_CODE:        invoices[0].service_type === '2003'? invoices[0].vehicle_type :invoices[0].min_billable_unit,
+                    QUANTITY:       1,
+                    UNIT_PRICE:     parseFloat(item.total_charges).toFixed(2),   
+                    EXTENDED_AMT:   parseFloat(item.total_charges).toFixed(2)                    
+                }]
+            }
+            else{
+                SALES_ORDER_DETAIL=[{
+                    COMPANY_CODE:   '00001',
+                    SO_CODE:        item.draft_bill_no,
+                    ITEM_CODE:      serviceType?.ascii_item_code,
+                    LINE_NO:        1,
+                    LOCATION_CODE:  item.ascii_loc_code,
+                    UM_CODE:        invoices[0].service_type === '2003'? invoices[0].vehicle_type :invoices[0].min_billable_unit,
+                    QUANTITY:       invoices[0].service_type === '2003' ? 1 :     
+                    _.sumBy(invoices,(i)=>{
+                        if(String(invoices[0].min_billable_unit).toLowerCase() === 'cbm'){
+                            return parseFloat(i.actual_cbm).toFixed(2)
+                        }
+                        if(String(invoices[0].min_billable_unit).toLowerCase() === 'weigth'){
+                            return parseFloat(i.actual_weight).toFixed(2)
+                        }
+                        if(['CASE','PIECE'].includes( String(invoices[0].min_billable_unit).toUpperCase())){
+                            return parseFloat(i.actual_qty).toFixed(2)
+                        }
+                    }),
+                    UNIT_PRICE:     parseFloat(item.rate).toFixed(2),   
+                    EXTENDED_AMT:   parseFloat(item.total_charges).toFixed(2)                    
+                }] 
+            }
 
             return {
                 COMPANY_CODE:   '00001',
@@ -238,9 +216,6 @@ exports.createAsciiSalesOrder = async({
         })
         .then(result => {    
 
-            // const errors =result.data.ERROR.map(item => item.HEADER[0].REF_CODE) 
-            // const success = data.filter(item => !errors.includes(item.SO_CODE))
-            
             return {
                 errors:result.data.ERROR,
                 success:result.data.SUMMARY

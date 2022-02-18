@@ -129,6 +129,19 @@ router.post('/:contract_type/invoice',async(req,res)=>{
 router.post('/:contract_type/revenue-leak',async(req,res)=>{
     try{
         const {contract_type} = req.params;
+        const {location,rdd} = req.query;
+        
+        if(contract_type === 'sell'){
+           
+            await draftBill.replanSell({
+                location:location,
+                deliveryDate:rdd
+            })
+        }
+        else if(contract_type==='BUY'){
+
+        }
+
         res.status(200).end()
     }
     catch(e){
@@ -186,25 +199,25 @@ router.post('/ascii/sell',async(req,res)=>{
             location
         })
 
-        const result = await ascii.createAsciiSalesOrder({
-            token,
-            data: JSON.parse(JSON.stringify(data))
-        })
+        // const result = await ascii.createAsciiSalesOrder({
+        //     token,
+        //     data: JSON.parse(JSON.stringify(data))
+        // })
 
-        //update draft bills
-        await draftBill.updateDraftBill({
-            data:{
-                status:'DRAFT_BILL_POSTED',
-                // updated_by:req.session.userId
-            },
-            filters:{
-                draft_bill_no: result.success.map(item => item.SO_CODE),
+        // //update draft bills
+        // await draftBill.updateDraftBill({
+        //     data:{
+        //         status:'DRAFT_BILL_POSTED',
+        //         // updated_by:req.session.userId
+        //     },
+        //     filters:{
+        //         draft_bill_no: result.success.map(item => item.SO_CODE),
                 
-            }
-        })
+        //     }
+        // })
 
         res.status(200).json({
-            result: result,
+            //result: result,
             data
         })
     }

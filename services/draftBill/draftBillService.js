@@ -1040,3 +1040,49 @@ exports.updateDraftBill = async({
         throw e
     }
 }
+
+const getRevenueLeakInvoices = async({
+    rdd,
+    location,
+    contract_type
+}) =>{
+    try{
+        // console.log('test')
+        const invoices = await invoiceService.getAllRevenueLeak({
+            filters:{
+                '$invoice.location$':location,
+                '$invoice.rdd$':rdd,
+                draft_bill_type:contract_type
+            }
+        })
+
+        console.log(invoices)
+    }
+    catch(e){
+        throw e
+    }
+}
+
+
+//# Revenue Leak Sell
+
+
+
+exports.replanSell = async({
+    deliveryDate,
+    location
+})=>{
+    try{
+        let revenueLeak = [];
+        await getRevenueLeakInvoices({
+            is_draft_bill:false,
+            contract_type:'SELL',
+            location,
+            rdd:deliveryDate
+        })
+        
+    }
+    catch(e){
+        throw e
+    }
+}
