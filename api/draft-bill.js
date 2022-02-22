@@ -67,7 +67,10 @@ router.get('/leakage',async(req,res)=>{
         */
 
         const {count,rows} = await invoice.getPaginatedRevenueLeak({
-            filters:query
+            filters:{
+                ...query,
+                is_draft_bill:false
+            }
         })
 
         res.status(200).json({
@@ -111,7 +114,6 @@ router.post('/:contract_type/invoice',async(req,res)=>{
         }
 
         //console.log(draftBills)
-
         const create = await draftBill.createDraftBill(draftBills.draftBill)
      
         res.status(200).json({
@@ -151,29 +153,34 @@ router.post('/:contract_type/revenue-leak',async(req,res)=>{
                 deliveryDate:rdd
             })
 
+            //Update Revenue Leak Reason
+            await invoice.createRevenueLeak({
+                data:data.revenueLeak
+            })
+
         }
 
-        // if(!data){
-        //     return res.status(400).json({
-        //         message:'Invalid Data Found'
-        //     })
-        // }
+        if(!data){
+            return res.status(400).json({
+                message:'Invalid Data Found'
+            })
+        }
 
-        // const create = await draftBill.createDraftBill(data.draftBill)
+        const create = await draftBill.createDraftBill(data.draftBill)
 
-        // await invoice.updateRevenueLeak({
-        //     filters:{
-        //         fk_invoice_id:create.invData.map(item => item.fk_invoice_id)
-        //     },
-        //     data:{
-        //         is_draft_bill:true
-        //     }
-        // })
+        await invoice.updateRevenueLeak({
+            filters:{
+                fk_invoice_id:create.invData.map(item => item.fk_invoice_id)
+            },
+            data:{
+                is_draft_bill:true
+            }
+        })
 
         res.status(200).json({
-            data
-            // draft_bills:data.draftBill,
-            // rev_leak:data.revenueLeak
+            // data
+            draft_bills:data.draftBill,
+            rev_leak:data.revenueLeak
         })
     }
     catch(e){

@@ -38,11 +38,7 @@ const groupWithAgg = async(data) => {
         let grouped = []
 
         const allConditions = await getAggCondition(_.uniq(data.map(item => item.tariff.fk_agg_id))) 
-<<<<<<< HEAD
        
-=======
-      
->>>>>>> develop
         const raw_group = _.groupBy(data,(item)=>{
             return item.group_id
         })
@@ -54,10 +50,6 @@ const groupWithAgg = async(data) => {
             // console.log(raw_group[item])
             //get conditions
             let conditions = allConditions.filter(item => item.agg_id === invoice.tariff.fk_agg_id)
-<<<<<<< HEAD
-=======
- 
->>>>>>> develop
             //convert the paremeters into array
             const parameters = invoice.tariff.parameter ?  invoice.tariff.parameter.split(',') : null
  
@@ -370,13 +362,8 @@ const groupWithoutAgg = async(data) => {
     return ungrouped
 }
 
-<<<<<<< HEAD
 const assignTariff = ({invoices,contracts}) => {
     
-=======
-const assignTariff = async ({invoices,contracts}) => {
-
->>>>>>> develop
     let data = [];  
     let withoutTariff = [];
     for(let i in invoices){
@@ -633,9 +620,6 @@ exports.generateDraftBillBuy = async({rdd,location}) => {
             }
         })
 
-      
-        // console.log(data)
-
         // //2. Get contract details from the selected invoices
         const contracts = await getBuyContracts({invoices:data.filter(item => item.vg_code)})
         data = contracts.data
@@ -729,12 +713,9 @@ const getBuyInvoice =async({
                     fk_invoice_id:item.id
                 }
             })
-
-            //console.log(data)
-            
+         
             //Get the datas with vendor group
             const withVendorGroup = data.filter(item => item.vg_code && item.ship_point_to && item.ship_point_from)
-            // const withContracts = data.filter(item => item.contract_id && item.ship_point_to && item.ship_point_from)
             
             const withoutVendorGroup = data.filter(item => !withVendorGroup.map(item => item.id).includes(item.id)).map( i => {
                 let reason = null
@@ -752,7 +733,7 @@ const getBuyInvoice =async({
             })
             
             return {
-                data:withVendorGroup ,              
+                data:withVendorGroup,              
                 noVendorGroup:withoutVendorGroup//data.filter(item => )
             }
         })
@@ -1100,7 +1081,7 @@ const getInvoicesRevLeakSell = async({
             contract_type:'SELL'
         })
         .then(result => {
-          
+            console.log(result.length)
             const data = result.map(item => {
                 let {contract,...newItem} = item;
                 const contract_id = typeof contract?.contract_id !== 'undefined' ? contract.contract_id : null
@@ -1198,7 +1179,7 @@ exports.replanSell = async({
             rdd:deliveryDate
         })
 
-        // console.log(data)
+        //console.log(no_contracts.length)
 
         //2. Get Tariffs Per Contract
         const contracts = await getContracts(data)
@@ -1208,10 +1189,7 @@ exports.replanSell = async({
             contracts
         })
 
-        // console.log(data)
-        
         data = dataWithTariff.data
-        
         //#4.1 group the invoices with aggregation flag 
         const withAgg = await groupWithAgg(data.filter(item => item.tariff.with_agg));
         //4.2 group the invoices without aggregation flag
@@ -1231,7 +1209,7 @@ exports.replanSell = async({
             revenueLeak.push({
                 invoice_no:     item.invoice_no,
                 draft_bill_type:'SELL',
-                fk_invoice_id:  item.id,
+                fk_invoice_id:  item.fk_invoice_id,
                 reason:         item.reason
             })
         })
@@ -1257,6 +1235,13 @@ const getInvoicesRevLeakBuy = async({
     location
 }) => {
     try{
+        const vendorGroups = await vendorService.getAllVendorGroupDtl({
+            filters:{
+                '$vendor_header.vg_status$':'ACTIVE',
+                '$vendor_header.location$':location
+            }
+        })
+
         const {data, no_vendor_group} = await getRevenueLeakInvoices({
             rdd,
             location,
@@ -1265,22 +1250,42 @@ const getInvoicesRevLeakBuy = async({
         .then(result => {
             const data =  result.map(item => {
                 let {contract,vendor_group,...newItem} = item
-                const vg_code = typeof vendor_group?.vg_code !== 'undefined' ? vendor_group.vg_code:null
-                
+                const vg_code = _.find(vendorGroups,['vg_vendor_id',newItem.trucker_id])
+               
                 return {
                     ...newItem,
-                    contract_id:null,
-                    vg_code:    null,
-                    fk_invoice_id:item.id
+                    contract_id:    null,
+                    vg_code:        vg_code?.vg_code,
                 }
             })
 
-            // console.log(data)
-            return {data,no_vendor_group:[]}
+            //Get the datas with vendor group
+            const withVendorGroup = data.filter(item => item.vg_code && item.ship_point_to && item.ship_point_from)
+            const withoutVendorGroup = data.filter(item => !withVendorGroup.map(item => item.fk_invoice_id).includes(item.fk_invoice_id)).map( i => {
+                let reason = null
+                if(!i.ship_point_to || !i.ship_point_from){
+                    reason = 'NO SHIP POINT INFORMATION'
+                }
+                else if(!i.vendor_group){
+                    reason = 'NO VENDOR GROUP'
+                }
+
+                return {
+                    ...i,
+                    reason
+                }
+            })
+
+
+            return {
+                data:           withVendorGroup,
+                no_vendor_group:withoutVendorGroup
+            }
         })
 
         return {
-            data, no_vendor_group
+            data, 
+            no_vendor_group
         }
     }
     catch(e){
@@ -1294,14 +1299,39 @@ exports.replanBuy = async({
     location
 })=>{
     try{
+        
         let revenueLeak = [];
         let {data,no_vendor_group} = await getInvoicesRevLeakBuy({
             rdd:deliveryDate,
             location
         })
 
+        const contracts = await getBuyContracts({invoices:data.filter(item => item.vg_code)})
+        data = contracts.data
+     
+        const dataWithTariff = await assignTariff({
+            invoices:data,
+            contracts:contracts.contracts
+        })
+
+        data=dataWithTariff.data
+        // //4. group the invoices with aggregation flag 
+        const withAgg = await groupWithAgg(data.filter(item => item.tariff.with_agg));
+
+        no_vendor_group.map(item => {
+            revenueLeak.push({
+                invoice_no:     item.invoice_no,
+                draft_bill_type:'BUY',
+                fk_invoice_id:  item.fk_invoice_id,
+                reason:         item.reason
+            })
+        })
+
+        revenueLeak = _.uniqBy(revenueLeak,'fk_invoice_id')
+
         return{
-            data
+            draftBill:withAgg,
+            revenueLeak
         }
 
     }

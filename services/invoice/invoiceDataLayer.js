@@ -292,7 +292,10 @@ const getAllRevenueLeak = async({filters}) => {
                             as:"details"
                         },
                         {
-                            
+                            model:models.vendor_group_dtl_tbl,
+                            attributes:['vg_code'],
+                            required:false,
+                            as:'vendor_group'
                         }
                     ],
                     as:"invoice"
