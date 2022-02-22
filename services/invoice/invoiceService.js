@@ -149,6 +149,19 @@ exports.createRevenueLeak = async({data}) => {
     }
 }
 
+exports.updateRevenueLeak = async({filters,data,options})=>{
+    try{
+        return await dataLayer.updateRevenueLeak({
+            filters,
+            data,
+            options 
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
 
 exports.getPaginatedRevenueLeak = async({
     filters
@@ -191,6 +204,7 @@ exports.getAllRevenueLeak = async({
     filters
 })=>{
     try{
+        
         return await dataLayer.getAllRevenueLeak({
             filters
         })

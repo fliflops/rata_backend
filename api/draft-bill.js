@@ -130,19 +130,50 @@ router.post('/:contract_type/revenue-leak',async(req,res)=>{
     try{
         const {contract_type} = req.params;
         const {location,rdd} = req.query;
-        
-        if(contract_type === 'sell'){
+        let data
+        if(contract_type === 'SELL'){
            
-            await draftBill.replanSell({
+            data = await draftBill.replanSell({
                 location:location,
                 deliveryDate:rdd
             })
+
+            //Update Revenue Leak Reason
+            await invoice.createRevenueLeak({
+                data:data.revenueLeak
+            })
+
         }
         else if(contract_type==='BUY'){
+            data = await draftBill.replanBuy({
+                location,
+                deliveryDate:rdd
+            })
 
         }
 
-        res.status(200).end()
+        // if(!data){
+        //     return res.status(400).json({
+        //         message:'Invalid Data Found'
+        //     })
+        // }
+
+        // const create = await draftBill.createDraftBill(data.draftBill)
+
+        // await invoice.updateRevenueLeak({
+        //     filters:{
+        //         fk_invoice_id:create.invData.map(item => item.fk_invoice_id)
+        //     },
+        //     data:{
+        //         is_draft_bill:true
+        //     }
+        // })
+
+        res.status(200).json({
+            data
+            // draft_bills:data.draftBill,
+            // rev_leak:data.revenueLeak
+        })
     }
     catch(e){
         console.log(e)
@@ -199,25 +230,25 @@ router.post('/ascii/sell',async(req,res)=>{
             location
         })
 
-        // const result = await ascii.createAsciiSalesOrder({
-        //     token,
-        //     data: JSON.parse(JSON.stringify(data))
-        // })
+        const result = await ascii.createAsciiSalesOrder({
+            token,
+            data: JSON.parse(JSON.stringify(data))
+        })
 
-        // //update draft bills
-        // await draftBill.updateDraftBill({
-        //     data:{
-        //         status:'DRAFT_BILL_POSTED',
-        //         // updated_by:req.session.userId
-        //     },
-        //     filters:{
-        //         draft_bill_no: result.success.map(item => item.SO_CODE),
+        //update draft bills
+        await draftBill.updateDraftBill({
+            data:{
+                status:'DRAFT_BILL_POSTED',
+                // updated_by:req.session.userId
+            },
+            filters:{
+                draft_bill_no: result.success.map(item => item.SO_CODE),
                 
-        //     }
-        // })
+            }
+        })
 
         res.status(200).json({
-            //result: result,
+            result: result,
             data
         })
     }

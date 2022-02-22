@@ -18,6 +18,7 @@ const createInvoice = async({
     }
 }
 
+
 const createInvoiceDtl = async ({
     data,
     options
@@ -169,6 +170,25 @@ const updateInvoice = async({data,options,filters}) => {
     }
 }
 
+const updateRevenueLeak = async({
+    filters,data,options
+}) => {
+    try{
+        return await models.invoices_rev_leak_tbl.update({   
+            ...data
+        },
+        {
+            where:{
+                ...filters
+            },
+            ...options
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
 const createRevenueLeak = async({
     data,
     options
@@ -236,11 +256,45 @@ const getPaginatedRevenueLeak = async({
 const getAllRevenueLeak = async({filters}) => {
     try{
         const attributes = Object.keys(models.invoices_cleared_hdr.rawAttributes)
+      
         return await models.invoices_rev_leak_tbl.findAll({
             include:[
                 {
                     model:models.invoices_cleared_hdr,
                     attributes:attributes.filter(item => !['id','invoice_no','is_processed_sell','is_processed_buy','created_by','updated_by','createdAt','updatedAt','principal_name','trucker_name','stc_from_name','stc_to_name'].includes(item)),
+                    include:[
+                        {
+                            model:models.contract_hdr_tbl,
+                            attributes:["contract_id","contract_type"],
+                            where:{
+                                contract_status:'APPROVED',
+                                contract_type:'SELL'
+                            },
+                            required:false,
+                            as:"contract"
+                        },
+                        {
+                            model:models.ship_point_tbl,
+                            attributes:['stc_description','stc_name','stc_address','country','region','province','city','barangay'],
+                            required:false,
+                            as:'ship_point_from'
+                        },
+                        {
+                            model:models.ship_point_tbl,
+                            attributes:['stc_description','stc_name','stc_address','country','region','province','city','barangay'],
+                            required:false,
+                            as:'ship_point_to'
+                        },
+                        {
+                            model:models.invoices_dtl_tbl,
+                            attributes:['trip_no','br_no','class_of_store','uom','planned_qty','planned_weight','planned_cbm','actual_qty','actual_weight','actual_cbm','return_qty'],
+                            required:false,
+                            as:"details"
+                        },
+                        {
+                            
+                        }
+                    ],
                     as:"invoice"
                 }
             ],
@@ -264,6 +318,7 @@ module.exports = {
     getLatestInvoice,
     getAllInvoice,
     updateInvoice,
+    updateRevenueLeak,
     createRevenueLeak,
     getPaginatedRevenueLeak,
     getAllRevenueLeak
