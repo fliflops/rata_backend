@@ -9,7 +9,11 @@ const moment = require('moment');
 const {Op} = require('sequelize')
 
 const sumByQty = ({data,uom,field}) => {
-    return _.sumBy(data.filter(item => item.uom === uom),item =>item[field]).toFixed(2)
+    return parseFloat(_.sumBy(data.filter(item => item.uom === uom),item =>parseFloat(item[field]))).toFixed(2)
+}
+
+const sumQtyHeader = ({data,field})=>{
+    return parseFloat(_.sum(data.map(item => parseFloat(item[field])))).toFixed(2)
 }
 
 const sumBy = ({data,field}) => {
@@ -34,7 +38,11 @@ const groupWithAgg = async(data) => {
         let grouped = []
 
         const allConditions = await getAggCondition(_.uniq(data.map(item => item.tariff.fk_agg_id))) 
+<<<<<<< HEAD
        
+=======
+      
+>>>>>>> develop
         const raw_group = _.groupBy(data,(item)=>{
             return item.group_id
         })
@@ -43,16 +51,22 @@ const groupWithAgg = async(data) => {
         //Assigns the corresponding conditions per tariff
         for(const item in raw_group){
             const invoice = raw_group[item][0]
-
+            // console.log(raw_group[item])
             //get conditions
             let conditions = allConditions.filter(item => item.agg_id === invoice.tariff.fk_agg_id)
+<<<<<<< HEAD
+=======
+ 
+>>>>>>> develop
             //convert the paremeters into array
             const parameters = invoice.tariff.parameter ?  invoice.tariff.parameter.split(',') : null
-            
+ 
             //group invoices per group_by values 
             const invoices = raw_group[item].map(item => {
-                const planned_qty    =sumByQty({data:item.details,uom:item.tariff.min_billable_unit,field:'planned_qty'})
-                const actual_qty     =sumByQty({data:item.details,uom:item.tariff.min_billable_unit,field:'actual_qty'})
+                // console.log()
+                const details = item.details
+                const planned_qty    =sumByQty({data:item.details, uom:item.tariff.min_billable_unit, field:'planned_qty'})
+                const actual_qty     =sumByQty({data:details, uom:item.tariff.min_billable_unit, field:'actual_qty'})
                 const planned_weight =sumBy({data:item.details,field:'planned_weight'})
                 const planned_cbm    =sumBy({data:item.details,field:'planned_cbm'})
                 const actual_weight  =sumBy({data:item.details,field:'actual_weight'})
@@ -72,7 +86,7 @@ const groupWithAgg = async(data) => {
                     tariff_id:          item.tariff.tariff_id,
                     contract_id:        item.contract_id,
                     service_type:       item.service_type,
-                    sub_service_type:   null,
+                    sub_service_type:   item.sub_service_type,
                     min_billable_value: item.tariff.min_value,
                     min_billable_unit:  item.tariff.min_billable_unit,
                     from_geo_type:      invoice.tariff.from_geo_type,
@@ -81,13 +95,13 @@ const groupWithAgg = async(data) => {
                     ship_to:            item.stc_to,
                     remarks:            item.redel_remarks,
                     class_of_store:     item.class_of_store,
-                    planned_qty:        isNaN(planned_qty)   ?  null:planned_qty,
-                    actual_qty:         isNaN(actual_qty)    ?  null:actual_qty,
-                    planned_weight:     isNaN(planned_weight)?  null:planned_weight,
-                    planned_cbm:        isNaN(planned_cbm)   ?  null:planned_cbm,
-                    actual_weight:      isNaN(actual_weight) ?  null:actual_weight,
-                    actual_cbm:         isNaN(actual_cbm)    ?  null:actual_cbm,
-                    return_qty:         isNaN(return_qty)    ?  null:return_qty,
+                    planned_qty:        isNaN(planned_qty)   ?  0:planned_qty,
+                    actual_qty:         isNaN(actual_qty)    ?  0:actual_qty,
+                    planned_weight:     isNaN(planned_weight)?  0:planned_weight,
+                    planned_cbm:        isNaN(planned_cbm)   ?  0:planned_cbm,
+                    actual_weight:      isNaN(actual_weight) ?  0:actual_weight,
+                    actual_cbm:         isNaN(actual_cbm)    ?  0:actual_cbm,
+                    return_qty:         isNaN(return_qty)    ?  0:return_qty,
                     fk_invoice_id:      item.fk_invoice_id
                 }
             })
@@ -136,12 +150,14 @@ const groupWithAgg = async(data) => {
             //if parameters is null compute weight and cbm only
             //else compute all
             if(df.parameters){
+           
                 df.parameters.map(item => {
+                    // console.log(df.min_billable_unit)
                     aggregatedValues={
                         ...aggregatedValues,
-                        total_cbm:      isNaN (sumBy({data:df.invoices,field:'actual_cbm'})) ?                     null :                   sumBy({data:df.invoices,field:'actual_cbm'}),
-                        total_weight:   isNaN (sumBy({data:df.invoices,field:'actual_weight'})) ?                  null :                   sumBy({data:df.invoices,field:'actual_weight'}),
-                        total_qty:      isNaN (sumByQty({data:df.invoices,uom:df.min_billable_unit,field:item})) ? null :   sumByQty({data:df.invoices,uom:df.min_billable_unit,field:item})
+                        total_cbm:      isNaN (sumBy({data:df.invoices,field:'actual_cbm'})) ?                     null :   sumBy({data:df.invoices,field:'actual_cbm'}),
+                        total_weight:   isNaN (sumBy({data:df.invoices,field:'actual_weight'})) ?                  null :   sumBy({data:df.invoices,field:'actual_weight'}),
+                        total_qty:      sumQtyHeader({data:df.invoices,field:item})//100//isNaN (sumByQty({data:df.invoices,uom:df.min_billable_unit,field:item})) ? null :   sumByQty({data:df.invoices,uom:df.min_billable_unit,field:item})
                     }
                 })
             }
@@ -184,6 +200,7 @@ const groupWithAgg = async(data) => {
                 contract_type:      df.tariff.contract_type,
                 trip_no:            df.trip_no,
                 service_type:       df.service_type,
+                sub_service_type:   df.sub_service_type,
                 draft_bill_date:    null,
                 contract_id:        df.contract_id,
                 tariff_id:          df.tariff.tariff_id,
@@ -265,7 +282,7 @@ const groupWithoutAgg = async(data) => {
                 tariff_id:          invoice.tariff.tariff_id,
                 contract_id:        invoice.contract_id,
                 service_type:       invoice.service_type,
-                sub_service_type:   null,
+                sub_service_type:   invoice.sub_service_type,
                 min_billable_value: invoice.tariff.min_value,
                 min_billable_unit:  invoice.tariff.min_billable_unit,
                 from_geo_type:      invoice.tariff.from_geo_type,
@@ -353,8 +370,13 @@ const groupWithoutAgg = async(data) => {
     return ungrouped
 }
 
+<<<<<<< HEAD
 const assignTariff = ({invoices,contracts}) => {
     
+=======
+const assignTariff = async ({invoices,contracts}) => {
+
+>>>>>>> develop
     let data = [];  
     let withoutTariff = [];
     for(let i in invoices){
@@ -371,22 +393,27 @@ const assignTariff = ({invoices,contracts}) => {
                 location,
                 vehicle_type,    
                 class_of_store,
+                sub_service_type,
                 contract_type
             } = contract
 
             const inv_stc_from = invoice.ship_point_from[from_geo_type]
             const inv_stc_to = invoice.ship_point_to[to_geo_type]
+            const invoice_sub_service_type = String(invoice.sub_service_type).toLowerCase()
 
+            
             //  console.log(String(location).toLowerCase() === String(invoice.location).toLowerCase()
             //     && (inv_stc_from === from_geo && inv_stc_to === to_geo)
             //     && service_type === invoice.service_type)
 
-            if(String(location).toLowerCase() === String(invoice.location).toLowerCase()
-                && (String(inv_stc_from).toLowerCase() === String(from_geo).toLowerCase() 
-                && String(inv_stc_to).toLowerCase() === String(to_geo).toLowerCase())
-                && service_type === invoice.service_type){
+            if( String(location).toLowerCase()          === String(invoice.location).toLowerCase()
+                &&  (String(inv_stc_from).toLowerCase() === String(from_geo).toLowerCase() 
+                &&  String(inv_stc_to).toLowerCase()    === String(to_geo).toLowerCase())
+                &&  service_type                        === invoice.service_type
+                &&  (invoice_sub_service_type===null?true:(invoice_sub_service_type === String(sub_service_type).toLowerCase()))
+                )
+                {
                
-                
                 //if tariff has vehicle type maintained
                 if(vehicle_type){
                     // console.log({
@@ -465,7 +492,8 @@ const assignTariff = ({invoices,contracts}) => {
                 fk_agg_id:          tariffs[0].fk_agg_id,
                 from_geo_type:      tariffs[0].from_geo_type,
                 to_geo_type:        tariffs[0].from_geo_type,
-                contract_type:      tariffs[0].contract_type
+                contract_type:      tariffs[0].contract_type,
+
             }
     
             data.push({
@@ -590,8 +618,6 @@ exports.getAllDraftBills = async({
 }
 /*#ROUTE Services */
 
-
-
 /*#BUY Process Starts Here*/
 exports.generateDraftBillBuy = async({rdd,location}) => {
     try{
@@ -607,11 +633,14 @@ exports.generateDraftBillBuy = async({rdd,location}) => {
             }
         })
 
-        //2. Get contract details from the selected invoices
+      
+        // console.log(data)
+
+        // //2. Get contract details from the selected invoices
         const contracts = await getBuyContracts({invoices:data.filter(item => item.vg_code)})
         data = contracts.data
 
-        //3. Assign Tariff to Invoice using the retrieved contracts
+        // //3. Assign Tariff to Invoice using the retrieved contracts
         const dataWithTariff = await assignTariff({
             invoices:data,
             contracts:contracts.contracts
@@ -619,10 +648,10 @@ exports.generateDraftBillBuy = async({rdd,location}) => {
 
         data=dataWithTariff.data
 
-        //4. group the invoices with aggregation flag 
+        // //4. group the invoices with aggregation flag 
         const withAgg = await groupWithAgg(data.filter(item => item.tariff.with_agg));
 
-        //5. push to revenue leak
+        // //5. push to revenue leak
         dataWithTariff.withoutTariff.map(item => {
             revenueLeak.push({
                 invoice_no: item.invoice_no,
@@ -643,7 +672,8 @@ exports.generateDraftBillBuy = async({rdd,location}) => {
 
         
 
-        //5.1 remove the duplicates
+
+        // //5.1 remove the duplicates
         revenueLeak = _.uniqBy(revenueLeak,'fk_invoice_id')
 
         //6. Update Invoices
@@ -671,6 +701,15 @@ const getBuyInvoice =async({
 }) => {
     try {
 
+        const vendorGroups = await vendorService.getAllVendorGroupDtl({
+            filters:{
+                '$vendor_header.vg_status$':'ACTIVE',
+                '$vendor_header.location$':filters.location
+            }
+        })
+
+        // console.log(vendorGroups)
+
         let {noVendorGroup,data} = await invoiceService.getAllInvoice({
             filters:{
                 ...filters
@@ -679,13 +718,14 @@ const getBuyInvoice =async({
         .then(async result => {
             const data =  result.map(item => {
                 let {contract,vendor_group,...newItem} = item
+                const vg_code = _.find(vendorGroups,['vg_vendor_id',newItem.trucker_id])
                 //const contract_id = typeof contract?.contract_id !== 'undefined' ? contract.contract_id : null
-                const vg_code = typeof vendor_group?.vg_code !== 'undefined' ? vendor_group.vg_code:null
+                //const vg_code = typeof vendor_group?.vg_code !== 'undefined' ? vendor_group.vg_code:null
                 
                 return {
                     ...newItem,
                     contract_id:null,
-                    vg_code,
+                    vg_code:vg_code?.vg_code,
                     fk_invoice_id:item.id
                 }
             })
@@ -712,8 +752,8 @@ const getBuyInvoice =async({
             })
             
             return {
-                data:  withVendorGroup ,              
-                noVendorGroup: withoutVendorGroup//data.filter(item => )
+                data:withVendorGroup ,              
+                noVendorGroup:withoutVendorGroup//data.filter(item => )
             }
         })
 
@@ -769,8 +809,6 @@ const getBuyContracts = async({
             return contract_tariff 
         })
 
-        // console.log(contracts)
-
         //assign contract id
         const details = invoices.map(item => {
             const contract = _.find(contracts,c =>{
@@ -813,9 +851,7 @@ exports.generateDraftBill = async({
        
         //2. Get contract from the selected invoices
         const contracts = await getContracts(data);
-
-        //console.log(contracts)
-        
+  
         //3. Assign Tariff to Invoice using the retrieved contracts
         const dataWithTariff = await assignTariff({
             invoices:data,
@@ -850,18 +886,19 @@ exports.generateDraftBill = async({
         //remove the duplicates
         revenueLeak = _.uniqBy(revenueLeak,'fk_invoice_id')
 
-        //update invoices
+        // //update invoices
         await invoiceService.updateInvoice({
             data:{
                 is_processed_sell:true
             },
             filters:{
                 id:revenueLeak.map(item => item.fk_invoice_id).concat(_.uniqBy(data,'fk_invoice_id').map(item => item.fk_invoice_id))
-
             }
         })
 
         return {draftBill: withAgg.concat(withOutAgg),revenueLeak}
+
+        
     }
     catch(e){
         throw e
@@ -984,13 +1021,7 @@ const getContracts = async(data) => {
                 },
                 '$contract.valid_to$':{
                     [Op.gte]: moment().toDate()
-                },
-                // valid_from:{
-                //     [Op.lte]: moment().toDate()
-                // },
-                // valid_to:{
-                //     [Op.gte]: moment().toDate() 
-                // }
+                }
             }
         })
         .then(result => {

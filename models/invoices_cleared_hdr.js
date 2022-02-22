@@ -44,6 +44,9 @@ module.exports = (sequelize, DataTypes) => {
         service_type:{
             type:DataTypes.STRING(50)
         },
+        sub_service_type:{
+            type:DataTypes.STRING(50)
+        },
         invoice_no:{
             type:DataTypes.STRING(50)
         },

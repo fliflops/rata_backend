@@ -34,66 +34,7 @@ exports.createInvoiceTransaction = async({
         return {
             invoices,
             inv_details
-        }
-
-    //    const inv = await dataLayer.getAllInvoice({
-    //        filters:{
-    //            rdd:'2022-02-01'
-    //        }
-    //    })
-
-    // //    console.log(inv.length)
-    // //    console.log(invoices.length)
-
-
-    //    const inv_inserted = inv.map(item => {
-    //        return {
-    //            ...item,
-    //            key: `${item.trip_no}-${item.br_no}`
-    //        }
-    //    })
-
-    //    const inv_raw = invoices.map(item => {
-    //        return {
-    //            ...item,
-    //            key:`${item.trip_no}-${item.br_no}`
-    //        }
-    //    })
-
-    //    console.log(inv_raw)
-       
-
-
-
-
-
-        // for(const i in details){
-        //     const item = details[i]
-        //     const invoice_id = invoices.filter(invoice => (
-        //         invoice.trip_no === item.trip_no && invoice.br_no === item.br_no
-        //     )).map(item => item.id)
-
-        //     //if(invoice_id.length === 1){
-        //         inv_details[i] = {
-        //         ...item,
-        //         fk_invoice_id: invoice_id[0]
-        //         }
-        //     // }
-        //     // else{
-        //     //     console.log(invoice_id)
-        //     // }
-
-        //     // console.log(invoice_id)
-
-        //     // if(invoice_id.length === 0){
-        //     //     console.log(invoice_id)
-        //     // }
-        // }
-
-
-        // console.log(inv))
-
-       
+        }  
     }
     catch(e){
         throw e

@@ -75,11 +75,6 @@ const bulkCreateTransaction = async({
 const getAllVendorGroup = async({filters,options}) => {
     try {
         return await models.vendor_group_tbl.findAll({
-            // include:[
-            //     {
-
-            //     }
-            // ],
             where:{
                 ...filters
             }
@@ -90,9 +85,32 @@ const getAllVendorGroup = async({filters,options}) => {
     }
 }
 
+const getAllVendorGroupDtl = async({filters,options})=>{
+    try{
+        return await models.vendor_group_dtl_tbl.findAll({
+            include:[
+                {
+                    model:models.vendor_group_tbl,
+                    attributes:['location','vg_status'],
+                    required:false,
+                    as:'vendor_header'
+                }
+            ],
+            where:{
+                ...filters
+            }
+        })
+        .then(result =>JSON.parse(JSON.stringify(result)))
+    }
+    catch(e){
+        throw e
+    }
+}
+
 module.exports = {
     bulkCreateVendor,
     getAllVendorGroup,
+    getAllVendorGroupDtl,
     bulkCreateTransaction
 }
 

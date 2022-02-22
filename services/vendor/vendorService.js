@@ -41,3 +41,27 @@ exports.bulkCreateTransaction = async({
         throw e
     }
 }
+
+exports.getAllVendorGroupDtl = async({
+    filters
+})=>{
+    try{
+        return await dataLayer.getAllVendorGroupDtl({
+            filters
+        })
+        .then(result => {
+            return result.map(item => {
+                const {vendor_header,...data} = item
+
+                return{
+                    ...data,
+                    location:vendor_header.location
+                }
+            })
+        })
+
+    }
+    catch(e){
+        throw e
+    }
+}
