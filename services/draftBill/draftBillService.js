@@ -47,7 +47,7 @@ const groupWithAgg = async(data) => {
         //Assigns the corresponding conditions per tariff
         for(const item in raw_group){
             const invoice = raw_group[item][0]
-            // console.log(raw_group[item])
+
             //get conditions
             let conditions = allConditions.filter(item => item.agg_id === invoice.tariff.fk_agg_id)
             //convert the paremeters into array
@@ -55,7 +55,7 @@ const groupWithAgg = async(data) => {
  
             //group invoices per group_by values 
             const invoices = raw_group[item].map(item => {
-                // console.log()
+            
                 const details = item.details
                 const planned_qty    =sumByQty({data:item.details, uom:item.tariff.min_billable_unit, field:'planned_qty'})
                 const actual_qty     =sumByQty({data:details, uom:item.tariff.min_billable_unit, field:'actual_qty'})
@@ -147,8 +147,8 @@ const groupWithAgg = async(data) => {
                     // console.log(df.min_billable_unit)
                     aggregatedValues={
                         ...aggregatedValues,
-                        total_cbm:      isNaN (sumBy({data:df.invoices,field:'actual_cbm'})) ?                     null :   sumBy({data:df.invoices,field:'actual_cbm'}),
-                        total_weight:   isNaN (sumBy({data:df.invoices,field:'actual_weight'})) ?                  null :   sumBy({data:df.invoices,field:'actual_weight'}),
+                        total_cbm:      isNaN (sumBy({data:df.invoices,field:'actual_cbm'})) ?                     0 :   sumBy({data:df.invoices,field:'actual_cbm'}),
+                        total_weight:   isNaN (sumBy({data:df.invoices,field:'actual_weight'})) ?                  0 :   sumBy({data:df.invoices,field:'actual_weight'}),
                         total_qty:      sumQtyHeader({data:df.invoices,field:item})//100//isNaN (sumByQty({data:df.invoices,uom:df.min_billable_unit,field:item})) ? null :   sumByQty({data:df.invoices,uom:df.min_billable_unit,field:item})
                     }
                 })
@@ -156,8 +156,8 @@ const groupWithAgg = async(data) => {
             else{
                 aggregatedValues={
                     ...aggregatedValues,
-                    total_cbm:      isNaN (sumBy({data:df.invoices,field:'actual_cbm'})) ? null     : sumBy({data:df.invoices,field:'actual_cbm'}),
-                    total_weight:   isNaN (sumBy({data:df.invoices,field:'actual_weight'})) ? null  : sumBy({data:df.invoices,field:'actual_weight'}),
+                    total_cbm:      isNaN (sumBy({data:df.invoices,field:'actual_cbm'})) ? 0     : sumBy({data:df.invoices,field:'actual_cbm'}),
+                    total_weight:   isNaN (sumBy({data:df.invoices,field:'actual_weight'})) ? 0  : sumBy({data:df.invoices,field:'actual_weight'}),
                 }
             }
             
@@ -297,9 +297,9 @@ const groupWithoutAgg = async(data) => {
         //Assign the aggregated values into draft bill header
         invoice = {
             ...invoice,
-            total_cbm:      invoices[0].actual_cbm,
-            total_weight:   invoices[0].actual_weight,
-            total_qty:      invoices[0].actual_qty
+            total_cbm:      invoices[0].actual_cbm      || 0,
+            total_weight:   invoices[0].actual_weight   || 0,
+            total_qty:      invoices[0].actual_qty      || 0
         }
 
         //declare the condition variables
@@ -384,33 +384,20 @@ const assignTariff = ({invoices,contracts}) => {
                 contract_type
             } = contract
 
-            const inv_stc_from = invoice.ship_point_from[from_geo_type]
-            const inv_stc_to = invoice.ship_point_to[to_geo_type]
-            const invoice_sub_service_type = String(invoice.sub_service_type).toLowerCase()
-
-            
-            //  console.log(String(location).toLowerCase() === String(invoice.location).toLowerCase()
-            //     && (inv_stc_from === from_geo && inv_stc_to === to_geo)
-            //     && service_type === invoice.service_type)
-
+            const inv_stc_from              = invoice.ship_point_from[String(from_geo_type).toLowerCase()]
+            const inv_stc_to                = invoice.ship_point_to[String(to_geo_type).toLowerCase()]
+            const invoice_sub_service_type  = String(invoice.sub_service_type).toLowerCase()
+         
             if( String(location).toLowerCase()          === String(invoice.location).toLowerCase()
                 &&  (String(inv_stc_from).toLowerCase() === String(from_geo).toLowerCase() 
                 &&  String(inv_stc_to).toLowerCase()    === String(to_geo).toLowerCase())
                 &&  service_type                        === invoice.service_type
-                &&  (invoice_sub_service_type===null?true:(invoice_sub_service_type === String(sub_service_type).toLowerCase()))
-                )
+                &&  (invoice_sub_service_type===null?true:(invoice_sub_service_type === String(sub_service_type).toLowerCase())) )
                 {
                
                 //if tariff has vehicle type maintained
                 if(vehicle_type){
-                    // console.log({
-                    //     text:'has vehicle type',
-                    //     class_of_store,
-                    //     invoice: invoice.class_of_store,
-                    //     vehicle_type,
-                    //     invoice:invoice.vehicle_type,
-                    //     tariff_id
-                    // })
+              
                     //if tariff is equal to invoice vehicle type
                     if(vehicle_type === invoice.vehicle_type){
 
@@ -431,10 +418,6 @@ const assignTariff = ({invoices,contracts}) => {
                     return false 
                 }
                 else{
-
-                    //console.log('not vehicle type')
-                  
-                    //if vehicle type is null
                     //check if the invoice class of store is equal to the tariff
                     if(String(class_of_store).toLowerCase() === String(invoice.class_of_store).toLowerCase()){
                        
@@ -446,8 +429,6 @@ const assignTariff = ({invoices,contracts}) => {
             //return false if the primary conditions are not meant
             return false
         });
-
-        // console.log(tariffs)
 
         // Check if the system finds more than 1 tariff
         if(tariffs.length > 1 || tariffs.length === 0){
@@ -603,7 +584,7 @@ exports.getAllDraftBills = async({
         throw e
     }
 }
-/*#ROUTE Services */
+/*#ROUTE Services*/
 
 /*#BUY Process Starts Here*/
 exports.generateDraftBillBuy = async({rdd,location}) => {
@@ -654,9 +635,6 @@ exports.generateDraftBillBuy = async({rdd,location}) => {
             })
         })
 
-        
-
-
         // //5.1 remove the duplicates
         revenueLeak = _.uniqBy(revenueLeak,'fk_invoice_id')
 
@@ -691,8 +669,6 @@ const getBuyInvoice =async({
                 '$vendor_header.location$':filters.location
             }
         })
-
-        // console.log(vendorGroups)
 
         let {noVendorGroup,data} = await invoiceService.getAllInvoice({
             filters:{
@@ -839,8 +815,7 @@ exports.generateDraftBill = async({
             contracts
         });
 
-        data = dataWithTariff.data;
-        
+        data = dataWithTariff.data;        
         //#4.1 group the invoices with aggregation flag 
         const withAgg = await groupWithAgg(data.filter(item => item.tariff.with_agg));
         //4.2 group the invoices without aggregation flag
@@ -864,10 +839,10 @@ exports.generateDraftBill = async({
             })
         })
 
-        //remove the duplicates
+        /*remove the duplicates*/
         revenueLeak = _.uniqBy(revenueLeak,'fk_invoice_id')
 
-        // //update invoices
+        /*#update invoices*/
         await invoiceService.updateInvoice({
             data:{
                 is_processed_sell:true
@@ -877,9 +852,8 @@ exports.generateDraftBill = async({
             }
         })
 
-        return {draftBill: withAgg.concat(withOutAgg),revenueLeak}
-
-        
+        return {draftBill: withAgg.concat(withOutAgg),revenueLeak}  
+        //return {draftBill:data,revenueLeak:dataWithTariff.withoutTariff}  
     }
     catch(e){
         throw e
@@ -1068,8 +1042,7 @@ const getRevenueLeakInvoices = async({
     }
 }
 
-
-//# Revenue Leak Sell
+//#Revenue Leak Sell
 const getInvoicesRevLeakSell = async({
     rdd,
     location,
@@ -1081,7 +1054,7 @@ const getInvoicesRevLeakSell = async({
             contract_type:'SELL'
         })
         .then(result => {
-            console.log(result.length)
+            // console.log(result.length)
             const data = result.map(item => {
                 let {contract,...newItem} = item;
                 const contract_id = typeof contract?.contract_id !== 'undefined' ? contract.contract_id : null
@@ -1179,8 +1152,6 @@ exports.replanSell = async({
             rdd:deliveryDate
         })
 
-        //console.log(no_contracts.length)
-
         //2. Get Tariffs Per Contract
         const contracts = await getContracts(data)
         //3. Assign Tariff
@@ -1218,6 +1189,7 @@ exports.replanSell = async({
         revenueLeak = _.uniqBy(revenueLeak,'fk_invoice_id')
 
         return {
+            //draftBill:data,
             draftBill:withAgg.concat(withOutAgg),
             revenueLeak
         }        
@@ -1226,10 +1198,9 @@ exports.replanSell = async({
         throw e
     }
 }
+//#Revenue Leak Sell Ends
 
-//Revenue Leak Sell Ends
-
-//Revenue Leak Buy
+//#Revenue Leak Buy
 const getInvoicesRevLeakBuy = async({
     rdd,
     location
@@ -1276,7 +1247,6 @@ const getInvoicesRevLeakBuy = async({
                 }
             })
 
-
             return {
                 data:           withVendorGroup,
                 no_vendor_group:withoutVendorGroup
@@ -1292,7 +1262,6 @@ const getInvoicesRevLeakBuy = async({
         throw e
     }
 }
-
 
 exports.replanBuy = async({
     deliveryDate,

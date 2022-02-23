@@ -41,7 +41,7 @@ exports.bulkCreateTariff = async({data})=>{
             }),
             options:{
                 logging:false,
-                updateOnDuplicate:['updatedAt','vehicle_type']
+                updateOnDuplicate:['updatedAt','vehicle_type','from_geo_type','to_geo_type','from_geo','to_geo']
             }
         })
     }

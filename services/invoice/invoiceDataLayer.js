@@ -121,13 +121,13 @@ const getAllInvoice = async({filters}) => {
                 },
                 {
                     model:models.ship_point_tbl,
-                    attributes:['stc_description','stc_name','stc_address','country','region','province','city','barangay'],
+                    attributes:['stc_code','stc_description','stc_name','stc_address','country','region','province','city','barangay'],
                     required:false,
                     as:'ship_point_from'
                 },
                 {
                     model:models.ship_point_tbl,
-                    attributes:['stc_description','stc_name','stc_address','country','region','province','city','barangay'],
+                    attributes:['stc_code','stc_description','stc_name','stc_address','country','region','province','city','barangay'],
                     required:false,
                     as:'ship_point_to'
                 },
@@ -275,13 +275,13 @@ const getAllRevenueLeak = async({filters}) => {
                         },
                         {
                             model:models.ship_point_tbl,
-                            attributes:['stc_description','stc_name','stc_address','country','region','province','city','barangay'],
+                            attributes:['stc_code','stc_description','stc_name','stc_address','country','region','province','city','barangay'],
                             required:false,
                             as:'ship_point_from'
                         },
                         {
                             model:models.ship_point_tbl,
-                            attributes:['stc_description','stc_name','stc_address','country','region','province','city','barangay'],
+                            attributes:['stc_code','stc_description','stc_name','stc_address','country','region','province','city','barangay'],
                             required:false,
                             as:'ship_point_to'
                         },
