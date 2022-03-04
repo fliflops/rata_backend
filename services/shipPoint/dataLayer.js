@@ -35,7 +35,22 @@ const bulkCreateShipPoint = async({
     }
 }
 
+const getAllShipPoint = async({filters})=>{
+    try{
+        return await models.ship_point_tbl.findAll({
+            where:{
+                ...filters
+            }
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
+    catch(e){
+        throw e
+    }
+}
+
 module.exports={
     getShipPoint,
-    bulkCreateShipPoint
+    bulkCreateShipPoint,
+    getAllShipPoint
 }

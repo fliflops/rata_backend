@@ -64,6 +64,40 @@ const getContract = async({
     }
 }
 
+const getAllContracts= async({
+    filters,
+    options
+}) => {
+    try{
+        return await models.contract_hdr_tbl.findAll({
+            include:[
+                {
+                    model:models.principal_tbl,
+                    attributes:["principal_name"],
+                    as:"principal"
+                }
+            ],
+            where:{
+                ...filters
+            },
+            ...options
+        })
+        .then(result => {
+            const data = JSON.parse(JSON.stringify(result))
+            return data.map(item => {
+                const {principal,...newItem} = item
+
+                return {
+                    ...newItem,
+                    principal_name: principal?.principal_name
+                }
+            })
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
 
 const getContractDetails = async({filters,options}) => {
     try{    
@@ -422,6 +456,7 @@ module.exports={
     createContract,
     getPaginatedContract,
     getContract,
+    getAllContracts,
     updateContract,
     getContractDetails,
     transactionCreateContract,

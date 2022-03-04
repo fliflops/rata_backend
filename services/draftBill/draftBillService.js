@@ -369,7 +369,9 @@ const assignTariff = ({invoices,contracts}) => {
     for(let i in invoices){
         const invoice = invoices[i];
         let tariff=null;
-        const tariffs = contracts.filter(contract => {
+        const tariffs = contracts
+        .filter(contract => contract.contract_id === invoice.contract_id)
+        .filter(contract => {
             const {
                 tariff_id,
                 service_type,
@@ -387,12 +389,13 @@ const assignTariff = ({invoices,contracts}) => {
             const inv_stc_from              = invoice.ship_point_from[String(from_geo_type).toLowerCase()]
             const inv_stc_to                = invoice.ship_point_to[String(to_geo_type).toLowerCase()]
             const invoice_sub_service_type  = String(invoice.sub_service_type).toLowerCase()
-         
-            if( String(location).toLowerCase()          === String(invoice.location).toLowerCase()
-                &&  (String(inv_stc_from).toLowerCase() === String(from_geo).toLowerCase() 
-                &&  String(inv_stc_to).toLowerCase()    === String(to_geo).toLowerCase())
-                &&  service_type                        === invoice.service_type
-                &&  (invoice_sub_service_type===null?true:(invoice_sub_service_type === String(sub_service_type).toLowerCase())) )
+            
+            if( //String(invoice.contract_id).toLowerCase()   === String(contract.contract_id)                &&
+                String(location).toLowerCase()              === String(invoice.location).toLowerCase()      &&
+                (String(inv_stc_from).toLowerCase()         === String(from_geo).toLowerCase()              &&
+                String(inv_stc_to).toLowerCase()            === String(to_geo).toLowerCase())               &&
+                service_type                                === invoice.service_type                        &&
+                (invoice_sub_service_type===null?true:(invoice_sub_service_type === String(sub_service_type).toLowerCase())) )
                 {
                
                 //if tariff has vehicle type maintained
@@ -460,8 +463,7 @@ const assignTariff = ({invoices,contracts}) => {
                 fk_agg_id:          tariffs[0].fk_agg_id,
                 from_geo_type:      tariffs[0].from_geo_type,
                 to_geo_type:        tariffs[0].from_geo_type,
-                contract_type:      tariffs[0].contract_type,
-
+                contract_type:      tariffs[0].contract_type
             }
     
             data.push({
@@ -499,7 +501,6 @@ const generateDraftBillNo = async({count}) => {
 /*#ROUTE Services */
 exports.createDraftBill = async(draftBills) => {
     try{
-
         let count = await draftBillCount();
         //remove the invoices without computed total charges
         let data = draftBills.filter(item => item.total_charges)
@@ -824,6 +825,7 @@ exports.generateDraftBill = async({
         dataWithTariff.withoutTariff.map(item => {
             revenueLeak.push({
                 invoice_no: item.invoice_no.split('-')[0],
+                //principal_code: item.principal_code,
                 draft_bill_type: 'SELL',
                 fk_invoice_id: item.fk_invoice_id,
                 reason: item.reason,
@@ -833,6 +835,7 @@ exports.generateDraftBill = async({
         noContracts.map(item => {
             revenueLeak.push({
                 invoice_no:     item.invoice_no,
+                //principal_code: item.principal_code,
                 draft_bill_type:'SELL',
                 fk_invoice_id:  item.id,
                 reason:         item.reason
@@ -1159,6 +1162,8 @@ exports.replanSell = async({
             invoices:data,
             contracts
         })
+
+        // console.log(contracts)
 
         data = dataWithTariff.data
         //#4.1 group the invoices with aggregation flag 

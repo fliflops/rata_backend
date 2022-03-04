@@ -111,6 +111,17 @@ exports.getContract = async({filters}) => {
     }
 }
 
+exports.getAllContracts = async({filters})=>{
+    try{
+        return await dataLayer.getAllContracts({
+            filters
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
 exports.bulkCreateContractDetails = async({contract,details}) => {
     try{
         return await dataLayer.bulkCreateContractDetailsTransaction({

@@ -247,6 +247,7 @@ const getPaginatedTariff = async({
 
 const getAllTariff = async({filters}) => {
     try{
+        // console.log(filters)
         return await models.tariff_sell_hdr_tbl.findAll({
             where:{
                 ...filters

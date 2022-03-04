@@ -36,19 +36,19 @@ const getGeoCountry = async()=>{
     
 }
 
-const getGeoRegion = async({country}) =>{
+const getGeoRegion = async({filters}) =>{
     try{
-        return dataLayer.getGeoRegion({country})
+        return dataLayer.getGeoRegion({filters})
     }
     catch(e){
         throw e
     }  
 }
 
-const getGeoProvince = async({region}) =>{
+const getGeoProvince = async({filters}) =>{
     try{
         
-        return await dataLayer.getGeoProvince({region})
+        return await dataLayer.getGeoProvince({filters})
 
     }
     catch(e){
@@ -56,24 +56,23 @@ const getGeoProvince = async({region}) =>{
     }  
 }
 
-const getGeoCity = async({province}) =>{
+const getGeoCity = async({filters}) =>{
     try{
-        return await dataLayer.getGeoCity({province})
+        return await dataLayer.getGeoCity({filters})
     }   
     catch(e){
         throw e
     }  
 }
 
-const getGeoBrgy = async({province,city}) =>{
+const getGeoBrgy = async({filters}) =>{
     try{
-        return await dataLayer.getGeoBrgy({province,city})
+        return await dataLayer.getGeoBrgy({filters})
     }
     catch(e){
         throw e
     }  
 }
-
 
 module.exports = {
     getGeography,

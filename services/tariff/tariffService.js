@@ -105,8 +105,9 @@ exports.getTariff = async({filters})=>{
 
 exports.getAllTariff = async({filters}) => {
     try{
+        // console.log(filters)
         return await dataLayer.getAllTariff({
-            ...filters
+            filters
         })
         .then(result => {
             return result.map(item => item.toJSON())
@@ -123,6 +124,41 @@ exports.updateTariff = async({filters,data})=>{
             filters,
             data
         })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+
+//Validations
+
+exports.isTariffExists = async({
+    tariff_ids
+})=>{
+    try{
+        // console.log(tariff_ids)
+        let isExist = false
+
+        let results = await dataLayer.getAllTariff({
+            filters:{
+                tariff_id:tariff_ids
+            }
+        }).then(result => {
+            const data = JSON.parse(JSON.stringify(result))
+
+            return data
+        })
+
+        if(results.length > 0){
+            isExist=true
+        }
+
+        return {
+            isExist,
+            results
+        }
+
     }
     catch(e){
         throw e

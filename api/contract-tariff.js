@@ -1,59 +1,32 @@
 const router = require('express').Router()
 const {tariff,aggregation,contract} = require('../services');
 
-// router.post('/tariff-type',async(req,res)=>{
-//     try{
-//         const {header,conditions} = req.body;
-//         const userId = req.session.userId;
-
-//         if(!header){
-//             res.status(400).json({
-//                 message:'Tariff Headers is required!'
-//             })
-//         }
-//         if(!conditions || conditions.length === 0){
-//             res.status(400).json({
-//                 message:'Conditions is required!'
-//             })
-//         }
-        
-//         const hasNull = await tariff.hasNull(header)
-//         if(hasNull.length > 0){
-//             res.status(400).json({
-//                 message:`${hasNull.map(x => x).join(',')} is/are required`
-//             })
-//         }
-        
-//         await tariff.createTariffType({
-//             header:{
-//                 ...header,
-
-//             },
-//             conditions
-//         })
-
-//         res.status(200).end()
-//     }   
-//     catch(e){
-//         console.log(e)
-//         res.status(500).json({
-//             message:`${e}`
-//         })
-//     }
-// })
-
 router.post('/tariff',async(req,res) => {
     try{
         const {data} = req.body;
 
-        await tariff.createTariff({
-            data:{
-                ...data,
-                // created_by:req.session.userId,
-                // modified_by:req.session.userId,
-                // approved_by:req.session.userId
-            } 
+        /*Validations*/
+        //1. Check if tariff exists
+        const {isExist,results} = await tariff.isTariffExists({
+            tariff_ids:[data.tariff_id]
         })
+
+        if(isExist){
+            return res.status(400).json({
+                message:'Tariff Exists!'
+            })
+        }
+
+        // console.log(results)
+
+        // await tariff.createTariff({
+        //     data:{
+        //         ...data,
+        //         // created_by:req.session.userId,
+        //         // modified_by:req.session.userId,
+        //         // approved_by:req.session.userId
+        //     } 
+        // })
         res.status(200).end()
     }
     catch(e){
@@ -126,9 +99,6 @@ router.post('/contract/:contract_id',async (req,res)=>{
                 // created_by:req.session.userId
             }
         })
-
-        // console.log(data)
-        // console.log(tariff)
 
         res.status(200).end()
     }
@@ -425,15 +395,6 @@ router.put('/contract/:contract_id/:tariff_id', async(req,res)=>{
         })
     }
 })
-
-// router.put('/tariff/:tariff_id/:contract_id',async(req,res)=>{
-//     try{
-//         const {tariff_id,contract_id} = req.params
-//     }
-//     catch(e){
-//         throw e
-//     }
-// })
 
 
 module.exports = router;

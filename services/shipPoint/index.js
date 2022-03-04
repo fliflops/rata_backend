@@ -37,3 +37,14 @@ exports.bulkCreateShipPoint = async({data}) => {
         throw e
     }
 }
+
+exports.getAllShipPoint = async({filters}) => {
+    try{
+        return await dataLayer.getAllShipPoint({
+            filters
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
