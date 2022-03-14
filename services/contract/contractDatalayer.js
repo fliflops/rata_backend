@@ -1,6 +1,7 @@
 const models = require('../../models');
 const moment = require('moment');
 const {sequelize,Sequelize} = models;
+const {viewFilters} = require('../../helper')
 
 const formatFilters = ({
     model,
@@ -157,6 +158,14 @@ const getPaginatedContractTariff = async({
     totalPage
     })=>{
         try{    
+
+            const filter = viewFilters.globalSearchFilter({
+                model:models.contract_tariff_dtl.rawAttributes,
+                filters
+            })
+
+            console.log(filter)
+
             return await models.contract_tariff_dtl.findAndCountAll({
                 include:[
                     {
@@ -181,8 +190,8 @@ const getPaginatedContractTariff = async({
                     }
                 ],
                 where:{
-
-                    ...filters
+                    ...filter
+                    // ...filters
                 },
                 offset:parseInt(page) * parseInt(totalPage),
                 limit:parseInt(totalPage)

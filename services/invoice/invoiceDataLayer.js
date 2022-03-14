@@ -1,6 +1,7 @@
 const models = require('../../models');
 const {sequelize,Sequelize} = models;
-const {useFormatFilters} = require('../../helper')
+const {useFormatFilters,viewFilters} = require('../../helper')
+
 
 const createInvoice = async({
     data,
@@ -140,8 +141,8 @@ const getAllInvoice = async({filters}) => {
             ],
             where:{
                 ...filters 
-            }
-            // logging:false
+            },
+            logging:false
         })
         .then(result => JSON.parse(JSON.stringify(result)))
         
@@ -204,7 +205,6 @@ const createRevenueLeak = async({
         throw e
     }
 }
-
 
 const getPaginatedRevenueLeak = async({
     filters,
@@ -312,9 +312,76 @@ const getAllRevenueLeak = async({filters}) => {
     }
 }
 
+const getPaginatedInvoices = async({
+    filters,
+    orderBy,
+    page,
+    totalPage
+})=>{
+    try{
+        const filter = viewFilters.globalSearchFilter({
+            model:models.invoices_cleared_hdr.rawAttributes,
+            filters
+        })
+
+        return await models.invoices_cleared_hdr.findAndCountAll({
+            //include:[
+                // {
+                //     model:models.invoices_dtl_tbl,
+                //     attributes:['trip_no','br_no','class_of_store','uom','planned_qty','planned_weight','planned_cbm','actual_qty','actual_weight','actual_cbm','return_qty'],
+                //     required:false,
+                //     as:"details"
+                // },
+                // {
+                //     model:models.contract_hdr_tbl,
+                //     attributes:["contract_id","contract_type"],
+                //     where:{
+                //         contract_status:'APPROVED',
+                //         contract_type:'SELL'
+                //     },
+                //     required:false,
+                //     as:"contract"
+                // },
+                // {
+                //     model:models.ship_point_tbl,
+                //     attributes:['stc_code','stc_description','stc_name','stc_address','country','region','province','city','barangay'],
+                //     required:false,
+                //     as:'ship_point_from'
+                // },
+                // {
+                //     model:models.ship_point_tbl,
+                //     attributes:['stc_code','stc_description','stc_name','stc_address','country','region','province','city','barangay'],
+                //     required:false,
+                //     as:'ship_point_to'
+                // },
+                // {
+                //     model:models.vendor_group_dtl_tbl,
+                //     attributes:['vg_code'],
+                //     required:false,
+                //     as:'vendor_group'
+                // }
+            //],
+            where:{
+                ...filter 
+            },
+            offset:parseInt(page) * parseInt(totalPage),
+            limit:parseInt(totalPage),
+            //order: [[orderBy,desc]]
+            order:[orderBy],
+            logging:false
+        })
+        .then(result => {
+           return {count,rows} = JSON.parse(JSON.stringify(result))
+        })
+
+    }
+    catch(e){
+        throw e
+    }
+}
 
 
-module.exports = {
+module.exports={
     createInvoice,
     createInvoiceDtl,
     createInvoiceTransaction,
@@ -324,5 +391,7 @@ module.exports = {
     updateRevenueLeak,
     createRevenueLeak,
     getPaginatedRevenueLeak,
-    getAllRevenueLeak
+    getAllRevenueLeak,
+    getPaginatedRevenueLeak,
+    getPaginatedInvoices
 }

@@ -220,6 +220,17 @@ db.principal_tbl.belongsTo(db.draft_bill_hdr_tbl,{
 	foreignKey:'principal_code'
 })
 
+//User Associations
+db.user_tbl.hasOne(db.role_tbl,{
+	foreignKey:'role_id',
+	sourceKey:'user_role_id',
+	as:'role'
+})
+
+db.role_tbl.belongsTo(db.user_tbl,{
+	foreignKey:'role_id'
+})
+
 module.exports = db;
 
 

@@ -57,7 +57,11 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING(50)},
         min_billable_value:{
             allowNull:false,
-            type: DataTypes.DECIMAL(18,9)},
+            type: DataTypes.DECIMAL(18,9)
+        },
+        max_billable_value:{
+            type: DataTypes.DECIMAL(18,9)
+        },
         min_billable_unit:{
             type: DataTypes.STRING(50)
         },

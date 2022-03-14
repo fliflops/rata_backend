@@ -1,7 +1,6 @@
 const dataLayer = require('./invoiceDataLayer');
 const revenueLeak = require('.')
 const _ = require('lodash');
-const { invoice } = require('..');
 
 exports.createInvoiceTransaction = async({
     invoices,
@@ -135,6 +134,25 @@ exports.getPaginatedRevenueLeak = async({
                 count
             }
         })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+exports.getPaginatedInvoice = async({
+    filters
+})=>{
+    try{
+        let {orderBy,page,totalPage,...newFilters} = filters;
+
+        return await dataLayer.getPaginatedInvoices({
+            filters:newFilters,
+            orderBy:orderBy.split(','),
+            page,
+            totalPage
+        })
+
     }
     catch(e){
         throw e

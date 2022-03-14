@@ -296,7 +296,8 @@ router.get('/:contract_id/tariff',async(req,res)=>{
         
         const {count,rows} = await contract.getPaginatedContractTariff({
             filters:{
-                contract_id
+                contract_id,
+                ...filters
             },
             page,
             totalPage

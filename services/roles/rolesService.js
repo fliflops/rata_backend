@@ -1,5 +1,6 @@
 const dataLayer = require('./rolesDataLayer');
 const _ = require('lodash');
+
 exports.createRole = async({data,userId}) => {
     try{
         let roleData = [];
@@ -94,6 +95,24 @@ exports.formatRoleModules = async({data})=>{
 
         return headers
 
+    }
+    catch(e){
+        throw e
+    }
+}
+
+exports.getPaginatedRoles = async({
+    filters,
+    page,
+    totalPage
+})=>{
+    try{
+
+        return await dataLayer.getPaginatedRole({
+            filters,
+            page,
+            totalPage
+        })
     }
     catch(e){
         throw e

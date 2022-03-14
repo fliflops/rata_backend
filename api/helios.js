@@ -4,6 +4,37 @@ const {draftBill, invoice} = require('../services');
 
 const _ = require('lodash');
 
+router.get('/invoices',async(req,res)=>{
+    try{
+        const {
+            page,
+            totalPage,
+            orderBy,
+            ...filters
+        } = req.query;
+
+        const {count,rows} = await invoice.getPaginatedInvoice({
+            filters:{
+                ...filters,
+                page,
+                totalPage,
+                orderBy
+            }
+        }) 
+
+        res.status(200).json({
+            data:rows,
+            rows:count
+        })
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({
+            message:`${e}`
+        })
+    }
+})
+
 router.post('/invoices',async(req,res) => {
     try{
         const {dateFrom,dateTo} = req.query;
@@ -56,53 +87,55 @@ router.post('/trips',async(req,res) => {
     }
 })
 
-router.get('/draft-bill',async(req,res) => {
-    try{
-        const {dateFrom,dateTo} = req.query;
-        let deliveryDate= '2021-09-28'
-        const bill = await draftBill.generateDraftBill({
-            //deliveryDate: '2021-11-16'
-            deliveryDate
-        })
+
+
+// router.get('/draft-bill',async(req,res) => {
+//     try{
+//         const {dateFrom,dateTo} = req.query;
+//         let deliveryDate= '2021-09-28'
+//         const bill = await draftBill.generateDraftBill({
+//             //deliveryDate: '2021-11-16'
+//             deliveryDate
+//         })
                
-        const createDraftBill = await draftBill.createDraftBill(bill.draftBill)
+//         const createDraftBill = await draftBill.createDraftBill(bill.draftBill)
         
-        const createRevenueLeak = await invoice.createRevenueLeak({
-            data:bill.revenueLeak
-        })
+//         const createRevenueLeak = await invoice.createRevenueLeak({
+//             data:bill.revenueLeak
+//         })
 
 
-        res.status(200).json(createDraftBill)
+//         res.status(200).json(createDraftBill)
 
-    }
-    catch(e){
-        console.log(e)
-        res.status(500).json({
-            message:`${e}`
-        })
-    }
-})
+//     }
+//     catch(e){
+//         console.log(e)
+//         res.status(500).json({
+//             message:`${e}`
+//         })
+//     }
+// })
 
-router.get('/draft-bill/buy',async(req,res)=>{
-    try {
-        const {rdd} = req.query;
-        //get invoices 
+// router.get('/draft-bill/buy',async(req,res)=>{
+//     try {
+//         const {rdd} = req.query;
+//         //get invoices 
 
-        const buy = await draftBill.generateDraftBillBuy({
-            rdd
-        })
+//         const buy = await draftBill.generateDraftBillBuy({
+//             rdd
+//         })
         
-        res.status(200).json({
-            buy
-        })
-    } 
-    catch (e) {
-        console.log(e)
-        res.status(500).json({
-            message:`${e}`
-        })
-    }
+//         res.status(200).json({
+//             buy
+//         })
+//     } 
+//     catch (e) {
+//         console.log(e)
+//         res.status(500).json({
+//             message:`${e}`
+//         })
+//     }
 
-})
+// })
 
 module.exports = router

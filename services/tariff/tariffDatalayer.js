@@ -1,34 +1,7 @@
 const models = require('../../models');
 const {sequelize,Sequelize} = models;
 const moment = require('moment');
-
-const formatFilters = ({
-    model,
-    filters
-}) => {
-    try{
-        let formattedFilters = filters;
-        const attributes = Object.keys(model)
-        Object.keys(filters).map(field => {
-            if(field==='search'){
-                let fields = {}
-                attributes.map(item => (fields[item] = filters.search))
-                formattedFilters={
-                    ...formattedFilters,
-                    [Sequelize.Op.or]:fields
-                }
-
-                delete formattedFilters["search"]
-            }
-        })
-
-        return formattedFilters
-
-    }
-    catch(e){
-        throw e
-    }
-}
+const {viewFilters} = require('../../helper');
 
 const createTariffTypeHeader = async({
     data,
@@ -208,9 +181,7 @@ const getPaginatedTariff = async({
     totalPage
 })=>{
     try{
-
-        console.log(filters)
-        let newFilter=formatFilters({
+        let newFilter=viewFilters.globalSearchFilter({
             model:models.tariff_sell_hdr_tbl.rawAttributes,
             filters:{
                 ...filters

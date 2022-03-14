@@ -1,5 +1,6 @@
 const models = require('../../models');
-const { sequelize } = models
+const { sequelize,Sequelize } = models;
+const {viewFilters} = require('../../helper')
 
 const createRoleHeader = async({data,options}) => {
     try{
@@ -98,12 +99,83 @@ const getRoleModule = async({
     }
 }
 
+// const formatFilters = ({
+//     model,
+//     filters
+// }) => {
+//     try{
+//         let formattedFilters = filters;
+//         const attributes = Object.keys(model)
+//         Object.keys(filters).map(field => {
+//             if(field==='search'){
+//                 let fields = []
 
+//                 for(const attribute of attributes){
+//                     fields.push({
+//                         [attribute]:{
+//                             [Sequelize.Op.like]:'%'+filters.search+'%'
+//                         }
+//                     })
+//                 }
+
+//                 formattedFilters={
+//                     ...formattedFilters,
+//                     [Sequelize.Op.or]:fields
+//                 }
+
+//                 delete formattedFilters["search"]
+//             }
+//         })
+
+//         return formattedFilters
+//     }
+//     catch(e){
+//         throw e
+//     }
+// }
+
+
+const getPaginatedRole = async({
+    filters,
+    page,
+    totalPage
+})=>{
+    try{
+
+        const filter = viewFilters.globalSearchFilter({
+            model:models.role_tbl.rawAttributes,
+            filters
+        })
+        
+        const {count,rows} = await models.role_tbl.findAndCountAll({
+            offset:parseInt(page) * parseInt(totalPage),
+            limit:parseInt(totalPage),
+            where:{
+                ...filter
+            }
+        })
+        .then(result => {
+            let {count,rows} = JSON.parse(JSON.stringify(result))
+            return {
+                count,
+                rows
+            }
+        })
+        
+        return {
+            count,rows
+        }
+    }
+    catch(e){
+        throw e
+    }
+}
 
 module.exports = {
     createRoleHeader,
     bulkCreateRoleModules,
     createModuleTransaction,
     getAllRoles,
-    getRoleModule
+    getRoleModule,
+    getPaginatedRole
 }

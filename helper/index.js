@@ -1,3 +1,4 @@
 module.exports = {
-    useFormatFilters:require('./useFormatFilters')
+    useFormatFilters:require('./useFormatFilters'),
+    viewFilters: require('./viewFilters')
 }

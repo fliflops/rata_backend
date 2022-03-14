@@ -32,6 +32,7 @@ const getAggCondition = async(aggId)=>{
         throw e
     }
 }
+
 const groupWithAgg = async(data) => {
     try{
         let grouped = []
@@ -189,6 +190,12 @@ const groupWithAgg = async(data) => {
                     break; 
                 }
             }
+
+            // console.log(aggCondition)
+            // if(){
+
+            // }
+
  
             grouped[item] = {
                 draft_bill_no:      null,
@@ -330,7 +337,7 @@ const groupWithoutAgg = async(data) => {
             break;
         }
 
-        console.log(invoice.tariff.max_value)
+        // console.log(invoice.tariff.max_value)
     
         ungrouped.push({
             draft_bill_no:      null,
@@ -370,11 +377,13 @@ const groupWithoutAgg = async(data) => {
     return ungrouped
 }
 
-const assignTariff = ({invoices,contracts}) => {
+const assignTariff = async ({invoices,contracts}) => {
     
     let data = [];  
     let withoutTariff = [];
-    for(let i in invoices){
+    // let withoutFormula = [];
+
+    for(let i in invoices){ 
         const invoice       = invoices[i];
         let tariff          = null;
         const tariffs       = contracts
@@ -460,418 +469,44 @@ const assignTariff = ({invoices,contracts}) => {
             })
         }
         else{
-            tariff = {
-                tariff_id:          tariffs[0].tariff_id,
-                tariff_type:        tariffs[0].tariff_type,
-                min_billable_unit:  tariffs[0].min_billable_unit,
-                min_value:          tariffs[0].min_value,
-                max_value:          tariffs[0].max_value,
-                tariff_rate:        tariffs[0].tariff_rate,
-                group_by:           tariffs[0].group_by,
-                parameter:          tariffs[0].parameter,
-                with_agg:           tariffs[0].with_agg,
-                fk_agg_id:          tariffs[0].fk_agg_id,
-                from_geo_type:      tariffs[0].from_geo_type,
-                to_geo_type:        tariffs[0].from_geo_type,
-                contract_type:      tariffs[0].contract_type
-            }
-    
-            data.push({
-                ...invoice,
-                group_id:tariff.group_by.split(',').map(item =>  invoice[item]).join('|'),
-                tariff
-            })
+            // console.log(tariffs[0])
+            // const agg = await getAggCondition(tariffs[0].fk_agg_id)
+            // console.log(agg)
+            // // if(!tariffs[0].formula){
+            // //     console.log(tariffs)
+            // //     withoutFormula.push({
+            // //         ...invoice,
+            // //         reason:'Tariff has no valid Formula'
+            // //     })
+            // // }
+            // // else{
+                tariff = {
+                    tariff_id:          tariffs[0].tariff_id,
+                    tariff_type:        tariffs[0].tariff_type,
+                    min_billable_unit:  tariffs[0].min_billable_unit,
+                    min_value:          tariffs[0].min_value,
+                    max_value:          tariffs[0].max_value,
+                    tariff_rate:        tariffs[0].tariff_rate,
+                    group_by:           tariffs[0].group_by,
+                    parameter:          tariffs[0].parameter,
+                    with_agg:           tariffs[0].with_agg,
+                    fk_agg_id:          tariffs[0].fk_agg_id,
+                    from_geo_type:      tariffs[0].from_geo_type,
+                    to_geo_type:        tariffs[0].from_geo_type,
+                    contract_type:      tariffs[0].contract_type
+                }
+
+                data.push({
+                    ...invoice,
+                    group_id:tariff.group_by.split(',').map(item =>  invoice[item]).join('|'),
+                    tariff
+                })
+            // }
+            
         }
     }
 
     return {data,withoutTariff}
-}
-
-
-const draftBillCount = async() => {
-    try {
-        const getCount = await dataLayer.rawGetDraftBillCount({
-            createdAt:moment().format("YYYY-MM-DD")
-        })
-        return getCount
-    } 
-    catch (error) {
-        throw error
-    }
-}
-
-const generateDraftBillNo = async({count}) => {
-    try {
-        return `${moment().format('MMDDYY')}-${String(count).padStart(5,"00000")}`    
-    } 
-    catch (error) {
-        throw error
-    }
-}
-
-/*#ROUTE Services */
-exports.createDraftBill = async(draftBills) => {
-    try{
-        let count = await draftBillCount();
-        //remove the invoices without computed total charges
-        let data = draftBills.filter(item => item.total_charges)
-        let invData = [];
-            
-        for(const i in data){
-            let {invoices,...draftBill} = data[i]
-            count = count+=1
-            let draftBillNo = await generateDraftBillNo({
-                count
-            })
-
-            data[i] = {
-                ...draftBill,
-                draft_bill_no:draftBillNo,
-                draft_bill_date:moment().format('YYYY-MM-DD'),
-                status:'DRAFT_BILL'
-            }
-
-            invData.push(...invoices.map(item => {
-                return {
-                    ...item,
-                    draft_bill_no:draftBillNo
-                }
-            }))
-        }
-
-        await dataLayer.createDraftBillTransaction({
-            header:data,
-            details:invData
-        })
-
-        return {data,invData}
-    }
-    catch(e){
-        throw e
-    }
-}
-
-exports.getPaginatedDraftBill = async({
-    filters,
-})=>{
-    try{
-        let {orderBy,page,totalPage,...newFilters} = filters
-        return await dataLayer.getPaginatedDraftBill({
-            orderBy:orderBy.split(','),
-            page,
-            totalPage,
-            filters:{
-                ...newFilters
-            }
-        })
-    }
-    catch(e){
-        throw e
-    }
-}
-
-exports.getAllInvoices = async({
-    filters 
-}) => {
-    try{
-        return await dataLayer.getAllInvoices({
-            filters
-        })
-    }
-    catch(e){
-        throw e
-    }
-
-}
-
-exports.getAllDraftBills = async({
-    filters
-})=>{
-    try{
-        return await dataLayer.getAllDraftBills({
-            filters
-        })
-    }
-    catch(e){
-        throw e
-    }
-}
-/*#ROUTE Services*/
-
-/*#BUY Process Starts Here*/
-exports.generateDraftBillBuy = async({rdd,location}) => {
-    try{
-
-        let revenueLeak = [];
-
-        //1. Get All invoices per delivery date
-        let {data,noVendorGroup} = await getBuyInvoice({
-            filters:{
-                rdd,
-                location,
-                is_processed_buy:false
-            }
-        })
-
-        // //2. Get contract details from the selected invoices
-        const contracts = await getBuyContracts({invoices:data.filter(item => item.vg_code)})
-        data = contracts.data
-
-        // //3. Assign Tariff to Invoice using the retrieved contracts
-        const dataWithTariff = await assignTariff({
-            invoices:data,
-            contracts:contracts.contracts
-        })
-
-        data=dataWithTariff.data
-
-        // //4. group the invoices with aggregation flag 
-        const withAgg = await groupWithAgg(data.filter(item => item.tariff.with_agg));
-
-        // //5. push to revenue leak
-        dataWithTariff.withoutTariff.map(item => {
-            revenueLeak.push({
-                invoice_no: item.invoice_no,
-                draft_bill_type:'BUY',
-                fk_invoice_id:item.fk_invoice_id,
-                reason:item.reason
-            })
-        })
-
-        noVendorGroup.map(item => {
-            revenueLeak.push({
-                invoice_no:     item.invoice_no,
-                draft_bill_type:'BUY',
-                fk_invoice_id:  item.id,
-                reason:         item.reason
-            })
-        })
-
-        // //5.1 remove the duplicates
-        revenueLeak = _.uniqBy(revenueLeak,'fk_invoice_id')
-
-        //6. Update Invoices
-        await invoiceService.updateInvoice({
-            data:{
-                is_processed_buy:true
-            },
-            filters:{
-                id:revenueLeak.map(item => item.fk_invoice_id).concat(_.uniqBy(data,'fk_invoice_id').map(item => item.fk_invoice_id))
-            }
-        })
-
-        return {
-            draftBill:withAgg,
-            revenueLeak:revenueLeak   
-        }
-    } 
-    catch (e) {
-        throw e
-    }
-}
-
-const getBuyInvoice =async({
-    filters
-}) => {
-    try {
-
-        const vendorGroups = await vendorService.getAllVendorGroupDtl({
-            filters:{
-                '$vendor_header.vg_status$':'ACTIVE',
-                '$vendor_header.location$':filters.location
-            }
-        })
-
-        let {noVendorGroup,data} = await invoiceService.getAllInvoice({
-            filters:{
-                ...filters
-            }
-        })
-        .then(async result => {
-            const data =  result.map(item => {
-                let {contract,vendor_group,...newItem} = item
-                const vg_code = _.find(vendorGroups,['vg_vendor_id',newItem.trucker_id])
-                //const contract_id = typeof contract?.contract_id !== 'undefined' ? contract.contract_id : null
-                //const vg_code = typeof vendor_group?.vg_code !== 'undefined' ? vendor_group.vg_code:null
-                
-                return {
-                    ...newItem,
-                    contract_id:null,
-                    vg_code:vg_code?.vg_code,
-                    fk_invoice_id:item.id
-                }
-            })
-         
-            //Get the datas with vendor group
-            const withVendorGroup = data.filter(item => item.vg_code && item.ship_point_to && item.ship_point_from)
-            
-            const withoutVendorGroup = data.filter(item => !withVendorGroup.map(item => item.id).includes(item.id)).map( i => {
-                let reason = null
-                if(!i.ship_point_to || !i.ship_point_from){
-                    reason = 'NO SHIP POINT INFORMATION'
-                }
-                else if(!i.vendor_group){
-                    reason = 'NO VENDOR GROUP'
-                }
-
-                return {
-                    ...i,
-                    reason
-                }
-            })
-            
-            return {
-                data:withVendorGroup,              
-                noVendorGroup:withoutVendorGroup//data.filter(item => )
-            }
-        })
-
-
-        return{
-            noVendorGroup,
-            data
-        }
-        
-    } 
-    catch (e) {
-        throw e
-    }
-}
-
-const getBuyContracts = async({
-    invoices
-}) =>{  
-    try{
-        const vendor_groups = _.uniq(invoices.map(item => item.vg_code))
-        const contracts = await contratService.getContractDetails({
-            filters:{
-                '$contract.vendor_group$':vendor_groups,
-                '$contract.contract_type$':'BUY',
-                '$contract.valid_from$':{
-                    [Op.lte]: moment().toDate()
-                },
-                '$contract.valid_to$':{
-                    [Op.gte]: moment().toDate()
-                },
-                // valid_from:{
-                //     [Op.lte]: moment().toDate()
-                // },
-                // valid_to:{
-                //     [Op.gte]: moment().toDate() 
-                // }
-
-            }
-        })
-        .then(result =>{
-            let contract_tariff = result.map(item => {
-                const {tariff,contract,...contractDtl} = item
-                
-                return {
-                    ...contractDtl,
-                    ...tariff,
-                    vendor_group:contract.vendor_group,
-                    contract_type:contract.contract_type
-                }
-            })
-            .filter(item => moment(moment().format('YYYY-MM-DD')).isBetween(item.valid_from,item.valid_to))
-           
-            return contract_tariff 
-        })
-
-        //assign contract id
-        const details = invoices.map(item => {
-            const contract = _.find(contracts,c =>{
-                return c.vendor_group === item.vg_code
-            })
-
-            return {
-                ...item,
-                contract_id: typeof contract?.contract_id === 'undefined' ? null : contract.contract_id
-            }
-        })
-
-        return {
-            contracts,
-            data:details
-        }
-    }
-    catch(e){
-        throw e
-    }
-
-}
-/*#BUY Process Ends Here*/
-
-/*#SELL Process Starts Here*/
-exports.generateDraftBill = async({
-    deliveryDate,
-    location
-}) => {
-    try{
-        let revenueLeak = [];
-        //1. Get All invoices per delivery date
-        let {data,noContracts} = await getAllInvoice({
-            filters:{
-                rdd:deliveryDate,
-                is_processed_sell:false,
-                location
-            }
-        })
-       
-        //2. Get contract from the selected invoices
-        const contracts = await getContracts(data);
-  
-        //3. Assign Tariff to Invoice using the retrieved contracts
-        const dataWithTariff = await assignTariff({
-            invoices:data,
-            contracts
-        });
-
-        data = dataWithTariff.data;        
-        //#4.1 group the invoices with aggregation flag 
-        const withAgg = await groupWithAgg(data.filter(item => item.tariff.with_agg));
-        //4.2 group the invoices without aggregation flag
-        const withOutAgg = await groupWithoutAgg(data.filter(item => !item.tariff.with_agg))
-        //5. push to revenue leak
-        dataWithTariff.withoutTariff.map(item => {
-            revenueLeak.push({
-                invoice_no: item.invoice_no.split('-')[0],
-                //principal_code: item.principal_code,
-                draft_bill_type: 'SELL',
-                fk_invoice_id: item.fk_invoice_id,
-                reason: item.reason,
-            })
-        })
-
-        noContracts.map(item => {
-            revenueLeak.push({
-                invoice_no:     item.invoice_no,
-                //principal_code: item.principal_code,
-                draft_bill_type:'SELL',
-                fk_invoice_id:  item.id,
-                reason:         item.reason
-            })
-        })
-
-        /*remove the duplicates*/
-        revenueLeak = _.uniqBy(revenueLeak,'fk_invoice_id')
-
-        /*#update invoices*/
-        await invoiceService.updateInvoice({
-            data:{
-                is_processed_sell:true
-            },
-            filters:{
-                id:revenueLeak.map(item => item.fk_invoice_id).concat(_.uniqBy(data,'fk_invoice_id').map(item => item.fk_invoice_id))
-            }
-        })
-
-        return {draftBill: withAgg.concat(withOutAgg),revenueLeak}  
-        //return {draftBill:data,revenueLeak:dataWithTariff.withoutTariff}  
-    }
-    catch(e){
-        throw e
-    }
 }
 
 const getAllInvoice = async ({
@@ -888,16 +523,13 @@ const getAllInvoice = async ({
                 let {contract,vendor_group,...newItem} = item
                 const contract_id = typeof contract?.contract_id !== 'undefined' ? contract.contract_id : null
                 const contract_type = typeof contract?.contract_type !== 'undefined' ? contract.contract_type : null
-                // const vg_code = typeof vendor_group?.vg_code !== 'undefined' ? vendor_group.vg_code:null
-     
+               
                 return {
                     ...newItem,
                     contract_id,
                     contract_type
                 }
             })
-
-            // console.log(data)
             
             //Get the datas with contracts
             const withContracts = data.filter(item => 
@@ -965,8 +597,6 @@ const getAllInvoice = async ({
             }
         } 
 
-        // console.log(noContracts)
-
         return {
             data:invoiceWithClassOfStore,
             noContracts
@@ -1015,168 +645,50 @@ const getContracts = async(data) => {
         throw e
     }
 }
-/*#SELL Process Ends Here*/
 
-exports.updateDraftBill = async({
-    data,
-    filters
+
+const noFormula = (data) =>{
+    try{
+        return data.filter(item => {
+            return !item.condition
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+
+exports.generateDraftBillSell = async({
+    location,
+    contract_type,
+    deliveryDate
 })=>{
     try{
-
-        return await dataLayer.updateDraftBill({
-            filters,
-            data
-        })
-
-    }
-    catch(e){
-        throw e
-    }
-}
-
-const getRevenueLeakInvoices = async({
-    rdd,
-    location,
-    contract_type
-}) =>{
-    try{
-        return await invoiceService.getAllRevenueLeak({
-            filters:{
-                '$invoice.location$':location,
-                '$invoice.rdd$':rdd,
-                '$invoice.is_billable$':true,
-                draft_bill_type:contract_type,
-                is_draft_bill:false
-            }
-        })
-        .then(result => JSON.parse(JSON.stringify(result)))
-    }
-    catch(e){
-        throw e
-    }
-}
-
-//#Revenue Leak Sell
-const getInvoicesRevLeakSell = async({
-    rdd,
-    location,
-}) => {
-    try{
-        const {data,no_contracts} = await getRevenueLeakInvoices({
-            rdd,
-            location,
-            contract_type:'SELL'
-        })
-        .then(result => {
-            // console.log(result.length)
-            const data = result.map(item => {
-                let {contract,...newItem} = item;
-                const contract_id = typeof contract?.contract_id !== 'undefined' ? contract.contract_id : null
-                const contract_type = typeof contract?.contract_type !== 'undefined' ? contract.contract_type : null
-                
-                return {
-                    ...newItem,
-                    contract_id,
-                    contract_type
-                }
-            })
-
-            const with_contracts = data.filter(item => 
-                item.contract_id   && 
-                item.ship_point_to && 
-                item.ship_point_from 
-            )
-
-            const without_contracts = data.filter(item => !with_contracts.map(item => item.id).includes(item.id)).map( i => {
-                let reason = null
-                if(!i.ship_point_to || !i.ship_point_from){
-                    reason = 'NO SHIP POINT INFORMATION'
-                }
-                if(i.contract_id === null){
-                    reason = 'NO CONTRACT'
-                }
-                if(!i.is_billable){
-                    reason = 'NOT BILLABLE'
-                }
-
-                return {
-                    ...i,
-                    reason
-                }
-            })
-            
-            return {
-                data:with_contracts,
-                no_contracts:without_contracts
-            }
-        })
-
-        //Assign Class of Store into the header
-        let invoiceWithClassOfStore = []       
-        for(const i in data) {
-            const invoice =  data[i];
-            const class_of_store = _.uniq(invoice.details.map(item => item.class_of_store))
-            if(class_of_store.length > 1){
-                for(let i in class_of_store){
-                    let item = class_of_store[i]
-
-                    //Replace the item details per class of store
-                    const itemDetails = invoice.details.filter(i => i.class_of_store === item)
-                    invoiceWithClassOfStore.push({
-                        ...invoice,
-                        invoice_no:`${invoice.invoice_no}-${parseInt(i)+1}`,
-                        class_of_store:item,
-                        details:itemDetails
-                    })
-                }
-            }
-            else{
-                 //Replace the item details per class of store
-                const itemDetails = invoice.details.filter(i => i.class_of_store === class_of_store[0])
-                invoiceWithClassOfStore.push({
-                    ...invoice,
-                    class_of_store:class_of_store[0],
-                    //fk_invoice_id:invoice.id,
-                    details:itemDetails
-                })
-            }
-        }
-
-        return {
-            data:invoiceWithClassOfStore,
-            no_contracts
-        }
-    }
-    catch(e){
-        throw e
-    }
-
-}
-
-exports.replanSell = async({
-    deliveryDate,
-    location
-})=>{
-    try{
+        
         let revenueLeak = [];
-
-        //1. Get Revenue Leak Invoices
-        let {data,no_contracts} = await getInvoicesRevLeakSell({
-            location,
-            rdd:deliveryDate
+        let raw_data=[];
+        //1. Get All invoices per delivery date
+        let {data,noContracts} = await getAllInvoice({
+            filters:{
+                rdd:deliveryDate,
+                // is_processed_sell:false,
+                location
+            }
         })
 
-        //2. Get Tariffs Per Contract
-        const contracts = await getContracts(data)
-        //3. Assign Tariff
-        const dataWithTariff = await assignTariff({
-            invoices:data,
-            contracts
-        })
+         //2. Get contract from the selected invoices
+         const contracts = await getContracts(data);
+  
+         //3. Assign Tariff to Invoice using the retrieved contracts
+         const dataWithTariff = await assignTariff({
+             invoices:data,
+             contracts
+         });
 
-        // console.log(contracts)
-
-        data = dataWithTariff.data
+        data = dataWithTariff.data;   
+        
+        raw_data = raw_data.concat(dataWithTariff.data)    
         //#4.1 group the invoices with aggregation flag 
         const withAgg = await groupWithAgg(data.filter(item => item.tariff.with_agg));
         //4.2 group the invoices without aggregation flag
@@ -1184,144 +696,58 @@ exports.replanSell = async({
         
         //5. push to revenue leak
         dataWithTariff.withoutTariff.map(item => {
+            // console.log(item)
             revenueLeak.push({
                 invoice_no: item.invoice_no.split('-')[0],
+                principal_code: item.principal_code,
+                stc_from: item.ship_point_from,
+                stc_to:item.ship_point_to,
                 draft_bill_type: 'SELL',
                 fk_invoice_id: item.fk_invoice_id,
                 reason: item.reason,
             })
         })
 
-        no_contracts.map(item => {
-            revenueLeak.push({
-                invoice_no:     item.invoice_no,
-                draft_bill_type:'SELL',
-                fk_invoice_id:  item.fk_invoice_id,
-                reason:         item.reason
-            })
-        })
-
-        //remove the duplicates
-        revenueLeak = _.uniqBy(revenueLeak,'fk_invoice_id')
-
-        return {
-            //draftBill:data,
-            draftBill:withAgg.concat(withOutAgg),
-            revenueLeak
-        }        
-    }
-    catch(e){
-        throw e
-    }
-}
-//#Revenue Leak Sell Ends
-
-//#Revenue Leak Buy
-const getInvoicesRevLeakBuy = async({
-    rdd,
-    location
-}) => {
-    try{
-        const vendorGroups = await vendorService.getAllVendorGroupDtl({
-            filters:{
-                '$vendor_header.vg_status$':'ACTIVE',
-                '$vendor_header.location$':location
-            }
-        })
-
-        const {data, no_vendor_group} = await getRevenueLeakInvoices({
-            rdd,
-            location,
-            contract_type:'BUY'
-        })
-        .then(result => {
-            const data =  result.map(item => {
-                let {contract,vendor_group,...newItem} = item
-                const vg_code = _.find(vendorGroups,['vg_vendor_id',newItem.trucker_id])
-               
-                return {
-                    ...newItem,
-                    contract_id:    null,
-                    vg_code:        vg_code?.vg_code,
-                }
-            })
-
-            //Get the datas with vendor group
-            const withVendorGroup = data.filter(item => item.vg_code && item.ship_point_to && item.ship_point_from)
-            const withoutVendorGroup = data.filter(item => !withVendorGroup.map(item => item.fk_invoice_id).includes(item.fk_invoice_id)).map( i => {
-                let reason = null
-                if(!i.ship_point_to || !i.ship_point_from){
-                    reason = 'NO SHIP POINT INFORMATION'
-                }
-                else if(!i.vendor_group){
-                    reason = 'NO VENDOR GROUP'
-                }
-
-                return {
-                    ...i,
-                    reason
-                }
-            })
-
-            return {
-                data:           withVendorGroup,
-                no_vendor_group:withoutVendorGroup
-            }
-        })
-
-        return {
-            data, 
-            no_vendor_group
-        }
-    }
-    catch(e){
-        throw e
-    }
-}
-
-exports.replanBuy = async({
-    deliveryDate,
-    location
-})=>{
-    try{
         
-        let revenueLeak = [];
-        let {data,no_vendor_group} = await getInvoicesRevLeakBuy({
-            rdd:deliveryDate,
-            location
-        })
 
-        const contracts = await getBuyContracts({invoices:data.filter(item => item.vg_code)})
-        data = contracts.data
-     
-        const dataWithTariff = await assignTariff({
-            invoices:data,
-            contracts:contracts.contracts
-        })
+        // dataWithTariff.withoutFormula.map(item => {
+        //     //console.log(item)
+        //     revenueLeak.push({
+        //         invoice_no: item.invoice_no.split('-')[0],
+        //         principal_code: item.principal_code,
+        //         stc_from: item.ship_point_from,
+        //         stc_to:item.ship_point_to,
+        //         draft_bill_type: 'SELL',
+        //         fk_invoice_id: item.fk_invoice_id,
+        //         reason: item.reason,
+        //     })
+        // })
 
-        data=dataWithTariff.data
-        // //4. group the invoices with aggregation flag 
-        const withAgg = await groupWithAgg(data.filter(item => item.tariff.with_agg));
-
-        no_vendor_group.map(item => {
+        noContracts.map(item => {
             revenueLeak.push({
                 invoice_no:     item.invoice_no,
-                draft_bill_type:'BUY',
-                fk_invoice_id:  item.fk_invoice_id,
+                principal_code: item.principal_code,
+                draft_bill_type:'SELL',
+                fk_invoice_id:  item.id,
                 reason:         item.reason
             })
         })
 
+        
+
+        //no formulas
+        // const noFormulas = noFormula(withAgg.concat(withOutAgg))
+
+
+
+
+        /*remove the duplicates*/
         revenueLeak = _.uniqBy(revenueLeak,'fk_invoice_id')
 
-        return{
-            draftBill:withAgg,
-            revenueLeak
-        }
-
-    }
+        //return {draftBill: dataWithTariff}
+        return {draftBill: withAgg.concat(withOutAgg),revenueLeak,raw_data}  
+    }   
     catch(e){
         throw e
     }
 }
-

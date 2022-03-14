@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const {draftBill,invoice, helios,ascii} = require('../services')
+const test = require('../services/draftBill/draftBillTest');
 const {bookings} = helios
 
 router.get('/',async(req,res)=>{
@@ -77,6 +78,38 @@ router.get('/leakage',async(req,res)=>{
             data:rows,
             rows:count
         })
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({message:`${e}`})    
+    }
+})
+
+router.post('/:contract_type/test/invoice',async(req,res)=>{
+    try{
+        const {contract_type} = req.params;
+        const {location,rdd} = req.query
+        let draftBills;
+
+        if(contract_type==='SELL'){
+            draftBills = await test.generateDraftBillSell({
+                deliveryDate:rdd,
+                location
+            })
+        }   
+        else if(contract_type==='BUY'){
+            // draftBills = await draftBill.generateDraftBillBuy({
+            //     rdd,
+            //     location
+            // })
+        }
+
+        res.status(200).json({
+            data:draftBills.draftBill,
+            raw: draftBills?.raw_data,
+            revenue_leak:draftBills.revenueLeak
+        })
+
     }
     catch(e){
         console.log(e)

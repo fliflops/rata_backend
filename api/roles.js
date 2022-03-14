@@ -2,6 +2,28 @@ const router = require('express').Router();
 const {roles} = require('../services');
 
 
+router.get('/',async(req,res)=>{
+    try{
+        const {page,totalPage,...filters} = req.query
+        const {count,rows} = await roles.getPaginatedRoles({
+            filters,
+            page,
+            totalPage
+        })
+
+        res.status(200).json({
+            data:rows,
+            rows:count
+        })
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({
+            message:`${e}`
+        });
+    }
+})
+
 router.post('/',async(req,res)=>{
     try{
         const {data} = req.body;
@@ -14,7 +36,10 @@ router.post('/',async(req,res)=>{
         res.status(200).end()
     }
     catch(e){
-        throw e
+        console.log(e)
+        res.status(500).json({
+            message:`${e}`
+        });
     }
 })
 

@@ -30,6 +30,9 @@ module.exports = (sequelize, DataTypes) => {
         min_value:{
             type:DataTypes.DECIMAL(18,9)
         },
+        max_value:{
+            type:DataTypes.DECIMAL(18,9)
+        },
         sub_service_type:{
             type:DataTypes.STRING(50)
         },
