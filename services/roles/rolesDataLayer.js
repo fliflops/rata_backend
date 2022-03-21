@@ -67,14 +67,12 @@ const getAllRoles = async({
     filters
 }) => {
     try{
-
         return await models.role_tbl.findAll({
             where:{
                 ...filters
             }
         })
         .then(res => JSON.parse(JSON.stringify(res)))
-
     }
     catch(e){
         throw e
@@ -92,7 +90,6 @@ const getRoleModule = async({
             }
         })
         .then(res => JSON.parse(JSON.stringify(res)))
-
     }
     catch(e){
         throw e
@@ -171,11 +168,48 @@ const getPaginatedRole = async({
     }
 }
 
+const updateRole = async({data,filters,options}) => {
+    try{
+
+        return await models.role_tbl.update({
+            ...data
+        },{
+            where:{
+                ...filters
+            },
+            ...options
+        })
+
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const updateRoleModule = async({data,filters,options})=>{
+    try{
+        return await models.role_modules_tbl.update({
+            ...data
+        },
+        {
+            where:{
+                ...filters
+            },
+            ...options
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
 module.exports = {
     createRoleHeader,
     bulkCreateRoleModules,
     createModuleTransaction,
     getAllRoles,
     getRoleModule,
-    getPaginatedRole
+    getPaginatedRole,
+    updateRole,
+    updateRoleModule
 }

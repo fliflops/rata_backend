@@ -469,17 +469,6 @@ const assignTariff = async ({invoices,contracts}) => {
             })
         }
         else{
-            // console.log(tariffs[0])
-            // const agg = await getAggCondition(tariffs[0].fk_agg_id)
-            // console.log(agg)
-            // // if(!tariffs[0].formula){
-            // //     console.log(tariffs)
-            // //     withoutFormula.push({
-            // //         ...invoice,
-            // //         reason:'Tariff has no valid Formula'
-            // //     })
-            // // }
-            // // else{
                 tariff = {
                     tariff_id:          tariffs[0].tariff_id,
                     tariff_type:        tariffs[0].tariff_type,
@@ -501,8 +490,6 @@ const assignTariff = async ({invoices,contracts}) => {
                     group_id:tariff.group_by.split(',').map(item =>  invoice[item]).join('|'),
                     tariff
                 })
-            // }
-            
         }
     }
 

@@ -1,5 +1,6 @@
 const dataLayer = require('./rolesDataLayer');
 const _ = require('lodash');
+const {sequelize} = require('../../models')
 
 exports.createRole = async({data,userId}) => {
     try{
@@ -43,7 +44,7 @@ exports.createRole = async({data,userId}) => {
 exports.getAllRoles = async({filters})=> {
     try{
         return await dataLayer.getAllRoles({
-            ...filters
+            filters
         })
     }
     catch(e){
@@ -69,10 +70,9 @@ exports.formatRoleModules = async({data})=>{
                 name:item.module_name,
                 label:item.module_label,
                 route:item.route,
-                has_access:true
+                has_access:item.has_access
             }
         }),'name')
-
 
         for(const index in headers){
             const header = headers[index]
@@ -107,12 +107,73 @@ exports.getPaginatedRoles = async({
     totalPage
 })=>{
     try{
-
         return await dataLayer.getPaginatedRole({
             filters,
             page,
             totalPage
         })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+exports.updateRoleTransaction = async({
+    roles,
+    modules
+})=>{
+    try{
+        const {role_id,...role} = roles;
+        let roleData = [];
+
+        for(let i in modules){
+            let module = modules[i]
+            let sub_modules = module.sub_modules
+        
+            roleData = roleData.concat(sub_modules.map(i => {
+                return {
+                    module_name:    module.name,
+                    module_label:   module.label,
+                    route:          module.route,
+                    sub_module_name: i.name,
+                    sub_module_label:i.label,
+                    sub_module_route: i.route,
+                    has_access: i.has_access ? 1 : 0
+                }
+            }))
+        }
+
+        //console.log(roleData)
+        console.log(modules)
+        return await sequelize.transaction(async t => {
+            await dataLayer.updateRole({
+                data:role,
+                filters:{
+                    role_id
+                },
+                options:{
+                    transaction:t
+                }
+            })
+
+            for(const module of roleData){
+                await dataLayer.updateRoleModule({
+                    data:{
+                        has_access:module.has_access
+                    },
+                    filters:{
+                        sub_module_route:module.sub_module_route,
+                        role_id:role_id
+                    },
+                    options:{
+                        transaction:t
+                    }
+                })
+            }
+
+        })
+
+
     }
     catch(e){
         throw e
