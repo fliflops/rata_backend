@@ -1,5 +1,5 @@
 const dataLayer = require('./invoiceDataLayer');
-const revenueLeak = require('.')
+const draftBill = require('../draftBill');
 const _ = require('lodash');
 
 exports.createInvoiceTransaction = async({
@@ -62,12 +62,12 @@ exports.getAllInvoice = async({filters}) => {
     }
 }
 
-exports.updateInvoice = async({filters,data}) => {
+exports.updateInvoice = async({filters,data,options}) => {
     try{
         return await dataLayer.updateInvoice({
             data,
             filters,
-            options:{}
+            options
         })
     }
     catch(e){
@@ -75,11 +75,12 @@ exports.updateInvoice = async({filters,data}) => {
     }
 }
 
-exports.createRevenueLeak = async({data}) => {
+exports.createRevenueLeak = async({data,options}) => {
     try{
         return await dataLayer.createRevenueLeak({
             data,
             options:{
+                ...options,
                 updateOnDuplicate:['updatedAt','updated_by','reason','is_draft_bill']
             }
         })
@@ -101,7 +102,6 @@ exports.updateRevenueLeak = async({filters,data,options})=>{
         throw e
     }
 }
-
 
 exports.getPaginatedRevenueLeak = async({
     filters

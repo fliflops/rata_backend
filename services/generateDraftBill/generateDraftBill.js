@@ -1,12 +1,13 @@
-const _ = require('lodash');
-const dataLayer = require('./draftBillDatalayer');
-const invoiceService = require('../invoice/invoiceService');
-const contratService = require('../contract/contractService');
-const tariffService = require('../tariff/tariffService');
-const vendorService = require('../vendor/vendorService');
-const aggService = require('../aggregation/aggregation');
+const _ = require('lodash')
 const moment = require('moment');
-const {Op} = require('sequelize')
+const {Op} = require('sequelize');
+
+const draftBillService = require('../draftBill')
+const invoiceService = require('../invoice')
+const contractService = require('../contract')
+const aggService = require('../aggregation')
+const vendorService = require('../vendor')
+const dataLayer = require('./generateDraftBillDatalayer');
 
 const sumByQty = ({data,uom,field}) => {
     return parseFloat(_.sumBy(data.filter(item => item.uom === uom),item =>parseFloat(item[field]))).toFixed(2)
@@ -31,6 +32,297 @@ const getAggCondition = async(aggId)=>{
     catch(e){
         throw e
     }
+}
+
+const getAllInvoice = async ({filters}) => {
+    try{
+        let invoiceWithClassOfStore = []
+        const invoices = await invoiceService.getAllInvoice({
+            filters:{
+                ...filters
+            }
+        })
+        .then(async result => {
+            return result.map(item => {
+                let {contract,vendor_group,...newItem} = item
+                const contract_id = typeof contract?.contract_id !== 'undefined' ? contract.contract_id : null
+                const contract_type = typeof contract?.contract_type !== 'undefined' ? contract.contract_type : null
+               
+                return {
+                    ...newItem,
+                    contract_id,
+                    contract_type
+                }
+            })            
+        })
+
+        for(const i in invoices) {
+            const invoice =  invoices[i];
+            const class_of_store = _.uniq(invoice.details.map(item => item.class_of_store))
+            if(class_of_store.length > 1){
+                for(let i in class_of_store){
+                    let item = class_of_store[i]
+
+                    //Replace the item details per class of store
+                    const itemDetails = invoice.details.filter(i => i.class_of_store === item)
+                    invoiceWithClassOfStore.push({
+                        ...invoice,
+                        invoice_no:`${invoice.invoice_no}-${parseInt(i)+1}`,
+                        fk_invoice_id:invoice.id,
+                        class_of_store:item,
+                        details:itemDetails
+                    })
+                }
+            }
+            else{
+                 //Replace the item details per class of store
+                const itemDetails = invoice.details.filter(i => i.class_of_store === class_of_store[0])
+                invoiceWithClassOfStore.push({
+                    ...invoice,
+                    class_of_store:class_of_store[0],
+                    fk_invoice_id:invoice.id,
+                    details:itemDetails
+                })
+            }
+        } 
+        
+        // filter invoices with contracts,ship point, and billable
+        return invoiceWithClassOfStore.filter(item => 
+            item.contract_id   && 
+            item.ship_point_to && 
+            item.ship_point_from &&
+            item.is_billable)
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const getBuyInvoice = async({filters}) => {
+    try{
+
+        const vendorGroups = await vendorService.getAllVendorGroupDtl({
+            filters:{
+                '$vendor_header.vg_status$':'ACTIVE',
+                '$vendor_header.location$':filters.location
+            }
+        })
+
+        let data = await invoiceService.getAllInvoice({
+            filters:{...filters}
+        })
+        .then(async result => {
+
+            return result.map(item => {
+                let {contract,vendor_group,...newItem} = item
+                const vg_code = _.find(vendorGroups,['vg_vendor_id',newItem.trucker_id])
+            
+                return {
+                    ...newItem,
+                    contract_id:null,
+                    vg_code:vg_code?.vg_code,
+                    fk_invoice_id:item.id
+                }
+            })
+            
+        })
+
+        return data.filter(item => item.vg_code && item.ship_point_to && item.ship_point_from )
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const getRevenueLeakInvoice = ({filters})=>{
+    try{
+
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const getContracts = async({
+    contract_type,
+    data
+}) => {
+    try{
+
+        let filters = {}
+
+        if(String(contract_type).toUpperCase() === 'SELL'){
+            const contractID= _.uniq(data.map(item => item.contract_id).filter(item => item !== null))
+            filters={
+                contract_id:contractID
+            }
+        }
+        else if(String(contract_type).toUpperCase() === 'BUY'){
+            const vendor_groups = _.uniq(data.map(item => item.vg_code))
+            filters={
+                '$contract.vendor_group$':vendor_groups
+            }
+        }
+
+        let details = await contractService.getContractDetails({
+            filters:{
+                // contract_id:contractID,
+                ...filters,
+                '$contract.contract_type$':contract_type,
+                '$contract.valid_from$':{
+                    [Op.lte]: moment().toDate()
+                },
+                '$contract.valid_to$':{
+                    [Op.gte]: moment().toDate()
+                }
+            }
+        })
+        .then(result => {
+            let contract_tariff = result.map(item => {
+                const {tariff,contract,...contractDtl} = item
+
+                return {
+                    ...contractDtl,
+                    ...contract,
+                    ...tariff
+                }
+            })
+            .filter(item => moment(moment().format('YYYY-MM-DD')).isBetween(item.valid_from,item.valid_to))
+            
+            return contract_tariff
+        })
+
+        // console.log(details)
+        return details
+    }
+    catch(e){
+        throw e
+    }
+}
+
+/**Used for Generating BUY Draft Bill */
+const assignContract = async({data,contracts}) => {
+    try {   
+        
+        const details = data.map(item => {
+            const contract = _.find(contracts, c => {
+                return c.vendor_group === item.vg_code
+            })
+
+            return {
+                ...item,
+                contract_id: contract?.contract_id || null
+            }
+        })
+
+        return details
+
+        
+    } catch (e) {
+        throw e
+    }
+}
+
+const assignTariff = async ({invoices,contracts}) => {
+    
+    let data = [];  
+   
+    for(let i in invoices){ 
+        const invoice       = invoices[i];
+        let tariff          = null;
+        const tariffs       = contracts
+        .filter(contract    => contract.contract_id === invoice.contract_id)
+        .filter(contract    => {
+            const {
+                tariff_id,
+                service_type,
+                from_geo_type,
+                from_geo,
+                to_geo_type,
+                to_geo,
+                location,
+                vehicle_type,    
+                class_of_store,
+                sub_service_type,
+                contract_type
+            } = contract
+
+            const inv_stc_from              = invoice?.ship_point_from[String(from_geo_type).toLowerCase()] || null
+            const inv_stc_to                = invoice?.ship_point_to[String(to_geo_type).toLowerCase()] || null
+            const invoice_sub_service_type  = String(invoice.sub_service_type).toLowerCase()
+            
+            if(String(location).toLowerCase()              === String(invoice.location).toLowerCase()      &&
+                (String(inv_stc_from).toLowerCase()         === String(from_geo).toLowerCase()              &&
+                String(inv_stc_to).toLowerCase()            === String(to_geo).toLowerCase())               &&
+                service_type                                === invoice.service_type                        &&
+                (invoice_sub_service_type===null?true:(invoice_sub_service_type === String(sub_service_type).toLowerCase())) )
+                {
+               
+                //if tariff has vehicle type maintained
+                if(vehicle_type){
+              
+                    //if tariff is equal to invoice vehicle type
+                    if(vehicle_type === invoice.vehicle_type){
+
+                        //if tariff class off store is null 
+                        if(!class_of_store){
+                            return true
+                        }
+                        else{
+                            //if class of store is not null
+                            //check if the invoice class of store is equal to the tariff
+                            if(String(class_of_store).toLowerCase() === String(invoice.class_of_store).toLowerCase()){
+                                return true
+                            }
+
+                            return false
+                        }
+                    } 
+                    return false 
+                }
+                else{
+                    //check if the invoice class of store is equal to the tariff
+                    if(String(class_of_store).toLowerCase() === String(invoice.class_of_store).toLowerCase()){
+                       
+                        return true
+                    }
+                    return false
+                }  
+            }
+
+            //return false if the primary conditions are not meant
+            return false
+        });
+
+        if(tariffs.length === 1){
+            tariff={
+                tariff_id:          tariffs[0].tariff_id,
+                tariff_type:        tariffs[0].tariff_type,
+                min_billable_unit:  tariffs[0].min_billable_unit,
+                min_value:          tariffs[0].min_value,
+                max_value:          tariffs[0].max_value,
+                tariff_rate:        tariffs[0].tariff_rate,
+                group_by:           tariffs[0].group_by,
+                parameter:          tariffs[0].parameter,
+                with_agg:           tariffs[0].with_agg,
+                fk_agg_id:          tariffs[0].fk_agg_id,
+                from_geo_type:      tariffs[0].from_geo_type,
+                to_geo_type:        tariffs[0].from_geo_type,
+                contract_type:      tariffs[0].contract_type
+            }
+            
+            // console.log(tariff)
+            
+            data.push({
+                ...invoice,
+                group_id: tariff.group_by === 'string' ?  tariff.group_by.split(',').map(item =>  invoice[item]).join('|') : null,
+                tariff
+            })
+
+        }
+    }
+
+    return data
 }
 
 const groupWithAgg = async(data) => {
@@ -331,8 +623,6 @@ const groupWithoutAgg = async(data) => {
 
             break;
         }
-
-        // console.log(invoice.tariff.max_value)
     
         ungrouped.push({
             draft_bill_no:      null,
@@ -369,420 +659,120 @@ const groupWithoutAgg = async(data) => {
         
     }
 
-    return ungrouped
+    return ungrouped.filter(item => item.total_charges)
 }
 
-const assignTariff = async ({invoices,contracts}) => {
-    
-    let data = [];  
-    let withoutTariff = [];
-    // let withoutFormula = [];
-
-    for(let i in invoices){ 
-        const invoice       = invoices[i];
-        let tariff          = null;
-        const tariffs       = contracts
-        .filter(contract    => contract.contract_id === invoice.contract_id)
-        .filter(contract    => {
-            const {
-                tariff_id,
-                service_type,
-                from_geo_type,
-                from_geo,
-                to_geo_type,
-                to_geo,
-                location,
-                vehicle_type,    
-                class_of_store,
-                sub_service_type,
-                contract_type
-            } = contract
-
-            const inv_stc_from              = invoice.ship_point_from[String(from_geo_type).toLowerCase()]
-            const inv_stc_to                = invoice.ship_point_to[String(to_geo_type).toLowerCase()]
-            const invoice_sub_service_type  = String(invoice.sub_service_type).toLowerCase()
-            
-            if(String(location).toLowerCase()              === String(invoice.location).toLowerCase()      &&
-                (String(inv_stc_from).toLowerCase()         === String(from_geo).toLowerCase()              &&
-                String(inv_stc_to).toLowerCase()            === String(to_geo).toLowerCase())               &&
-                service_type                                === invoice.service_type                        &&
-                (invoice_sub_service_type===null?true:(invoice_sub_service_type === String(sub_service_type).toLowerCase())) )
-                {
-               
-                //if tariff has vehicle type maintained
-                if(vehicle_type){
-              
-                    //if tariff is equal to invoice vehicle type
-                    if(vehicle_type === invoice.vehicle_type){
-
-                        //if tariff class off store is null 
-                        if(!class_of_store){
-                            return true
-                        }
-                        else{
-                            //if class of store is not null
-                            //check if the invoice class of store is equal to the tariff
-                            if(String(class_of_store).toLowerCase() === String(invoice.class_of_store).toLowerCase()){
-                                return true
-                            }
-
-                            return false
-                        }
-                    } 
-                    return false 
-                }
-                else{
-                    //check if the invoice class of store is equal to the tariff
-                    if(String(class_of_store).toLowerCase() === String(invoice.class_of_store).toLowerCase()){
-                       
-                        return true
-                    }
-                    return false
-                }  
-            }
-
-            //return false if the primary conditions are not meant
-            return false
-        });
-
-        // if(tariffs.length === 1){
-        //     tariff={
-        //         tariff_id:          tariffs[0].tariff_id,
-        //         tariff_type:        tariffs[0].tariff_type,
-        //         min_billable_unit:  tariffs[0].min_billable_unit,
-        //         min_value:          tariffs[0].min_value,
-        //         max_value:          tariffs[0].max_value,
-        //         tariff_rate:        tariffs[0].tariff_rate,
-        //         group_by:           tariffs[0].group_by,
-        //         parameter:          tariffs[0].parameter,
-        //         with_agg:           tariffs[0].with_agg,
-        //         fk_agg_id:          tariffs[0].fk_agg_id,
-        //         from_geo_type:      tariffs[0].from_geo_type,
-        //         to_geo_type:        tariffs[0].from_geo_type,
-        //         contract_type:      tariffs[0].contract_type
-        //     }
-
-        //     data.push({
-        //         ...invoice,
-        //         group_id:tariff.group_by.split(',').map(item =>  invoice[item]).join('|'),
-        //         tariff
-        //     })
-
-        // }
-
-        // Check if the system finds more than 1 tariff
-        if(tariffs.length > 1 || tariffs.length === 0){
-            let reason = null
-            //proceed to next invoice
-            //assign the invoice to revenue leak
-            if(tariffs.length > 1){
-                reason='DUPLICATE TARIFF'
-            }
-            else if(tariffs.length === 0){
-                reason='NO TARIFF'
-            }
-            withoutTariff.push({
-                ...invoice,
-                reason
-            })
-        }
-        else{
-                tariff = {
-                    tariff_id:          tariffs[0].tariff_id,
-                    tariff_type:        tariffs[0].tariff_type,
-                    min_billable_unit:  tariffs[0].min_billable_unit,
-                    min_value:          tariffs[0].min_value,
-                    max_value:          tariffs[0].max_value,
-                    tariff_rate:        tariffs[0].tariff_rate,
-                    group_by:           tariffs[0].group_by,
-                    parameter:          tariffs[0].parameter,
-                    with_agg:           tariffs[0].with_agg,
-                    fk_agg_id:          tariffs[0].fk_agg_id,
-                    from_geo_type:      tariffs[0].from_geo_type,
-                    to_geo_type:        tariffs[0].from_geo_type,
-                    contract_type:      tariffs[0].contract_type
-                }
-                data.push({
-                    ...invoice,
-                    group_id:tariff.group_by.split(',').map(item =>  invoice[item]).join('|'),
-                    tariff
-                })
-            }
-        }
-
-    return {
-        data,
-        withoutTariff
-    }
-}
-
-const getAllInvoice = async ({
-    filters
-}) => {
+/*Sell Process Starts here*/
+exports.generateDraftBill = async({deliveryDate,location}) => {
     try{
-        let invoiceWithClassOfStore = []
-        // const invoices = await invoiceService.getAllInvoice({
-        //     filters:{
-        //         ...filters
-        //     }
-        // })
-        // .then(async result => {
-        //     return result.map(item => {
-        //         let {contract,vendor_group,...newItem} = item
-        //         const contract_id = typeof contract?.contract_id !== 'undefined' ? contract.contract_id : null
-        //         const contract_type = typeof contract?.contract_type !== 'undefined' ? contract.contract_type : null
-               
-        //         return {
-        //             ...newItem,
-        //             contract_id,
-        //             contract_type
-        //         }
-        //     })            
-        // })
-
-        // for(const i in invoices) {
-        //     const invoice =  invoices[i];
-        //     const class_of_store = _.uniq(invoice.details.map(item => item.class_of_store))
-        //     if(class_of_store.length > 1){
-        //         for(let i in class_of_store){
-        //             let item = class_of_store[i]
-
-        //             //Replace the item details per class of store
-        //             const itemDetails = invoice.details.filter(i => i.class_of_store === item)
-        //             invoiceWithClassOfStore.push({
-        //                 ...invoice,
-        //                 invoice_no:`${invoice.invoice_no}-${parseInt(i)+1}`,
-        //                 fk_invoice_id:invoice.id,
-        //                 class_of_store:item,
-        //                 details:itemDetails
-        //             })
-        //         }
-        //     }
-        //     else{
-        //          //Replace the item details per class of store
-        //         const itemDetails = invoice.details.filter(i => i.class_of_store === class_of_store[0])
-        //         invoiceWithClassOfStore.push({
-        //             ...invoice,
-        //             class_of_store:class_of_store[0],
-        //             fk_invoice_id:invoice.id,
-        //             details:itemDetails
-        //         })
-        //     }
-        // } 
-
-        // return invoiceWithClassOfStore
-
-
-        let {noContracts,data} = await invoiceService.getAllInvoice({
-            filters:{
-                ...filters,
-            }
-        })
-        .then(async result => {
-            const data =  result.map(item => {
-                let {contract,vendor_group,...newItem} = item
-                const contract_id = typeof contract?.contract_id !== 'undefined' ? contract.contract_id : null
-                const contract_type = typeof contract?.contract_type !== 'undefined' ? contract.contract_type : null      
-                return {
-                    ...newItem,
-                    contract_id,
-                    contract_type
-                }
-            })
-            //Get the datas with contracts
-            const withContracts = data.filter(item => 
-                item.contract_id   && 
-                item.ship_point_to && 
-                item.ship_point_from &&
-                item.is_billable
-                )
-            //console.log(withContracts)
-            //removed the invoices without contract for sell side
-            const withoutContracts = data.filter(item => !withContracts.map(item => item.id).includes(item.id)).map( i => {
-                let reason = null
-                if(!i.ship_point_to || !i.ship_point_from){
-                    reason = 'NO SHIP POINT INFORMATION'
-                }
-                if(i.contract_id === null){
-                    reason = 'NO CONTRACT'
-                }
-                if(!i.is_billable){
-                    reason = 'NOT BILLABLE'
-                }
-                return {
-                    ...i,
-                    reason
-                }
-            })
-            return {
-                data:  withContracts ,              
-                noContracts: withoutContracts
-            }
-        })
-        //Assign Class of Store into the header
-        return {
-            data:invoiceWithClassOfStore,
-            noContracts
-        }
-    }
-    catch(e){
-        throw e
-    }
-    
-}
-
-const getContracts = async(data) => {
-    try{
-        const contractID= _.uniq(data.map(item => item.contract_id).filter(item => item !== null))
-        let details = await contratService.getContractDetails({
-            filters:{
-                contract_id:contractID,
-                '$contract.contract_type$':'SELL',
-                '$contract.valid_from$':{
-                    [Op.lte]: moment().toDate()
-                },
-                '$contract.valid_to$':{
-                    [Op.gte]: moment().toDate()
-                }
-            }
-        })
-        .then(result => {
-            let contract_tariff = result.map(item => {
-                const {tariff,contract,...contractDtl} = item
-
-                return {
-                    ...contractDtl,
-                    ...contract,
-                    ...tariff
-                }
-            })
-            .filter(item => moment(moment().format('YYYY-MM-DD')).isBetween(item.valid_from,item.valid_to))
-            
-            return contract_tariff
-        })
-
-        // console.log(details)
-        return details
-    }
-    catch(e){
-        throw e
-    }
-}
-
-
-exports.generateDraftBillSell = async({
-    location,
-    contract_type,
-    deliveryDate
-})=>{
-    try{
-
+        
+        let draft_bills = []
         /*A. Get Invoices
         1. Assignment of Contracts per Invoices */
-
         const invoices = await getAllInvoice({
             filters:{
                 rdd:deliveryDate,
                 location,
-                 // is_processed_sell:false,
+                is_processed_sell:false,
             }
-        }) 
+        })
 
         /*B. Assignment of Tariffs Per Contract 
-            1.Get Contracts
-            2.Assignment of Tariff per Invoice based on retrieved contracts*/
-        const contracts =   await getContracts(invoices);
-        const data      =   await assignTariff({
-            invoices,
-            contracts
-        })
+        1.Get Contracts
+        2.Assignment of Tariff per Invoice based on retrieved contracts*/
+        const contracts =   await getContracts({data:invoices,contract_type:'SELL'});
+        const data      =   await assignTariff({invoices,contracts})
 
         /*C. Invoice Grouping
             1. Assign Formula per Condition
             2. Compute Rate
         */
-        const withAgg = await groupWithAgg(data.filter(item => item.tariff.with_agg))
-        const withOutAgg = await groupWithoutAgg(data.filter(item => !item.tariff.with_agg))
-
-        return {
-            data,
-            withAgg,
-            withOutAgg
-        }
-    }   
-    catch(e){
-        throw e
-    }
-}
-
-exports.generateDraftBillSellV1 = async({
-    location,
-    contract_type,
-    deliveryDate
-})=>{
-    try{
-    let revenueLeak = [];
-            let raw_data=[];
-
-            //1. Get All invoices per delivery date
-            let {data,noContracts} = await getAllInvoice({
-                filters:{
-                    rdd:deliveryDate,
-                    // is_processed_sell:false,
-                    location
-                }
-            })
-
-            //2. Get contract from the selected invoices
-            const contracts = await getContracts(data);
-    
-            //3. Assign Tariff to Invoice using the retrieved contracts
-            const dataWithTariff = await assignTariff({
-                invoices:data,
-                contracts
-            });
-
-
-            data = dataWithTariff.data;   
-            
-            raw_data = raw_data.concat(dataWithTariff.data)    
-            //#4.1 group the invoices with aggregation flag 
-            const withAgg = await groupWithAgg(data.filter(item => item.tariff.with_agg));
-            //4.2 group the invoices without aggregation flag
-            const withOutAgg = await groupWithoutAgg(data.filter(item => !item.tariff.with_agg))
-            
-            //5. push to revenue leak
-            dataWithTariff.withoutTariff.map(item => {
-                // console.log(item)
-                revenueLeak.push({
-                    invoice_no: item.invoice_no.split('-')[0],
-                    principal_code: item.principal_code,
-                    stc_from: item.ship_point_from,
-                    stc_to:item.ship_point_to,
-                    draft_bill_type: 'SELL',
-                    fk_invoice_id: item.fk_invoice_id,
-                    reason: item.reason,
-                })
-            })
-
-            noContracts.map(item => {
-                revenueLeak.push({
-                    invoice_no:     item.invoice_no,
-                    principal_code: item.principal_code,
-                    draft_bill_type:'SELL',
-                    fk_invoice_id:  item.id,
-                    reason:         item.reason
-                })
-            })
-
-            
-            /*remove the duplicates*/
-            revenueLeak = _.uniqBy(revenueLeak,'fk_invoice_id')
-
-            //return {draftBill: dataWithTariff}
-            return {draftBill: withAgg.concat(withOutAgg),revenueLeak,raw_data}  
-
+        const withAgg       = await groupWithAgg(data.filter(item => item.tariff.with_agg))
+        const withOutAgg    = await groupWithoutAgg(data.filter(item => !item.tariff.with_agg))
         
+        /**Append generated draft_bills */
+        draft_bills = draft_bills.concat(withAgg).concat(withOutAgg)
+
+        return draft_bills
+    }
+    catch(e){
+        throw e
+    }  
+}
+/*Sell Process Ends here*/
+
+/*Buy Process Starts here*/
+exports.generateDraftBillBuy = async({deliveryDate,location}) => {
+    try{   
+        let draft_bills = [];
+
+         /*A. Get Invoices
+        1. Assignment of Vendor Groups Per Invoices */
+        const invoices = await getBuyInvoice({
+            filters:{
+                rdd:deliveryDate,
+                location,
+                is_processed_buy:false
+            }
+        })
+
+        /*B. Assignment of Tariffs Per Contract 
+        1.Get Contracts
+        2.Assignment of Contract per Invoice
+        3.Assignment of Tariff per Invoice based on contract*/
+        const contracts =           await getContracts({contract_type:'BUY',data:invoices});
+        const invoices_contract =   await assignContract({contracts,data:invoices})
+        const data =                await assignTariff({invoices:invoices_contract,contracts})
+
+        /*C. Invoice Grouping
+            1. Assign Formula per Condition
+            2. Compute Rate
+        */
+        const withAgg    = await groupWithAgg(data.filter(item => item.tariff.with_agg))
+        const withOutAgg = await groupWithoutAgg(data.filter(item => !item.tariff.with_agg))
+        
+         /**Combine generated draft_bills */
+        draft_bills = draft_bills.concat(withAgg).concat(withOutAgg)
+
+        return draft_bills
+    }
+    catch(e){
+        throw e
+    }
+}
+/*Buy Process ends here*/
+
+/*Replan Sell Process Starts here*/
+exports.replanDraftBill = async({deliveryDate,location})=>{
+    try{
+        let draft_bills=[]
+
+
+        /*1. Get Revenue Leak Invoives
+          2. Assign Contract to Invoices  
+        */
+       
+
+
+
+    }
+    catch(e){
+        throw e
+    }
+}
+/*Replan Sell Process Ends here*/
+
+
+exports.createDraftBillTransaction = async({header,details,revenueLeak,contract_type})=>{
+    try{
+
+        return await dataLayer.createDraftBillTransaction({
+            header,
+            details,
+            revenueLeak,
+            contract_type
+        })
+
     }   
     catch(e){
         throw e
@@ -790,4 +780,13 @@ exports.generateDraftBillSellV1 = async({
 }
 
 
-    
+
+
+
+
+
+
+
+
+
+

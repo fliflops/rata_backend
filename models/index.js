@@ -220,6 +220,16 @@ db.principal_tbl.belongsTo(db.draft_bill_hdr_tbl,{
 	foreignKey:'principal_code'
 })
 
+db.draft_bill_invoice_tbl.hasOne(db.draft_bill_hdr_tbl,{
+	foreignKey:'draft_bill_no',
+	sourceKey:'draft_bill_no',
+	as:'header'
+})
+
+db.draft_bill_hdr_tbl.belongsTo(db.draft_bill_invoice_tbl,{
+	foreignKey:'draft_bill_no'
+})
+
 //User Associations
 db.user_tbl.hasOne(db.role_tbl,{
 	foreignKey:'role_id',

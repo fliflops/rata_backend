@@ -152,6 +152,13 @@ const rawGetDraftBillCount = async({
 const getAllInvoices = async({filters})=>{
     try{
         return await models.draft_bill_invoice_tbl.findAll({
+            include:[
+                {
+                    model:models.draft_bill_hdr_tbl,
+                    attributes:['contract_type'],
+                    as:'header'
+                }
+            ],
             where:{
                 ...filters
             }

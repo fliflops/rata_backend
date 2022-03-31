@@ -26,9 +26,9 @@ const getGeography = async ({
     }
 }
 
-const getGeoCountry = async()=>{
+const getGeoCountry = async({filters})=>{
     try{
-        return await dataLayer.getGeoCountry()
+        return await dataLayer.getGeoCountry({filters})
     }
     catch(e){
         throw e
