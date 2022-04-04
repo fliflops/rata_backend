@@ -60,8 +60,7 @@ const createDraftBillTransaction = async({header,details,revenueLeak,contract_ty
         throw e
     }
 }
-
-
+ 
 module.exports={
     createDraftBillTransaction
 }

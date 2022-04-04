@@ -98,6 +98,99 @@ const getAllInvoice = async ({filters}) => {
     }
 }
 
+const getAllRevenueLeakInvoices = async({rdd,location,contract_type})=>{
+    try{
+        const invoices = await invoiceService.getAllRevenueLeak({
+            filters:{
+                '$invoice.location$':   location,
+                '$invoice.rdd$':        rdd,
+                // '$invoice.is_billable$':true,
+                draft_bill_type:        contract_type,
+                is_draft_bill:          false
+            }
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+        
+        if(String(contract_type).toUpperCase() === 'SELL'){
+            let invoiceWithClassOfStore = []
+            
+            const data = invoices.map(item => {
+                const {contract,...invoice} = item
+                const contract_id   = typeof contract?.contract_id !== 'undefined' ? contract.contract_id : null
+                const contract_type = typeof contract?.contract_type !== 'undefined' ? contract.contract_type : null
+                
+                return {
+                    ...invoice,
+                    contract_id,
+                    contract_type
+                }
+            })
+            .filter(item => item.contract_id   && 
+                item.ship_point_to             && 
+                item.ship_point_from           &&
+                item.is_billable
+            )
+
+            for(const i in data) {
+                const invoice =  data[i];
+                const class_of_store = _.uniq(invoice.details.map(item => item.class_of_store))
+                if(class_of_store.length > 1){
+                    for(let i in class_of_store){
+                        let item = class_of_store[i]
+    
+                        //Replace the item details per class of store
+                        const itemDetails = invoice.details.filter(i => i.class_of_store === item)
+                        invoiceWithClassOfStore.push({
+                            ...invoice,
+                            invoice_no:`${invoice.invoice_no}-${parseInt(i)+1}`,
+                            class_of_store:item,
+                            details:itemDetails
+                        })
+                    }
+                }
+                else{
+                     //Replace the item details per class of store
+                    const itemDetails = invoice.details.filter(i => i.class_of_store === class_of_store[0])
+                    invoiceWithClassOfStore.push({
+                        ...invoice,
+                        class_of_store:class_of_store[0],
+                        details:itemDetails
+                    })
+                }
+            }
+            
+            return invoiceWithClassOfStore 
+        }
+        else{   
+            
+            const vendorGroups = await vendorService.getAllVendorGroupDtl({
+                filters:{
+                    '$vendor_header.vg_status$':'ACTIVE',
+                    '$vendor_header.location$':location
+                }
+            })
+
+            const data = invoices.map(item => {
+                const {contract,vendor_group,...invoice} = item
+                const vg_code = _.find(vendorGroups,['vg_vendor_id',invoice.trucker_id])
+                
+                return {
+                    ...invoice,
+                    contract_id:    null,
+                    vg_code:        vg_code?.vg_code
+                }
+            
+            })
+            .filter(item => item.vg_code && item.ship_point_to && item.ship_point_from)
+
+            return data
+        }
+    }
+    catch(e){
+        throw e
+    }
+}
+
 const getBuyInvoice = async({filters}) => {
     try{
 
@@ -134,14 +227,6 @@ const getBuyInvoice = async({filters}) => {
     }
 }
 
-const getRevenueLeakInvoice = ({filters})=>{
-    try{
-
-    }
-    catch(e){
-        throw e
-    }
-}
 
 const getContracts = async({
     contract_type,
@@ -251,7 +336,7 @@ const assignTariff = async ({invoices,contracts}) => {
             const inv_stc_to                = invoice?.ship_point_to[String(to_geo_type).toLowerCase()] || null
             const invoice_sub_service_type  = String(invoice.sub_service_type).toLowerCase()
             
-            if(String(location).toLowerCase()              === String(invoice.location).toLowerCase()      &&
+            if(String(location).toLowerCase()               === String(invoice.location).toLowerCase()      &&
                 (String(inv_stc_from).toLowerCase()         === String(from_geo).toLowerCase()              &&
                 String(inv_stc_to).toLowerCase()            === String(to_geo).toLowerCase())               &&
                 service_type                                === invoice.service_type                        &&
@@ -315,7 +400,7 @@ const assignTariff = async ({invoices,contracts}) => {
             
             data.push({
                 ...invoice,
-                group_id: tariff.group_by === 'string' ?  tariff.group_by.split(',').map(item =>  invoice[item]).join('|') : null,
+                group_id: typeof tariff.group_by === 'string' ?  tariff.group_by.split(',').map(item =>  invoice[item]).join('|') : null,
                 tariff
             })
 
@@ -723,7 +808,6 @@ exports.generateDraftBillBuy = async({deliveryDate,location}) => {
         const contracts =           await getContracts({contract_type:'BUY',data:invoices});
         const invoices_contract =   await assignContract({contracts,data:invoices})
         const data =                await assignTariff({invoices:invoices_contract,contracts})
-
         /*C. Invoice Grouping
             1. Assign Formula per Condition
             2. Compute Rate
@@ -751,10 +835,28 @@ exports.replanDraftBill = async({deliveryDate,location})=>{
         /*1. Get Revenue Leak Invoives
           2. Assign Contract to Invoices  
         */
-       
+        
+        const invoices = await getAllRevenueLeakInvoices({
+            rdd:deliveryDate,
+            location,
+            contract_type:'SELL'
+        })
 
+        // return invoices
 
+         /*B. Assignment of Tariffs Per Contract 
+        1.Get Contracts
+        2.Assignment of Tariff per Invoice based on retrieved contracts*/
+        const contracts =   await getContracts({data:invoices,contract_type:'SELL'});
+        const data      =   await assignTariff({invoices,contracts})
+        
+        const withAgg       = await groupWithAgg(data.filter(item => item.tariff.with_agg))
+        const withOutAgg    = await groupWithoutAgg(data.filter(item => !item.tariff.with_agg))
+        
+        /**Append generated draft_bills */
+        draft_bills = draft_bills.concat(withAgg).concat(withOutAgg)
 
+        return draft_bills
     }
     catch(e){
         throw e
@@ -762,7 +864,45 @@ exports.replanDraftBill = async({deliveryDate,location})=>{
 }
 /*Replan Sell Process Ends here*/
 
+/**Replan Buy Process Starts Here */
+exports.replanDraftBillBuy = async({deliveryDate,location})=>{
+    try{
+        let draft_bills = [];
+        
+         /*A. Get Invoices
+        1. Assignment of Vendor Groups Per Invoices */
+        const invoices = await getAllRevenueLeakInvoices({
+            rdd:deliveryDate,
+            location,
+            contract_type:'BUY'
+        })
 
+        /*B. Assignment of Tariffs Per Contract 
+        1.Get Contracts
+        2.Assignment of Contract per Invoice
+        3.Assignment of Tariff per Invoice based on contract*/
+        const contracts =           await getContracts({contract_type:'BUY',data:invoices});
+        const invoices_contract =   await assignContract({contracts,data:invoices})
+        const data =                await assignTariff({invoices:invoices_contract,contracts})
+
+        /*C. Invoice Grouping
+            1. Assign Formula per Condition
+            2. Compute Rate
+        */
+        const withAgg    = await groupWithAgg(data.filter(item => item.tariff.with_agg))
+        const withOutAgg = await groupWithoutAgg(data.filter(item => !item.tariff.with_agg))
+        
+         /**Combine generated draft_bills */
+        draft_bills = draft_bills.concat(withAgg).concat(withOutAgg)
+
+            
+        return draft_bills
+    }
+    catch(e){
+        throw e
+    }
+}
+/**Replan Buy Process Ends Here */
 exports.createDraftBillTransaction = async({header,details,revenueLeak,contract_type})=>{
     try{
 
@@ -778,6 +918,8 @@ exports.createDraftBillTransaction = async({header,details,revenueLeak,contract_
         throw e
     }
 }
+
+
 
 
 

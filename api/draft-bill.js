@@ -156,40 +156,7 @@ router.post('/:contract_type/invoice',async(req,res)=>{
             header,
             invoices,
             revenue_leak
-        })
-
-    
-        // if(contract_type==='SELL'){
-        //     draftBills = await draftBill.generateDraftBill({
-        //         deliveryDate:rdd,
-        //         location
-        //     })
-
-        //     // revenue leak
-        //     // await invoice.createRevenueLeak({
-        //     //     data:draftBills.revenueLeak
-        //     // })
-        // }   
-        // else if(contract_type==='BUY'){
-        //     draftBills = await draftBill.generateDraftBillBuy({
-        //         rdd,
-        //         location
-        //     })
-
-        //     //revenue leak
-        //     await invoice.createRevenueLeak({
-        //         data:draftBills.revenueLeak
-        //     })
-        // }
-
-        // //console.log(draftBills)
-        
-        // res.status(200).json({
-        //     data:draftBills.draftBill,
-        //     revenue_leak:draftBills.revenueLeak
-        // })
-
-       
+        })    
     }
     catch(e){
         console.log(e)
@@ -202,55 +169,71 @@ router.post('/:contract_type/revenue-leak',async(req,res)=>{
         const {contract_type} = req.params;
         const {location,rdd} = req.query;
 
-        // let data
-        // if(contract_type === 'SELL'){
-           
-        //     data = await draftBill.replanSell({
-        //         location:location,
-        //         deliveryDate:rdd
-        //     })
+        let draftBills;
+        let revenue_leak;
 
-        //     //Update Revenue Leak Reason
-        //     await invoice.createRevenueLeak({
-        //         data:data.revenueLeak
-        //     })
+        let header;
+        let invoices;
 
-        // }
-        // else if(contract_type==='BUY'){
-        //     data = await draftBill.replanBuy({
-        //         location,
-        //         deliveryDate:rdd
-        //     })
+        if(contract_type === 'SELL'){
+            draftBills = await generateDraftBill.replanDraftBill({
+                deliveryDate:rdd,
+                location
+            })
+            const {data,invData} = await draftBill.createDraftBill(draftBills)
+            
+            revenue_leak = await revenueLeak.generateRevenueLeakReplan({
+                rdd,
+                location,
+                contract_type:'SELL',
+                draft_bill_invoices:invData
+            })
 
-        //     //Update Revenue Leak Reason
-        //     await invoice.createRevenueLeak({
-        //         data:data.revenueLeak
-        //     })
+            header  = data
+            invoices = invData
+        }
+        else{
 
-        // }
+            draftBills = await generateDraftBill.replanDraftBillBuy({
+                deliveryDate:rdd,
+                location
+            })
+            const {data,invData} = await draftBill.createDraftBill(draftBills)
+            
+            revenue_leak = await revenueLeak.generateRevenueLeakReplan({
+                rdd,
+                location,
+                contract_type:'BUY',
+                draft_bill_invoices:invData
+            })
 
-        // if(!data){
-        //     return res.status(400).json({
-        //         message:'Invalid Data Found'
-        //     })
-        // }
+            header  = data
+            invoices = invData
+        }
 
-        // const create = await draftBill.createDraftBill(data.draftBill)
+        const get_revenue_leaks = await invoice.getAllRevenueLeak({
+            filters:{
+                draft_bill_type:contract_type,
+                '$invoice.location$':   location,
+                '$invoice.rdd$':        rdd,
+                is_draft_bill:          false
+            }
+        })
 
-        // await invoice.updateRevenueLeak({
-        //     filters:{
-        //         fk_invoice_id:create.invData.map(item => item.fk_invoice_id)
-        //     },
-        //     data:{
-        //         is_draft_bill:true
-        //     }
-        // })
+        await revenueLeak.createRevenueLeakTransaction({
+            header,
+            details:        invoices,
+            revenueLeak:    revenue_leak.revenue_leaks,
+            oldRevenueLeak: get_revenue_leaks,
+            contract_type
+        })
 
-        // res.status(200).json({
-        //     // data
-        //     draft_bills:data.draftBill,
-        //     rev_leak:data.revenueLeak
-        // })
+        res.status(200).json({
+            draftBills,
+            header,
+            invoices,
+            revenue_leak
+        })
     }
     catch(e){
         console.log(e)
@@ -307,8 +290,7 @@ router.post('/ascii/sell',async(req,res)=>{
                 // updated_by:req.session.userId
             },
             filters:{
-                draft_bill_no: result.success.map(item => item.SO_CODE),
-                
+                draft_bill_no: result.success.map(item => item.SO_CODE),   
             }
         })
 

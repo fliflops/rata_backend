@@ -4,7 +4,7 @@ const invoiceService        = require('../invoice')
 const draftBillService      = require('../draftBill')
 const contractTariffService = require('../contract')
 const aggService            = require('../aggregation')
-
+const dataLayer             = require('./revenueLeakDataLayer')
 const sumByQty = ({data,uom,field}) => {
     return parseFloat(_.sumBy(data.filter(item => item.uom === uom),item =>parseFloat(item[field]))).toFixed(2)
 }
@@ -62,39 +62,107 @@ const getInvoices = async({
                 ...item,
                 fk_invoice_id:item.id
             }
-        }     ),draft_bill_invoices,'fk_invoice_id')
+        }),draft_bill_invoices,'fk_invoice_id')
 
         for(const i in invoices){
             const invoice = invoices[i]
             const class_of_store = _.uniq(invoice.details.map(item => item.class_of_store))
-            if(class_of_store.length > 1){
-                for(let i in class_of_store){
-                    let item = class_of_store[i]
+            
+            if(String(contract_type) === 'SELL'){
+                if(class_of_store.length > 1){
+                    for(let i in class_of_store){
+                        let item = class_of_store[i]
 
-                    const itemDetails = invoice.details.filter(i => i.class_of_store === item)
+                        const itemDetails = invoice.details.filter(i => i.class_of_store === item)
+                        data.push({
+                            ...invoice,
+                            invoice_no:`${invoice.invoice_no}-${parseInt(i)+1}`,
+                            fk_invoice_id:invoice.id,
+                            class_of_store:item,
+                            details:itemDetails
+                        })
+                    
+                    }
+                }
+                else{
+                    const itemDetails = invoice.details.filter(i => i.class_of_store === class_of_store[0])
                     data.push({
                         ...invoice,
-                        invoice_no:`${invoice.invoice_no}-${parseInt(i)+1}`,
+                        class_of_store:class_of_store[0],
                         fk_invoice_id:invoice.id,
-                        class_of_store:item,
                         details:itemDetails
                     })
-                
                 }
             }
             else{
-                const itemDetails = invoice.details.filter(i => i.class_of_store === class_of_store[0])
-                data.push({
-                    ...invoice,
-                    class_of_store:class_of_store[0],
-                    fk_invoice_id:invoice.id,
-                    details:itemDetails
-                })
-            }
-            
+
+            }    
         }
 
         return data
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const getRevenueLeakInvoices = async({rdd,location,contract_type,draft_bill_invoices}) => {
+    try{
+  
+        let data = []
+
+        const leak_invoices = await invoiceService.getAllRevenueLeak({
+            filters:{
+                '$invoice.location$':   location,
+                '$invoice.rdd$':        rdd,
+                draft_bill_type:        contract_type,
+                is_draft_bill:          false
+            }
+        })
+        // console.log(leak_invoices)
+
+        let invoices = _.differenceBy(leak_invoices,draft_bill_invoices,'fk_invoice_id')
+
+        for(const i in invoices){
+            const invoice = invoices[i]
+            const class_of_store = _.uniq(invoice.details.map(item => item.class_of_store))
+            // if(String(contract_type).toUpperCase() === 'SELL'){
+                if(class_of_store.length > 1){
+                    for(let i in class_of_store){
+                        let item = class_of_store[i]
+                        const itemDetails = invoice.details.filter(i => i.class_of_store === item)
+                        data.push({
+                            ...invoice,
+                            id:invoice.fk_invoice_id,
+                            invoice_no:`${invoice.invoice_no}-${parseInt(i)+1}`,
+                            //fk_invoice_id:invoice.id,
+                            class_of_store:item,
+                            details:itemDetails
+                        })
+                    }
+                }
+                else{
+                    const itemDetails = invoice.details.filter(i => i.class_of_store === class_of_store[0])
+                    data.push({
+                        ...invoice,
+                        id:invoice.fk_invoice_id,
+                        class_of_store:class_of_store[0],
+                        //fk_invoice_id:invoice.id,
+                        details:itemDetails
+                    })
+                }
+            // }
+            // else{
+            //     data.push({
+            //         ...invoice,
+            //         id:invoice.fk_invoice_id,
+            //         class_of_store:class_of_store[0]
+            //     })
+            // }
+        }
+
+        return data
+
     }
     catch(e){
         throw e
@@ -653,3 +721,63 @@ exports.generateRevenueLeak = async({
     }
 }
 
+exports.generateRevenueLeakReplan = async({rdd,location,contract_type,draft_bill_invoices})=>{
+    try{
+        let revenue_leaks = []
+       
+        let invoices = await getRevenueLeakInvoices({rdd,location,contract_type,draft_bill_invoices,})
+        const count = _.uniqBy(invoices,'fk_invoice_id').length
+
+        const invoicesValidation    = await invoice_validation({data:invoices,contract_type})
+        invoices                    =  invoicesValidation.invoices
+        revenue_leaks               = revenue_leaks.concat(invoicesValidation.revenue_leak)
+
+        const contractValidation = await contract_validation({data:invoices,contract_type})
+        invoices        = contractValidation.invoice
+        revenue_leaks   = revenue_leaks.concat(contractValidation.revenue_leak)
+        
+        const tariffValidation  = await tariff_validation({data:invoices,contract_type})
+        invoices        = tariffValidation.invoices
+        revenue_leaks   = revenue_leaks.concat(tariffValidation.revenue_leak)
+        
+        const withAggValidation = await with_agg_result_validation({
+            data:invoices.filter(item => item.tariff.with_agg),
+            contract_type
+        })
+
+        const withoutAggValidation = await without_agg_result_validation({
+            data:invoices.filter(item => !item.tariff.with_agg),
+            contract_type
+        })
+
+        revenue_leaks = revenue_leaks.concat(withAggValidation.revenue_leak).concat(withoutAggValidation.revenue_leak)
+
+        const revenue_leak_count =  _.uniqBy(revenue_leaks,'fk_invoice_id').length
+
+        return {
+            invoices: _.differenceBy(invoices,revenue_leaks,'fk_invoice_id'),
+            revenue_leaks: _.uniqBy(revenue_leaks,'fk_invoice_id'),
+            invoice_count:count,
+            revenue_leak_count
+        }
+
+    }
+    catch(e){
+        throw e
+    }
+}
+
+exports.createRevenueLeakTransaction = async({header,details,revenueLeak,contract_type,oldRevenueLeak}) => {
+    try{
+        return await dataLayer.createRevenueLeakTransaction({
+            header,
+            details,
+            revenueLeak,
+            oldRevenueLeak,
+            contract_type
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
