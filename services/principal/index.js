@@ -23,9 +23,18 @@ exports.getPrincipal = async({
     }
 }
 
-exports.getAllPrincipal = async() => {
+exports.getAllPrincipal = async({filters}) => {
     try{
-        return await dataLayer.getAllPrincipal();
+        return await dataLayer.getAllPrincipal({filters});
+    }
+    catch(e){
+        throw e
+    }
+}
+
+exports.bulkCreatePrincipal = async({data}) => {
+    try{
+        return await dataLayer.bulkCreatePrincipal({data})
     }
     catch(e){
         throw e

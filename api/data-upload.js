@@ -1,5 +1,6 @@
 const router = require('express').Router();
-const {tariff,contract,vendor,shipPoint,geography} = require('../services');
+const {tariff,contract,vendor,shipPoint,geography, principal} = require('../services');
+const locationService = require('../services/location')
 const path = require('path');
 const _ = require('lodash');
 const moment = require('moment');
@@ -18,19 +19,13 @@ router.post('/tariff',async(req,res)=>{
         });
         const getCity=      await geography.getGeoCity({
             filters:{is_active:true}
-        }) ;
+        });
         const getBrgy =     await geography.getGeoBrgy({
             filters:{is_active:true}
         });
         const getShipPoint =   await shipPoint.getAllShipPoint({
             filters:{is_active:true}
         })
-
-        // console.log(getShipPoint)
-
-        //console.log(_.find(getCity,{city_code:'CALAMBA CITY'}))
-        
-        // console.log(getCity)
 
         if(typeof data.tariff === 'undefined'){
             return res.status(400).json({
@@ -360,26 +355,96 @@ router.post('/vendor',async(req,res)=>{
 router.post('/ship-point',async(req,res)=>{
     try{
         const {data}=req.body
+        let shipPoint_validation = [];
         if(typeof data.ship_point === 'undefined'){
             return res.status(400).json({
                 message:'Invalid File!'
             })
         }
 
-        await shipPoint.bulkCreateShipPoint({
-            data:data.ship_point.map(item => {
-                return {
-                    ...item,
-                    // created_by:req.session.userId
-                }
-            })
-        })
 
-        // console.log(data.ship_point)
+        const allShipPoints = await shipPoint.getAllShipPoint({})
+
+        const getRegion =   await geography.getGeoRegion({
+            filters:{is_active:true}
+        });
+        const getProvince=  await geography.getGeoProvince({
+            filters:{is_active:true}
+        });
+        const getCity=      await geography.getGeoCity({
+            filters:{is_active:true}
+        });
+
+        // console.log(data.ship_point[0])
+        for(const i in data.ship_point){
+            const ship_point = data.ship_point[i]
+            // console.log(ship_point)
+            const isExists        = allShipPoints.filter(item => item.stc_code === ship_point.stc_code)
+            const isRegionExists  = _.find(getRegion,   {region_code:   String(ship_point.region)})
+            const isProviceExists = _.find(getProvince, {province_code: String(ship_point.province)})
+            const isCityExists    = _.find(getCity,     {city_code:     String(ship_point.city)})
+            
+            if(isExists.length > 0){
+                shipPoint_validation.push({
+                    stc_code:ship_point.stc_code,
+                    reason:'Ship Point already exists!'
+                })
+    
+                continue;
+            }
+
+            if(!ship_point.stc_code){
+                shipPoint_validation.push({
+                    stc_code:ship_point.stc_code,
+                    reason:'Ship Point code is required!'
+                })
+            }
+
+            if(!ship_point.stc_description){
+                shipPoint_validation.push({
+                    stc_code:ship_point.stc_code,
+                    reason:'Description is required!'
+                })
+            }
+
+            if(!ship_point.stc_name){
+                shipPoint_validation.push({
+                    stc_code:ship_point.stc_code,
+                    reason:'Ship Point name is required!'
+                })
+            }
+
+            if(!isRegionExists){
+                shipPoint_validation.push({
+                    stc_code:ship_point.stc_code,
+                    reason:`Region ${ship_point.region} does not exists!`
+                })
+            }
+
+            if(!isProviceExists){
+                shipPoint_validation.push({
+                    stc_code:ship_point.stc_code,
+                    reason:`Province ${ship_point.province} does not exists!`
+                })
+
+            }
+            if(!isCityExists){
+                shipPoint_validation.push({
+                    stc_code:ship_point.stc_code,
+                    reason:`City ${ship_point.city} does not exists!`
+                })
+
+            }
+
+        }
+
+        await shipPoint.bulkCreateShipPoint({
+            data:_.differenceBy(data.ship_point,shipPoint_validation,'stc_code')
+        })
 
         res.status(200).json({
             results:{
-                ship_point_header:[]
+                ship_point_header:shipPoint_validation
             }
         })
     }
@@ -388,6 +453,139 @@ router.post('/ship-point',async(req,res)=>{
         res.status(500).json({
             message:`${e}`
         })
+    }
+})
+
+router.post('/principal',async(req,res)=> {
+    const {data}=req.body
+    let principal_validation = []
+
+    if(typeof data.principal === 'undefined'){
+        return res.status(400).json({
+            message:'Invalid File!'
+        })
+    }
+
+    const allPrincipals = await principal.getAllPrincipal({
+        filters:{
+            is_active:true
+        }
+    })
+
+    // console.log(allPrincipals)
+
+    for(let i in data.principal){
+        const principalData = data.principal[i];
+
+        const isExists = allPrincipals.filter(item => item.principal_code === String(principalData.principal_code))
+        // console.log(principalData)
+
+        if(isExists.length > 0){
+            principal_validation.push({
+                principal_code:principalData.principal_code,
+                reason:'Principal already exists!'
+            })
+
+            continue;
+        }
+
+        if(!principalData.principal_code){
+            principal_validation.push({
+                principal_code:principalData.principal_code,
+                reason:'Principal code is required'
+            })
+        }
+
+        if(!principalData.principal_name){
+            principal_validation.push({
+                principal_code:principalData.principal_code,
+                reason:'Principal name is required'
+            })
+        }
+
+        if(!principalData.ascii_principal_code){
+            principal_validation.push({
+                principal_code:principalData.principal_code,
+                reason:'Principal code mapping to ascii is required!'
+            })
+        }
+    }
+
+    await principal.bulkCreatePrincipal({
+        data:_.differenceBy(data.principal,principal_validation,'principal_code')
+    })
+
+    res.status(200).json({
+        results:{
+            principal:principal_validation
+        }  
+    })
+})
+
+router.post('/location',async(req,res)=>{
+    try{
+        const {data}=req.body
+        let location_validation = [];
+
+        if(typeof data.location === 'undefined'){
+            return res.status(400).json({
+                message:'Invalid File!'
+            })
+        }
+
+        const allLocations = await locationService.getAllLocation({})
+        
+
+        for(let i in data.location){
+            const location = data.location[i]
+            
+            const isExists = allLocations.filter(item => item.loc_code === String(location.loc_code))
+            if(isExists.length > 0){
+                location_validation.push({
+                    loc_code:location.loc_code,
+                    reason:'Location already exists!'
+                })
+    
+                continue;
+            }
+
+            if(!location.loc_code){
+                location_validation.push({
+                    loc_code:location.loc_code,
+                    reason:'Location Code is required!'
+                })
+            }
+
+            if(!location.loc_name){
+                location_validation.push({
+                    loc_code:location.loc_code,
+                    reason:'Location name is required!'
+                })
+            }
+
+            if(!location.ascii_loc_code){
+                location_validation.push({
+                    loc_code:location.ascii_loc_code,
+                    reason:'Location code mapping to ascii is required!'
+                })
+            }
+        }
+
+        await locationService.bulkCreateLocation({
+            data:_.differenceBy(data.location,location_validation,'loc_code')
+        })
+
+        res.status(200).json({
+            results:{
+                location: location_validation
+            }
+        })
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({
+            message:`${e}`
+        })   
     }
 })
 

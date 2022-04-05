@@ -51,7 +51,7 @@ module.exports = (sequelize, DataTypes) => {
             type:DataTypes.STRING(50)
         },
         rdd:{
-            type:DataTypes.STRING(50)
+            type:DataTypes.DATEONLY
         },
         dr_no:{
             type:DataTypes.STRING(50)

@@ -36,6 +36,7 @@ const revenueLeakFilter = ({model,
         let formattedFilters = filters;
         const attributes = Object.keys(model)
         Object.keys(filters).map(field => {
+         
             if(field==='search'){
                 let fields = {}
                 attributes.map(item => (fields[`$invoice.${item}$`] = filters.search))
@@ -56,6 +57,18 @@ const revenueLeakFilter = ({model,
 
                 delete formattedFilters[field]
             }
+
+            if(field==='rdd'){
+                console.log(filters.rdd.split(','))
+                formattedFilters={
+                    ...formattedFilters,
+                    '$invoice.rdd$':{
+                        [Sequelize.Op.between]:filters.rdd.split(',')
+                    }
+                }
+                delete formattedFilters['rdd']
+            }
+            
 
         })
 
