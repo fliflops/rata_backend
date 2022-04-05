@@ -4,7 +4,7 @@ const {principal,shipPoint,quickCode,location,tariff,geography,aggregation,vendo
 router.get('/principal',async(req,res) => {
     try{
 
-        const data = await principal.getAllPrincipal()
+        const data = await principal.getAllPrincipal({})
         const selectData = data.map(item => {
             return {
                 label:`${item.principal_code}-${item.principal_name}`,
@@ -37,7 +37,11 @@ router.get('/ship-point',async(req,res) => {
 
 router.get('/location',async(req,res) => {
     try{
-        const data = await location.getAllLocation()
+        const data = await location.getAllLocation({
+            filters:{
+                loc_status:'ACTIVE'
+            }
+        })
         const selectData = data.map(item => {
             return {
                 label:item.loc_name,
@@ -48,7 +52,6 @@ router.get('/location',async(req,res) => {
         res.status(200).json({
             data:selectData
         })
-        
     }
     catch(e){
         console.log(e)

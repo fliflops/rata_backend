@@ -21,7 +21,7 @@ module.exports = (sequelize, DataTypes) => {
         },
         delivery_date:{
             allowNull:false,
-            type: DataTypes.STRING(50)
+            type: DataTypes.DATEONLY
         },
         contract_id:{
             allowNull:false,

@@ -1,3 +1,5 @@
+const Sequelize = require('sequelize')
+
 module.exports = (sequelize, DataTypes) => {
     return sequelize.define('principal_tbl',{
         principal_code:{
@@ -8,18 +10,23 @@ module.exports = (sequelize, DataTypes) => {
             allowNull:false,
             type: DataTypes.STRING(50)
         },
-        principal_status:{
-            allowNull:true,
-            type: DataTypes.BOOLEAN()
+        description:{
+            type: DataTypes.STRING(255)
+        },
+        address:{
+            type: DataTypes.STRING(255)
+        },
+        ascii_principal_code:{
+            type: DataTypes.STRING(255)
         },
         created_date:{
             allowNull:false,
-            type: DataTypes.STRING(50)
+            type: Sequelize.DATE
             
         },
         modified_date:{
             allowNull:false,
-            type: DataTypes.STRING(50)
+            type: Sequelize.DATE
         }
     },
     {

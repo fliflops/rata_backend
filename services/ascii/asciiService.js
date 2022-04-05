@@ -167,7 +167,7 @@ exports.getDraftBill = async({
                         if(String(invoices[0].min_billable_unit).toLowerCase() === 'cbm'){
                             return parseFloat(i.actual_cbm).toFixed(2)
                         }
-                        if(String(invoices[0].min_billable_unit).toLowerCase() === 'weigth'){
+                        if(String(invoices[0].min_billable_unit).toLowerCase() === 'weight'){
                             return parseFloat(i.actual_weight).toFixed(2)
                         }
                         if(['CASE','PIECE'].includes( String(invoices[0].min_billable_unit).toUpperCase())){

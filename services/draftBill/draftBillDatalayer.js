@@ -1,5 +1,6 @@
 const { result } = require('lodash');
 const models = require('../../models');
+const moment = require('moment')
 const {sequelize,Sequelize} = models
 
 const createDraftBillHeader = async({data,options}) => {
@@ -56,14 +57,18 @@ const formatFilters = ({
         let formattedFilters = filters;
         const attributes = Object.keys(model)
         Object.keys(filters).map(field => {
-            // if(field === 'delivery_date'){
-            //     formattedFilters={
-            //         ...formattedFilters,
-            //         delivery_date: {
-            //             [Sequelize.Op.between]:filters.delivery_date.split(',')
-            //         }
-            //     }
-            // }
+            if(field === 'delivery_date'){
+                const rdd = filters.delivery_date.split(',')
+                formattedFilters={
+                    ...formattedFilters,
+                    delivery_date:{
+                        [Sequelize.Op.between]:rdd
+                        //[moment(rdd[0]).format('YYYY-MM-DD'),moment(rdd[1]).format('YYYY-MM-DD')]
+                    }
+                }
+
+                delete formattedFilters['delivery_date']
+            }
             if(field==='search'){
                 let fields = {}
                 attributes.map(item => (fields[item] = filters.search))

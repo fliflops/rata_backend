@@ -1,5 +1,5 @@
-const model = require('../../models');
-const {sequelize,Sequelize} = model;
+const models = require('../../models');
+const {sequelize,Sequelize} = models;
 
 const getPrincipal = async ({
     page,
@@ -21,11 +21,27 @@ const getPrincipal = async ({
     }
 }
 
-const getAllPrincipal = async () => {
+const getAllPrincipal = async ({filters}) => {
     try{
-        return await sequelize.query(`
-            Select * from principal_tbl where is_active = 1`,{
-            type:Sequelize.QueryTypes.SELECT
+
+        return await models.principal_tbl.findAll({
+            ...filters
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+        // return await sequelize.query(`
+        //     Select * from principal_tbl where is_active = 1`,{
+        //     type:Sequelize.QueryTypes.SELECT
+        // })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const bulkCreatePrincipal = async({data,options})=>{
+    try{
+        return await models.principal_tbl.bulkCreate(data,{
+            ...options
         })
     }
     catch(e){
@@ -33,4 +49,8 @@ const getAllPrincipal = async () => {
     }
 }
 
-module.exports = {getPrincipal,getAllPrincipal}
+module.exports = {
+    getPrincipal,
+    getAllPrincipal,
+    bulkCreatePrincipal
+}
