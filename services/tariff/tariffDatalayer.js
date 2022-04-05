@@ -87,7 +87,7 @@ const getTariff = async({filter,options}) => {
             ],
             // logging:false
         })
-        .then(result => result.toJSON())
+        .then(result => !result ? null : result.toJSON())
     }
     catch(e){
         throw e
@@ -145,9 +145,7 @@ const createTariff = async({data,options}) => {
                     ...filteredData
                 }
             }
-
-            // console.log(newData)
-            // console.log(data.tariff_id)
+            
             await updateTariff({
                 filters:{
                     tariff_id: data.tariff_id
@@ -225,6 +223,7 @@ const getAllTariff = async({filters}) => {
             },
             logging:false
         })
+        .then(result => JSON.parse(JSON.stringify(result)))
     }
     catch(e){
         throw e

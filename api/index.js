@@ -10,5 +10,6 @@ router.use('/draft-bill',       require('./draft-bill'));
 router.use('/data-upload',      require('./data-upload'));
 router.use('/data-download',    require('./data-download'));
 router.use('/roles',            require('./roles'));
+router.use('/test',             require('./test'));
 
 module.exports = router

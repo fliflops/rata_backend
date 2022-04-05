@@ -1,5 +1,13 @@
 const router = require('express').Router();
-const {draftBill,invoice, helios,ascii} = require('../services')
+const {
+    draftBill,
+    invoice, 
+    helios,
+    ascii, 
+    contract,
+    generateDraftBill,
+    revenueLeak
+} = require('../services')
 const test = require('../services/draftBill/draftBillTest');
 const {bookings} = helios
 
@@ -85,76 +93,70 @@ router.get('/leakage',async(req,res)=>{
     }
 })
 
-router.post('/:contract_type/test/invoice',async(req,res)=>{
-    try{
-        const {contract_type} = req.params;
-        const {location,rdd} = req.query
-        let draftBills;
-
-        if(contract_type==='SELL'){
-            draftBills = await test.generateDraftBillSell({
-                deliveryDate:rdd,
-                location
-            })
-        }   
-        else if(contract_type==='BUY'){
-            // draftBills = await draftBill.generateDraftBillBuy({
-            //     rdd,
-            //     location
-            // })
-        }
-
-        res.status(200).json({
-            data:draftBills.draftBill,
-            raw: draftBills?.raw_data,
-            revenue_leak:draftBills.revenueLeak
-        })
-
-    }
-    catch(e){
-        console.log(e)
-        res.status(500).json({message:`${e}`})    
-    }
-})
-
 router.post('/:contract_type/invoice',async(req,res)=>{
     try{
         const {contract_type} = req.params;
         const {location,rdd} = req.query
         let draftBills;
+        let revenue_leak;
 
-        if(contract_type==='SELL'){
-            draftBills = await draftBill.generateDraftBill({
+        let header;
+        let invoices;
+
+        if(contract_type ==='SELL'){
+            draftBills = await generateDraftBill.generateDraftBill({
                 deliveryDate:rdd,
                 location
             })
 
-            // revenue leak
-            await invoice.createRevenueLeak({
-                data:draftBills.revenueLeak
-            })
-        }   
-        else if(contract_type==='BUY'){
-            draftBills = await draftBill.generateDraftBillBuy({
+            const {data,invData} = await draftBill.createDraftBill(draftBills)
+            
+            revenue_leak = await revenueLeak.generateRevenueLeak({
                 rdd,
+                location,
+                contract_type:'SELL',
+                draft_bill_invoices:invData
+                
+            })
+
+            header      =   data
+            invoices    =   invData
+        }
+        else{
+
+            draftBills = await generateDraftBill.generateDraftBillBuy({
+                deliveryDate:rdd,
                 location
             })
 
-            //revenue leak
-            await invoice.createRevenueLeak({
-                data:draftBills.revenueLeak
+            const {data,invData} = await draftBill.createDraftBill(draftBills)
+
+            revenue_leak = await revenueLeak.generateRevenueLeak({
+                rdd,
+                location,
+                contract_type:'BUY',
+                draft_bill_invoices:invData
             })
+
+            
+            header      =   data
+            invoices    =   invData
         }
 
-        //console.log(draftBills)
-        const create = await draftBill.createDraftBill(draftBills.draftBill)
-     
-        res.status(200).json({
-            data:draftBills.draftBill,
-            revenue_leak:draftBills.revenueLeak
+
+        await generateDraftBill.createDraftBillTransaction({
+            header,
+            details: invoices,
+            revenueLeak: revenue_leak.revenue_leaks,
+            contract_type
         })
 
-        // res.end()
+        res.status(200).json({
+            draftBills,
+            header,
+            invoices,
+            revenue_leak
+        })    
     }
     catch(e){
         console.log(e)
@@ -166,54 +168,71 @@ router.post('/:contract_type/revenue-leak',async(req,res)=>{
     try{
         const {contract_type} = req.params;
         const {location,rdd} = req.query;
-        let data
+
+        let draftBills;
+        let revenue_leak;
+
+        let header;
+        let invoices;
+
         if(contract_type === 'SELL'){
-           
-            data = await draftBill.replanSell({
-                location:location,
-                deliveryDate:rdd
+            draftBills = await generateDraftBill.replanDraftBill({
+                deliveryDate:rdd,
+                location
             })
-
-            //Update Revenue Leak Reason
-            await invoice.createRevenueLeak({
-                data:data.revenueLeak
-            })
-
-        }
-        else if(contract_type==='BUY'){
-            data = await draftBill.replanBuy({
+            const {data,invData} = await draftBill.createDraftBill(draftBills)
+            
+            revenue_leak = await revenueLeak.generateRevenueLeakReplan({
+                rdd,
                 location,
-                deliveryDate:rdd
+                contract_type:'SELL',
+                draft_bill_invoices:invData
             })
 
-            //Update Revenue Leak Reason
-            await invoice.createRevenueLeak({
-                data:data.revenueLeak
+            header  = data
+            invoices = invData
+        }
+        else{
+
+            draftBills = await generateDraftBill.replanDraftBillBuy({
+                deliveryDate:rdd,
+                location
+            })
+            const {data,invData} = await draftBill.createDraftBill(draftBills)
+            
+            revenue_leak = await revenueLeak.generateRevenueLeakReplan({
+                rdd,
+                location,
+                contract_type:'BUY',
+                draft_bill_invoices:invData
             })
 
+            header  = data
+            invoices = invData
         }
 
-        if(!data){
-            return res.status(400).json({
-                message:'Invalid Data Found'
-            })
-        }
-
-        const create = await draftBill.createDraftBill(data.draftBill)
-
-        await invoice.updateRevenueLeak({
+        const get_revenue_leaks = await invoice.getAllRevenueLeak({
             filters:{
-                fk_invoice_id:create.invData.map(item => item.fk_invoice_id)
-            },
-            data:{
-                is_draft_bill:true
+                draft_bill_type:contract_type,
+                '$invoice.location$':   location,
+                '$invoice.rdd$':        rdd,
+                is_draft_bill:          false
             }
         })
 
+        await revenueLeak.createRevenueLeakTransaction({
+            header,
+            details:        invoices,
+            revenueLeak:    revenue_leak.revenue_leaks,
+            oldRevenueLeak: get_revenue_leaks,
+            contract_type
+        })
+
         res.status(200).json({
-            // data
-            draft_bills:data.draftBill,
-            rev_leak:data.revenueLeak
+            draftBills,
+            header,
+            invoices,
+            revenue_leak
         })
     }
     catch(e){
@@ -233,19 +252,6 @@ router.post('/helios',async(req,res)=>{
        const {inv_details} = await invoice.createInvoiceTransaction({
             invoices,
             details:getDetails
-
-            // invoices:getInvoices.map(item => {
-            //     return {
-            //         ...item,
-            //         // created_by:req.session.userId
-            //     }
-            // }),
-            // details:getDetails.map(item => {
-            //     return {
-            //         ...item,
-            //         // created_by:req.session.userId
-            //     }
-            // })
         })
 
         // console.log(invoices)
@@ -267,7 +273,6 @@ router.post('/ascii/sell',async(req,res)=>{
 
         //get the access token
         const token = await ascii.loginService()
-        
         const data = await ascii.getDraftBill({
             rdd,
             location
@@ -285,13 +290,12 @@ router.post('/ascii/sell',async(req,res)=>{
                 // updated_by:req.session.userId
             },
             filters:{
-                draft_bill_no: result.success.map(item => item.SO_CODE),
-                
+                draft_bill_no: result.success.map(item => item.SO_CODE),   
             }
         })
 
         res.status(200).json({
-            result: result,
+            // result: result,
             data
         })
     }

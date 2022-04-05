@@ -53,7 +53,7 @@ const getGeography = async({
     }
 }
 
-const getGeoCountry = async() => {
+const getGeoCountry = async({filters}) => {
     try{
         return await models.geo_country_tbl.findAll({
             where:{

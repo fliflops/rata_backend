@@ -42,26 +42,6 @@ const createInvoiceTransaction = async({
     details
 }) => {
     try{
-            // const created = await createInvoice({
-            //     data:invoices,
-            //     options:{
-            //        // transaction: t,
-            //         updateOnDuplicate:['updatedAt','cleared_date','remarks'],
-            //         logging:false
-            //     }
-            // })
-
-            // console.log(created.length)
-
-            // await createInvoiceDtl({
-            //     data:details,
-            //     options:{
-            //         //transaction: t,
-            //         updateOnDuplicate:['updatedAt'],
-            //         logging:false
-            //     }
-            // })
-        // console.log(invoices,details)
         return await sequelize.transaction(async t => {
             await createInvoice({
                 data:invoices,
@@ -379,7 +359,6 @@ const getPaginatedInvoices = async({
         throw e
     }
 }
-
 
 module.exports={
     createInvoice,

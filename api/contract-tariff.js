@@ -1,32 +1,42 @@
 const router = require('express').Router()
+const { result } = require('lodash');
 const {tariff,aggregation,contract} = require('../services');
 
 router.post('/tariff',async(req,res) => {
     try{
         const {data} = req.body;
 
+        console.log(data)
         /*Validations*/
         //1. Check if tariff exists
         const {isExist,results} = await tariff.isTariffExists({
             tariff_ids:[data.tariff_id]
         })
 
-        if(isExist){
+        console.log(results)
+
+        
+
+        // if(isExist){
+        //     return res.status(400).json({
+        //         message:'Tariff Exists!'
+        //     })
+        // }
+
+        // if(!isExist){
+  
+        //     return res.status(200).end()
+        // }
+        if(isExist && results[0].status === 'APPROVED'){
             return res.status(400).json({
-                message:'Tariff Exists!'
+                message:'Tariff exists and already approved!'
             })
         }
+        
+        await tariff.createTariff({
+            data 
+        })
 
-        // console.log(results)
-
-        // await tariff.createTariff({
-        //     data:{
-        //         ...data,
-        //         // created_by:req.session.userId,
-        //         // modified_by:req.session.userId,
-        //         // approved_by:req.session.userId
-        //     } 
-        // })
         res.status(200).end()
     }
     catch(e){
@@ -66,6 +76,7 @@ router.post('/contract/:contract_id',async (req,res)=>{
         const {data} = req.body;
         const {contract_id} = req.params;
 
+        
         // const userId = req.session.userId;
 
         if(contract_id === '' || !contract_id){
@@ -86,9 +97,7 @@ router.post('/contract/:contract_id',async (req,res)=>{
                 return res.status(400).json({
                     message:'Tariff exists and in active status!'
                 })
-            }
-
-            
+            }            
         }
 
         //Assign Tariff

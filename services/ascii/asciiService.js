@@ -69,7 +69,8 @@ exports.getDraftBillBuy = async({
                 QUANTITY:           1,
                 UNIT_PRICE:         parseFloat(item.rate).toFixed(2),
                 EXTENDED_AMT:       parseFloat(item.total_charges).toFixed(2)
-            }]  
+            }] 
+             
             // invoices.map((inv,index)=>{
             //     let quantity = 0
             //     return {
@@ -155,6 +156,20 @@ exports.getDraftBill = async({
                 }]
             }
             else{
+                
+                const quantity = invoices[0].service_type === '2003' ? 1 :     
+                _.sumBy(invoices,(i)=>{
+                    if(String(invoices[0].min_billable_unit).toLowerCase() === 'cbm'){
+                        return parseFloat(i.actual_cbm)
+                    }
+                    if(String(invoices[0].min_billable_unit).toLowerCase() === 'weigth'){
+                        return parseFloat(i.actual_weight)
+                    }
+                    if(['CASE','PIECE'].includes( String(invoices[0].min_billable_unit).toUpperCase())){
+                        return parseFloat(i.actual_qty)
+                    }
+                })
+
                 SALES_ORDER_DETAIL=[{
                     COMPANY_CODE:   '00001',
                     SO_CODE:        item.draft_bill_no,
