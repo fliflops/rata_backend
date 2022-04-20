@@ -138,11 +138,9 @@ router.post('/:contract_type/invoice',async(req,res)=>{
                 draft_bill_invoices:invData
             })
 
-            
             header      =   data
             invoices    =   invData
         }
-
 
         await generateDraftBill.createDraftBillTransaction({
             header,
@@ -154,7 +152,7 @@ router.post('/:contract_type/invoice',async(req,res)=>{
         res.status(200).json({
             draftBills,
             header,
-            invoices,
+            invoices: invoices,
             revenue_leak
         })    
     }

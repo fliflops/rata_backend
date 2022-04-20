@@ -200,8 +200,6 @@ router.post('/contract',async(req,res)=>{
             }
         })
 
-        // console.log(getCustomers)
-
         for(let i in contracts){
             const contract = contracts[i];
 
@@ -309,38 +307,129 @@ router.post('/vendor',async(req,res)=>{
     try{
         const {data} = JSON.parse(JSON.stringify(req.body));
 
+        let vendor_header=[]
+        let vendor_group=[]
+        let vendor_group_details=[]
         if(typeof data.vendor === 'undefined' || typeof data.vendor_group === 'undefined' || typeof data.vendor_group_details === 'undefined'){
             return res.status(400).json({
                 message:'Invalid File!'
             })
         }
 
+        const getVendor = await vendor.getAllVendor({
+            filters:{
+                vendor_id: data.vendor.map(item => item.vendor_id)
+            }
+        })
+
+        const getVendorGroup = await vendor.getAllVendorGroup({
+            filters:{
+                vg_code :data.vendor_group.map(item =>item.vg_code)
+            }
+        })
+
+        const getVendorGroupDetails = await vendor.getAllVendorGroupDtl({
+            filters:{
+                vg_code: _.uniq(data.vendor_group_details.map(item => item.vg_code))
+            }
+        })
+
+        for(let i in data.vendor){
+            const vendor = data.vendor[i]
+
+            const isExist = _.find(getVendor,(value)=>{
+                return value.vendor_id === vendor.vendor_id
+            })
+
+            if(isExist){
+                vendor_header.push({
+                    vendor_id: vendor.vendor_id,
+                    reason:'Vendor already exists!'
+                })
+
+                continue;
+            }
+        }
+
+        for(let i in data.vendor_group){
+            const vendorGroup = data.vendor_group[i];
+
+            const isExist = _.find(getVendorGroup,(value)=>{
+                return value.vg_code === vendorGroup.vg_code
+            })
+
+            if(isExist){
+                vendor_group.push({
+                    vg_code: vendorGroup.vg_code,
+                    reason:'Vendor Code already exists!'
+                })
+
+                continue;
+            }
+
+        }
+
+
+        for(let i in data.vendor_group_details){
+            const vendorGroupDetails = data.vendor_group_details[i];
+
+            const isExist = _.find(getVendorGroupDetails,(value)=>{
+                return value.vg_code === vendorGroupDetails.vg_code && value.vg_vendor_id === vendorGroupDetails.vg_vendor_id
+            })
+
+            console.log(isExist)
+
+            if(isExist){
+                vendor_group_details.push({
+                    vg_code: vendorGroupDetails.vg_code,
+                    vg_vendor_id: vendorGroupDetails.vg_vendor_id,
+                    reason:'Vendor mapping exists!'
+                })
+            }
+        }
+        
+
+        console.log(data.vendor_group_details)
+
         await vendor.bulkCreateTransaction({
-            vendor: data.vendor.map(item => {
-                return {
-                    ...item,
-                    // created_by:req.session.userId
-                }
-            }),
-            vendorGroup:data.vendor_group.map(item => {
-                return {
-                    ...item,
-                    // created_by:req.session.userId
-                }
-            }),
-            vendorGroupDetails:data.vendor_group_details.map(item => {
-                return {
-                    ...item,
-                    // created_by:req.session.userId
-                }
+            vendor:             data.vendor.filter(item => !vendor_header.map(x=>x.vendor_id).includes(item.vendor_id)),
+            vendorGroup:        data.vendor_group.filter(item => !vendor_group.map(x=>x.vg_code).includes(item.vg_code)),
+            vendorGroupDetails: data.vendor_group_details.filter(item => {
+                const isInvalid = _.some(vendor_group_details,{
+                    vg_code:item.vg_code,
+                    vg_vendor_id:item.vg_vendor_id
+                })
+
+                return !isInvalid
             })
         })
+
+        // await vendor.bulkCreateTransaction({
+        //     vendor: data.vendor.map(item => {
+        //         return {
+        //             ...item,
+        //             // created_by:req.session.userId
+        //         }
+        //     }),
+        //     vendorGroup:data.vendor_group.map(item => {
+        //         return {
+        //             ...item,
+        //             // created_by:req.session.userId
+        //         }
+        //     }),
+        //     vendorGroupDetails:data.vendor_group_details.map(item => {
+        //         return {
+        //             ...item,
+        //             // created_by:req.session.userId
+        //         }
+        //     })
+        // })
     
         res.status(200).json({
             results:{
-                vendor_header:[],
-                vendor_group:[],
-                vendor_group_details:[]
+                vendor_header,
+                vendor_group,
+                vendor_group_details
             }
         })
     }

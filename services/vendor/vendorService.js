@@ -14,6 +14,17 @@ exports.bulkCreateVendor = async({data})=>{
     }
 }
 
+exports.getAllVendor = async({filters})=>{
+    try{
+        return await dataLayer.getAllVendors({
+            filters
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
 exports.getAllVendorGroup = async({filters})=>{
     try{
         return await dataLayer.getAllVendorGroup({

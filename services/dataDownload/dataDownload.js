@@ -1,7 +1,7 @@
 const {getAllDraftBills, getAllInvoices} = require('../draftBill');
 const {getAllRevenueLeak} = require('../invoice')
 const xlsx = require('xlsx');
-
+const sequelize = require('sequelize')
 
 const generateExcel = (data) => {
     try{
@@ -26,7 +26,9 @@ const generateExcel = (data) => {
 
 exports.exportDraftBill = async({
     location,
-    delivery_date,
+    // delivery_date,
+    from,
+    to,
     contract_type
 }) => {
     try{
@@ -35,8 +37,11 @@ exports.exportDraftBill = async({
         const headers = await getAllDraftBills({
             filters:{
                 location,
-                delivery_date,
-                contract_type
+                delivery_date:{
+                    [sequelize.Op.between]:[from,to]
+                },
+                contract_type,
+                
             }
         })
 
@@ -53,11 +58,7 @@ exports.exportDraftBill = async({
             details
         }
 
-        // console.log(draftBill)
-
-        //const headers = processJSON(draftBill)
         const buffer = generateExcel(draftBill)
-        // console.log(buffer)
         return buffer
     }
     catch(e){
@@ -67,7 +68,8 @@ exports.exportDraftBill = async({
 
 exports.exportRevenueLeak = async({
     location,
-    delivery_date,
+    from,
+    to,
     contract_type
 }) => {
     try {
@@ -76,7 +78,10 @@ exports.exportRevenueLeak = async({
             filters:{
                 draft_bill_type: contract_type,
                 ['$invoice.location$']:location,
-                ['$invoice.rdd$']:delivery_date
+                // ['$invoice.rdd$']:delivery_date
+                ['$invoice.rdd$']:{
+                    [sequelize.Op.between]:[from,to]
+                }
             }
         })
 

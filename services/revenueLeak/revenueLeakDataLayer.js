@@ -22,8 +22,6 @@ const createRevenueLeakTransaction = async({header,details,revenueLeak,contract_
             }
         }),'diff_id')
         
-        // console.log(diff)
-        // const fk_invoice_id = details.map(item => item.fk_invoice_id).concat(revenueLeak.map(item => item.fk_invoice_id))
         return await sequelize.transaction(async t => {
             await draftBillService.createDraftBillHeader({
                 data:header,

@@ -104,10 +104,7 @@ exports.createDraftBill = async(draftBills) => {
             }))
         }
 
-        // await dataLayer.createDraftBillTransaction({
-        //     header:data,
-        //     details:invData
-        // })
+
 
         return {data,invData}
     }

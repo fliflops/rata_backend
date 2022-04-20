@@ -3,9 +3,9 @@ const {dataDownload} = require('../services')
 
 router.get('/draft-bill', async(req,res)=>{
     try{
-        const {rdd,location,type} = req.query
+        const {from,to,location,type} = req.query
 
-        if(!rdd || !location || !type){
+        if(!from || !to || !location || !type){
             return res.status(400).json({
                 message:'Invalid Parameters'
             })
@@ -13,7 +13,9 @@ router.get('/draft-bill', async(req,res)=>{
 
         const data = await dataDownload.exportDraftBill({
             location,
-            delivery_date:rdd,
+            //delivery_date:rdd,
+            from,
+            to,
             contract_type:type
         })
 
@@ -29,8 +31,8 @@ router.get('/draft-bill', async(req,res)=>{
 
 router.get('/revenue-leak', async(req,res)=> {
     try{
-        const {rdd,location,type} = req.query
-        if(!rdd || !location || !type){
+        const {from,to,location,type} = req.query
+        if(!from || !to || !location || !type){
             return res.status(400).json({
                 message:'Invalid Parameters'
             })
@@ -38,7 +40,9 @@ router.get('/revenue-leak', async(req,res)=> {
 
         const data = await dataDownload.exportRevenueLeak({
             location,
-            delivery_date:rdd, 
+            //delivery_date:rdd, 
+            from,
+            to,
             contract_type:type
         })
         

@@ -107,10 +107,25 @@ const getAllVendorGroupDtl = async({filters,options})=>{
     }
 }
 
+const getAllVendors = async({filters})=> {
+    try{
+        return await models.vendor_tbl.findAll({
+            where:{
+                ...filters
+            }
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
+    catch(e) {
+        throw e
+    }
+}
+
 module.exports = {
     bulkCreateVendor,
     getAllVendorGroup,
     getAllVendorGroupDtl,
+    getAllVendors,
     bulkCreateTransaction
 }
 

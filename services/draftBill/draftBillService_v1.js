@@ -50,6 +50,7 @@ const groupWithAgg = async(data) => {
 
             //get conditions
             let conditions = allConditions.filter(item => item.agg_id === invoice.tariff.fk_agg_id)
+
             //convert the paremeters into array
             const parameters = invoice.tariff.parameter ?  invoice.tariff.parameter.split(',') : null
  
@@ -68,7 +69,7 @@ const groupWithAgg = async(data) => {
                 return {
                     draft_bill_no:      '',
                     delivery_date:      item.rdd,
-                    location:           itsumByQtyem.location,
+                    location:           item.location,
                     trip_plan:          item.trip_no,
                     shipment_manifest:  item.shipment_manifest,
                     dr_no:              item.dr_no,
@@ -89,18 +90,16 @@ const groupWithAgg = async(data) => {
                     ship_to:            item.stc_to,
                     remarks:            item.redel_remarks,
                     class_of_store:     item.class_of_store,
-                    planned_qty:        isNaN(planned_qty)   ?  0:planned_qty,
-                    actual_qty:         isNaN(actual_qty)    ?  0:actual_qty,
-                    planned_weight:     isNaN(planned_weight)?  0:planned_weight,
-                    planned_cbm:        isNaN(planned_cbm)   ?  0:planned_cbm,
-                    actual_weight:      isNaN(actual_weight) ?  0:actual_weight,
-                    actual_cbm:         isNaN(actual_cbm)    ?  0:actual_cbm,
-                    return_qty:         isNaN(return_qty)    ?  0:return_qty,
+                    planned_qty:        isNaN(planned_qty)      ?  0:planned_qty,
+                    actual_qty:         isNaN(actual_qty)       ?  0:actual_qty,
+                    planned_weight:     isNaN(planned_weight)   ?  0:planned_weight,
+                    planned_cbm:        isNaN(planned_cbm)      ?  0:planned_cbm,
+                    actual_weight:      isNaN(actual_weight)    ?  0:actual_weight,
+                    actual_cbm:         isNaN(actual_cbm)       ?  0:actual_cbm,
+                    return_qty:         isNaN(return_qty)       ?  0:return_qty,
                     fk_invoice_id:      item.fk_invoice_id
                 }
             })
-
-            // console.log(invoice.tariff.max_value)
 
             //create draft bill header
             grouped.push({
@@ -154,7 +153,7 @@ const groupWithAgg = async(data) => {
                         ...aggregatedValues,
                         total_cbm:      isNaN (sumBy({data:df.invoices,field:'actual_cbm'})) ?                     0 :   sumBy({data:df.invoices,field:'actual_cbm'}),
                         total_weight:   isNaN (sumBy({data:df.invoices,field:'actual_weight'})) ?                  0 :   sumBy({data:df.invoices,field:'actual_weight'}),
-                        total_qty:      sumQtyHeader({data:df.invoices,field:item})//100//isNaN (sumByQty({data:df.invoices,uom:df.min_billable_unit,field:item})) ? null :   sumByQty({data:df.invoices,uom:df.min_billable_unit,field:item})
+                        total_qty:      sumQtyHeader({data:df.invoices,field:item})
                     }
                 })
             }
@@ -220,15 +219,12 @@ const groupWithAgg = async(data) => {
                     if(String(df.tariff.min_billable_unit).toLowerCase() === 'cbm'){
                         billing = ( item.actual_cbm / aggregatedValues.total_cbm ) * total_charges
                     }     
-                    
                     else if(String(df.tariff.min_billable_unit).toLowerCase() === 'weight'){
                         billing = ( item.actual_weight / aggregatedValues.total_weight ) * total_charges
                     }
-
                     else if(['CASE','PIECE'].includes(String(df.tariff.min_billable_unit).toUpperCase())){
                         billing = ( item.actual_qty / aggregatedValues.total_qty ) * total_charges
-                    }
-                    
+                    }                    
                     else {
                         if(index === df.invoices.length - 1){
                             billing=Math.floor(total_charges/df.invoices.length)  + (total_charges%df.invoices.length)

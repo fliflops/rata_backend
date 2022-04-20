@@ -48,14 +48,7 @@ const getInvoices = async({
             filters
         })
 
-        // const draft_bill_invoices = await draftBillService.getAllInvoices({
-        //     filters:{
-        //         location,
-        //         delivery_date:rdd,
-        //         '$header.contract_type$':contract_type
-        //         //contract_type:
-        //     }
-        // })
+        
 
         let invoices = _.differenceBy(pod_invoices.map(item => {
             return {
@@ -95,7 +88,13 @@ const getInvoices = async({
                 }
             }
             else{
-
+                const itemDetails = invoice.details.filter(i => i.class_of_store === class_of_store[0])
+                data.push({
+                    ...invoice,
+                    class_of_store:class_of_store[0],
+                    fk_invoice_id:invoice.id,
+                    details:itemDetails
+                })
             }    
         }
 
@@ -678,6 +677,7 @@ exports.generateRevenueLeak = async({
         let revenue_leaks = []
 
         let invoices = await getInvoices({rdd,location,contract_type, draft_bill_invoices})
+        
 
         const invoicesValidation = await invoice_validation({data:invoices,contract_type})
         invoices = invoicesValidation.invoices

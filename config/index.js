@@ -38,7 +38,31 @@ const dbConfig = {
     }
 }
 
+const scmdbConfig = {
+    username:       process.env.SCMDB_DB_USER,
+    password:       process.env.SCMDB_DB_PASSWORD,
+    host:           process.env.SCMDB_DB_HOST,
+    database:       process.env.SCMDB_DB,
+    dialect:        'mssql',
+    dialectOptions : {
+        options:{
+            requestTimeout: 3600000
+        }
+    },
+    pool: { 
+        max: 1000000,
+        min: 0,
+        idle: 2000000,
+        acquire: 2000000,
+        idleTimeoutMillis: 50,
+        evictionRunIntervalMillis: 5,
+        softIdleTimeoutMillis: 5,
+        logging: false
+    }
+}
+
 module.exports = {
     dbConfig,
-    podConfig
+    podConfig,
+    scmdbConfig
 }

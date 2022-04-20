@@ -410,7 +410,7 @@ const assignTariff = async ({invoices,contracts}) => {
     return data
 }
 
-const groupWithAgg = async(data) => {
+const groupWithAgg = async({data,contract_type}) => {
     try{
         let grouped = []
 
@@ -420,208 +420,415 @@ const groupWithAgg = async(data) => {
             return item.group_id
         })
 
-        //Group the invoices per group_id
-        //Assigns the corresponding conditions per tariff
-        for(const item in raw_group){
-            const invoice = raw_group[item][0]
+        //if the contract type is buy, get the highest rate per group id
+        //console.log(raw_group)
+        if(contract_type=='SELL'){
+            //Group the invoices per group_id
+            //Assigns the corresponding conditions per tariff
+            for(const item in raw_group){
+                const invoice = raw_group[item][0]
 
-            //get conditions
-            let conditions = allConditions.filter(item => item.agg_id === invoice.tariff.fk_agg_id)
-            //convert the paremeters into array
-            const parameters = invoice.tariff.parameter ?  invoice.tariff.parameter.split(',') : null
- 
-            //group invoices per group_by values 
-            const invoices = raw_group[item].map(item => {
-            
-                const details = item.details
-                const planned_qty    =sumByQty({data:item.details, uom:item.tariff.min_billable_unit, field:'planned_qty'})
-                const actual_qty     =sumByQty({data:details, uom:item.tariff.min_billable_unit, field:'actual_qty'})
-                const planned_weight =sumBy({data:item.details,field:'planned_weight'})
-                const planned_cbm    =sumBy({data:item.details,field:'planned_cbm'})
-                const actual_weight  =sumBy({data:item.details,field:'actual_weight'})
-                const actual_cbm     =sumBy({data:item.details,field:'actual_cbm'})
-                const return_qty     =sumBy({data:item.details,field:'return_qty'})
-                return {
-                    draft_bill_no:      '',
-                    delivery_date:      item.rdd,
-                    location:           item.location,
-                    trip_plan:          item.trip_no,
-                    shipment_manifest:  item.shipment_manifest,
-                    dr_no:              item.dr_no,
-                    invoice_no:         item.invoice_no,
-                    br_no:              item.br_no,
-                    delivery_status:    item.delivery_status,
-                    vehicle_type:       item.vehicle_type,
-                    tariff_id:          item.tariff.tariff_id,
-                    contract_id:        item.contract_id,
-                    service_type:       item.service_type,
-                    sub_service_type:   item.sub_service_type,
-                    min_billable_value: item.tariff.min_value,
-                    max_billable_value: item.tariff.max_value,
-                    min_billable_unit:  item.tariff.min_billable_unit,
-                    from_geo_type:      invoice.tariff.from_geo_type,
-                    ship_from:          item.stc_from,
-                    to_geo_type:        invoice.tariff.to_geo_type,
-                    ship_to:            item.stc_to,
-                    remarks:            item.redel_remarks,
-                    class_of_store:     item.class_of_store,
-                    planned_qty:        isNaN(planned_qty)   ?  0:planned_qty,
-                    actual_qty:         isNaN(actual_qty)    ?  0:actual_qty,
-                    planned_weight:     isNaN(planned_weight)?  0:planned_weight,
-                    planned_cbm:        isNaN(planned_cbm)   ?  0:planned_cbm,
-                    actual_weight:      isNaN(actual_weight) ?  0:actual_weight,
-                    actual_cbm:         isNaN(actual_cbm)    ?  0:actual_cbm,
-                    return_qty:         isNaN(return_qty)    ?  0:return_qty,
-                    fk_invoice_id:      item.fk_invoice_id
-                }
-            })
+                //get conditions
+                let conditions = allConditions.filter(item => item.agg_id === invoice.tariff.fk_agg_id)
+                
+                //convert the paremeters into array
+                const parameters = invoice.tariff.parameter ?  invoice.tariff.parameter.split(',') : null
+                
+                //group invoices per group_by values 
+                const invoices = raw_group[item].map(item => {
+                
+                    const details = item.details
+                    const planned_qty    =sumByQty({data:item.details, uom:item.tariff.min_billable_unit, field:'planned_qty'})
+                    const actual_qty     =sumByQty({data:details, uom:item.tariff.min_billable_unit, field:'actual_qty'})
+                    const planned_weight =sumBy({data:item.details,field:'planned_weight'})
+                    const planned_cbm    =sumBy({data:item.details,field:'planned_cbm'})
+                    const actual_weight  =sumBy({data:item.details,field:'actual_weight'})
+                    const actual_cbm     =sumBy({data:item.details,field:'actual_cbm'})
+                    const return_qty     =sumBy({data:item.details,field:'return_qty'})
+                    return {
+                        draft_bill_no:      '',
+                        delivery_date:      item.rdd,
+                        location:           item.location,
+                        trip_plan:          item.trip_no,
+                        shipment_manifest:  item.shipment_manifest,
+                        dr_no:              item.dr_no,
+                        invoice_no:         item.invoice_no,
+                        br_no:              item.br_no,
+                        delivery_status:    item.delivery_status,
+                        vehicle_type:       item.vehicle_type,
+                        tariff_id:          item.tariff.tariff_id,
+                        contract_id:        item.contract_id,
+                        service_type:       item.service_type,
+                        sub_service_type:   item.sub_service_type,
+                        min_billable_value: item.tariff.min_value,
+                        max_billable_value: item.tariff.max_value,
+                        min_billable_unit:  item.tariff.min_billable_unit,
+                        from_geo_type:      invoice.tariff.from_geo_type,
+                        ship_from:          item.stc_from,
+                        to_geo_type:        invoice.tariff.to_geo_type,
+                        ship_to:            item.stc_to,
+                        remarks:            item.redel_remarks,
+                        class_of_store:     item.class_of_store,
+                        planned_qty:        isNaN(planned_qty)   ?  0:planned_qty,
+                        actual_qty:         isNaN(actual_qty)    ?  0:actual_qty,
+                        planned_weight:     isNaN(planned_weight)?  0:planned_weight,
+                        planned_cbm:        isNaN(planned_cbm)   ?  0:planned_cbm,
+                        actual_weight:      isNaN(actual_weight) ?  0:actual_weight,
+                        actual_cbm:         isNaN(actual_cbm)    ?  0:actual_cbm,
+                        return_qty:         isNaN(return_qty)    ?  0:return_qty,
+                        fk_invoice_id:      item.fk_invoice_id
+                    }
+                })
 
-            // console.log(invoice.tariff.max_value)
-
-            //create draft bill header
-            grouped.push({
-                draft_bill_no:      null,
-                contract_type:      invoice.tariff.contract_type,
-                service_type:       invoice.service_type,
-                draft_bill_date:    null,
-                trip_no:            invoice.trip_no,
-                contract_id:        invoice.contract_id,
-                tariff_id:          invoice.tariff.tariff_id,
-                customer:           invoice.principal_code,
-                vendor:             invoice.trucker_id,
-                location:           invoice.location,
-                ship_from:          invoice.stc_from,
-                ship_point:         invoice.stc_to,
-                delivery_date:      invoice.rdd,
-                rate:               invoice.tariff.tariff_rate,
-                vehicle_type:       invoice.vehicle_type,
-                min_billable_value: invoice.tariff.min_value,
-                max_billable_value: invoice.tariff.max_value,
-                min_billable_unit:  invoice.tariff.min_billable_unit,
-                parameters,
-                tariff:             invoice.tariff,
-                invoices,
-                conditions,
-            })
-        }
-
-        //Get Conditions and compute the aggregated values per parameter
-        //compute the charging
-        for(const item in grouped){
-            const df = grouped[item]
-
-            //declare variable
-            let aggregatedValues = {
-                total_cbm:null,
-                total_weight:null,
-                total_qty:null
+                //create draft bill header
+                grouped.push({
+                    draft_bill_no:      null,
+                    contract_type:      invoice.tariff.contract_type,
+                    service_type:       invoice.service_type,
+                    draft_bill_date:    null,
+                    trip_no:            invoice.trip_no,
+                    contract_id:        invoice.contract_id,
+                    tariff_id:          invoice.tariff.tariff_id,
+                    customer:           invoice.principal_code,
+                    vendor:             invoice.trucker_id,
+                    location:           invoice.location,
+                    ship_from:          invoice.stc_from,
+                    ship_point:         invoice.stc_to,
+                    delivery_date:      invoice.rdd,
+                    rate:               invoice.tariff.tariff_rate,
+                    vehicle_type:       invoice.vehicle_type,
+                    min_billable_value: invoice.tariff.min_value,
+                    max_billable_value: invoice.tariff.max_value,
+                    min_billable_unit:  invoice.tariff.min_billable_unit,
+                    parameters,
+                    tariff:             invoice.tariff,
+                    invoices,
+                    conditions,
+                })
             }
 
-            let total_charges = null;
+            //Get Conditions and compute the aggregated values per parameter
+            //compute the charging
+            for(const item in grouped){
+                const df = grouped[item]
 
-            //Validate if the parameters is null
-            //if parameters is null compute weight and cbm only
-            //else compute all
-            if(df.parameters){
-           
-                df.parameters.map(item => {
-                    // console.log(df.min_billable_unit)
+                //declare variable
+                let aggregatedValues = {
+                    total_cbm:null,
+                    total_weight:null,
+                    total_qty:null
+                }
+
+                let total_charges = null;
+
+                //Validate if the parameters is null
+                //if parameters is null compute weight and cbm only
+                //else compute all
+                if(df.parameters){
+            
+                    df.parameters.map(item => {
+                        // console.log(df.min_billable_unit)
+                        aggregatedValues={
+                            ...aggregatedValues,
+                            total_cbm:      isNaN (sumBy({data:df.invoices,field:'actual_cbm'})) ?                     0 :   sumBy({data:df.invoices,field:'actual_cbm'}),
+                            total_weight:   isNaN (sumBy({data:df.invoices,field:'actual_weight'})) ?                  0 :   sumBy({data:df.invoices,field:'actual_weight'}),
+                            total_qty:      sumQtyHeader({data:df.invoices,field:item})//100//isNaN (sumByQty({data:df.invoices,uom:df.min_billable_unit,field:item})) ? null :   sumByQty({data:df.invoices,uom:df.min_billable_unit,field:item})
+                        }
+                    })
+                }
+                else{
                     aggregatedValues={
                         ...aggregatedValues,
-                        total_cbm:      isNaN (sumBy({data:df.invoices,field:'actual_cbm'})) ?                     0 :   sumBy({data:df.invoices,field:'actual_cbm'}),
-                        total_weight:   isNaN (sumBy({data:df.invoices,field:'actual_weight'})) ?                  0 :   sumBy({data:df.invoices,field:'actual_weight'}),
-                        total_qty:      sumQtyHeader({data:df.invoices,field:item})//100//isNaN (sumByQty({data:df.invoices,uom:df.min_billable_unit,field:item})) ? null :   sumByQty({data:df.invoices,uom:df.min_billable_unit,field:item})
+                        total_cbm:      isNaN (sumBy({data:df.invoices,field:'actual_cbm'})) ? 0     : sumBy({data:df.invoices,field:'actual_cbm'}),
+                        total_weight:   isNaN (sumBy({data:df.invoices,field:'actual_weight'})) ? 0  : sumBy({data:df.invoices,field:'actual_weight'}),
                     }
-                })
-            }
-            else{
-                aggregatedValues={
-                    ...aggregatedValues,
-                    total_cbm:      isNaN (sumBy({data:df.invoices,field:'actual_cbm'})) ? 0     : sumBy({data:df.invoices,field:'actual_cbm'}),
-                    total_weight:   isNaN (sumBy({data:df.invoices,field:'actual_weight'})) ? 0  : sumBy({data:df.invoices,field:'actual_weight'}),
                 }
-            }
-            
-            ///Compute total charges
-            const {tariff} = df
-            const invoice = aggregatedValues
-
-            let aggCondition = {
-                condition:null,
-                formula:null,
-            }
-
-            for(const cnd of df.conditions){
-                const conditon = cnd.raw_condition.split(',').join('')
-                const fn = new Function(['tariff','invoice'],'return ' +conditon)
-               
-                if(fn(tariff,invoice) || fn(tariff,invoice) === null){
-                    const formula = cnd.raw_formula.split(',').join('')
-                    const fnFormula = new Function(['tariff','invoice'],'return '+formula)
-                    total_charges = parseFloat(fnFormula(tariff,invoice)).toFixed(2)
-                    aggCondition = {
-                        ...aggCondition,
-                        condition:conditon,
-                        formula:formula
-                    }
-                    break; 
-                }
-            }
- 
-            grouped[item] = {
-                draft_bill_no:      null,
-                contract_type:      df.tariff.contract_type,
-                trip_no:            df.trip_no,
-                service_type:       df.service_type,
-                sub_service_type:   df.sub_service_type,
-                draft_bill_date:    null,
-                contract_id:        df.contract_id,
-                tariff_id:          df.tariff.tariff_id,
-                customer:           df.customer,
-                vendor:             df.vendor,
-                location:           df.location,
-                stc_from:           df.ship_from,
-                stc_to:             df.ship_point,
-                delivery_date:      df.delivery_date,
-                rate:               df.tariff.tariff_rate,
-                vehicle_type:       df.vehicle_type,
-                min_billable_value: df.tariff.min_value,
-                max_billable_value: df.tariff.max_value,
-                min_billable_unit:  df.tariff.min_billable_unit,
-                ...aggCondition,
-                ...aggregatedValues,
-                total_charges,
-                invoices:  df.invoices.map((item,index) => {
-                    let billing = 0
-                    if(String(df.tariff.min_billable_unit).toLowerCase() === 'cbm'){
-                        billing = ( item.actual_cbm / aggregatedValues.total_cbm ) * total_charges
-                    }     
-                    
-                    else if(String(df.tariff.min_billable_unit).toLowerCase() === 'weight'){
-                        billing = ( item.actual_weight / aggregatedValues.total_weight ) * total_charges
-                    }
-
-                    else if(['CASE','PIECE'].includes(String(df.tariff.min_billable_unit).toUpperCase())){
-                        billing = ( item.actual_qty / aggregatedValues.total_qty ) * total_charges
-                    }
-                    
-                    else {
-                        if(index === df.invoices.length - 1){
-                            billing=Math.floor(total_charges/df.invoices.length)  + (total_charges%df.invoices.length)
-                        }   
-                        else{
-                            billing=Math.floor(total_charges/df.invoices.length)
-                        }  
-                    }
-
-                    return {
-                        ...item,
-                        billing: billing.toFixed(2)
-                    }
-                })
                 
+                ///Compute total charges
+                const {tariff} = df
+                const invoice = aggregatedValues
+
+                let aggCondition = {
+                    condition:null,
+                    formula:null,
+                }
+
+                for(const cnd of df.conditions){
+                    const conditon = cnd.raw_condition.split(',').join('')
+                    const fn = new Function(['tariff','invoice'],'return ' +conditon)
+                
+                    if(fn(tariff,invoice) || fn(tariff,invoice) === null){
+                        const formula = cnd.raw_formula.split(',').join('')
+                        const fnFormula = new Function(['tariff','invoice'],'return '+formula)
+                        total_charges = parseFloat(fnFormula(tariff,invoice)).toFixed(2)
+                        aggCondition = {
+                            ...aggCondition,
+                            condition:conditon,
+                            formula:formula
+                        }
+                        break; 
+                    }
+                }
+    
+                grouped[item] = {
+                    draft_bill_no:      null,
+                    contract_type:      df.tariff.contract_type,
+                    trip_no:            df.trip_no,
+                    service_type:       df.service_type,
+                    sub_service_type:   df.sub_service_type,
+                    draft_bill_date:    null,
+                    contract_id:        df.contract_id,
+                    tariff_id:          df.tariff.tariff_id,
+                    customer:           df.customer,
+                    vendor:             df.vendor,
+                    location:           df.location,
+                    stc_from:           df.ship_from,
+                    stc_to:             df.ship_point,
+                    delivery_date:      df.delivery_date,
+                    rate:               df.tariff.tariff_rate,
+                    vehicle_type:       df.vehicle_type,
+                    min_billable_value: df.tariff.min_value,
+                    max_billable_value: df.tariff.max_value,
+                    min_billable_unit:  df.tariff.min_billable_unit,
+                    ...aggCondition,
+                    ...aggregatedValues,
+                    total_charges,
+                    invoices:  df.invoices.map((item,index) => {
+                        let billing = 0
+                        if(String(df.tariff.min_billable_unit).toLowerCase() === 'cbm'){
+                            billing = ( item.actual_cbm / aggregatedValues.total_cbm ) * total_charges
+                        }     
+                        
+                        else if(String(df.tariff.min_billable_unit).toLowerCase() === 'weight'){
+                            billing = ( item.actual_weight / aggregatedValues.total_weight ) * total_charges
+                        }
+
+                        else if(['CASE','PIECE'].includes(String(df.tariff.min_billable_unit).toUpperCase())){
+                            billing = ( item.actual_qty / aggregatedValues.total_qty ) * total_charges
+                        }
+                        
+                        else {
+                            if(index === df.invoices.length - 1){
+                                billing=Math.floor(total_charges/df.invoices.length)  + (total_charges%df.invoices.length)
+                            }   
+                            else{
+                                billing=Math.floor(total_charges/df.invoices.length)
+                            }  
+                        }
+
+                        return {
+                            ...item,
+                            billing: billing.toFixed(2)
+                        }
+                    })
+                    
+                }
             }
         }
+        else{
+            
+            for(const item in raw_group){
+                const invoice = _.maxBy(raw_group[item], o => o.tariff.tariff_rate)
+                //get conditions
+                let conditions = allConditions.filter(item => item.agg_id === invoice.tariff.fk_agg_id)
+                
+                //convert the paremeters into array
+                const parameters = invoice.tariff.parameter ?  invoice.tariff.parameter.split(',') : null
+                
+                //group invoices per group_by values 
+                const invoices = raw_group[item].map(item => {
+                
+                    const details = item.details
+                    const planned_qty    =sumByQty({data:item.details, uom:item.tariff.min_billable_unit, field:'planned_qty'})
+                    const actual_qty     =sumByQty({data:details, uom:item.tariff.min_billable_unit, field:'actual_qty'})
+                    const planned_weight =sumBy({data:item.details,field:'planned_weight'})
+                    const planned_cbm    =sumBy({data:item.details,field:'planned_cbm'})
+                    const actual_weight  =sumBy({data:item.details,field:'actual_weight'})
+                    const actual_cbm     =sumBy({data:item.details,field:'actual_cbm'})
+                    const return_qty     =sumBy({data:item.details,field:'return_qty'})
+                    return {
+                        draft_bill_no:      '',
+                        delivery_date:      item.rdd,
+                        location:           item.location,
+                        trip_plan:          item.trip_no,
+                        shipment_manifest:  item.shipment_manifest,
+                        dr_no:              item.dr_no,
+                        invoice_no:         item.invoice_no,
+                        br_no:              item.br_no,
+                        delivery_status:    item.delivery_status,
+                        vehicle_type:       item.vehicle_type,
+                        tariff_id:          item.tariff.tariff_id,
+                        contract_id:        item.contract_id,
+                        service_type:       item.service_type,
+                        sub_service_type:   item.sub_service_type,
+                        min_billable_value: item.tariff.min_value,
+                        max_billable_value: item.tariff.max_value,
+                        min_billable_unit:  item.tariff.min_billable_unit,
+                        from_geo_type:      invoice.tariff.from_geo_type,
+                        ship_from:          item.stc_from,
+                        to_geo_type:        invoice.tariff.to_geo_type,
+                        ship_to:            item.stc_to,
+                        remarks:            item.redel_remarks,
+                        class_of_store:     item.class_of_store,
+                        planned_qty:        isNaN(planned_qty)   ?  0:planned_qty,
+                        actual_qty:         isNaN(actual_qty)    ?  0:actual_qty,
+                        planned_weight:     isNaN(planned_weight)?  0:planned_weight,
+                        planned_cbm:        isNaN(planned_cbm)   ?  0:planned_cbm,
+                        actual_weight:      isNaN(actual_weight) ?  0:actual_weight,
+                        actual_cbm:         isNaN(actual_cbm)    ?  0:actual_cbm,
+                        return_qty:         isNaN(return_qty)    ?  0:return_qty,
+                        fk_invoice_id:      item.fk_invoice_id
+                    }
+                })
+
+                //create draft bill header
+                grouped.push({
+                    draft_bill_no:      null,
+                    contract_type:      invoice.tariff.contract_type,
+                    service_type:       invoice.service_type,
+                    draft_bill_date:    null,
+                    trip_no:            invoice.trip_no,
+                    contract_id:        invoice.contract_id,
+                    tariff_id:          invoice.tariff.tariff_id,
+                    customer:           invoice.principal_code,
+                    vendor:             invoice.trucker_id,
+                    location:           invoice.location,
+                    ship_from:          invoice.stc_from,
+                    ship_point:         invoice.stc_to,
+                    delivery_date:      invoice.rdd,
+                    rate:               invoice.tariff.tariff_rate,
+                    vehicle_type:       invoice.vehicle_type,
+                    min_billable_value: invoice.tariff.min_value,
+                    max_billable_value: invoice.tariff.max_value,
+                    min_billable_unit:  invoice.tariff.min_billable_unit,
+                    parameters,
+                    tariff:             invoice.tariff,
+                    invoices,
+                    conditions,
+                })
+            }
+
+            //Get Conditions and compute the aggregated values per parameter
+            //compute the charging
+            for(const item in grouped){
+                const df = grouped[item]
+
+                //declare variable
+                let aggregatedValues = {
+                    total_cbm:null,
+                    total_weight:null,
+                    total_qty:null
+                }
+
+                let total_charges = null;
+
+                //Validate if the parameters is null
+                //if parameters is null compute weight and cbm only
+                //else compute all
+                if(df.parameters){
+            
+                    df.parameters.map(item => {
+                        // console.log(df.min_billable_unit)
+                        aggregatedValues={
+                            ...aggregatedValues,
+                            total_cbm:      isNaN (sumBy({data:df.invoices,field:'actual_cbm'})) ?                     0 :   sumBy({data:df.invoices,field:'actual_cbm'}),
+                            total_weight:   isNaN (sumBy({data:df.invoices,field:'actual_weight'})) ?                  0 :   sumBy({data:df.invoices,field:'actual_weight'}),
+                            total_qty:      sumQtyHeader({data:df.invoices,field:item})//100//isNaN (sumByQty({data:df.invoices,uom:df.min_billable_unit,field:item})) ? null :   sumByQty({data:df.invoices,uom:df.min_billable_unit,field:item})
+                        }
+                    })
+                }
+                else{
+                    aggregatedValues={
+                        ...aggregatedValues,
+                        total_cbm:      isNaN (sumBy({data:df.invoices,field:'actual_cbm'})) ? 0     : sumBy({data:df.invoices,field:'actual_cbm'}),
+                        total_weight:   isNaN (sumBy({data:df.invoices,field:'actual_weight'})) ? 0  : sumBy({data:df.invoices,field:'actual_weight'}),
+                    }
+                }
+                
+                ///Compute total charges
+                const {tariff} = df
+                const invoice = aggregatedValues
+
+                let aggCondition = {
+                    condition:null,
+                    formula:null,
+                }
+
+                for(const cnd of df.conditions){
+                    const conditon = cnd.raw_condition.split(',').join('')
+                    const fn = new Function(['tariff','invoice'],'return ' +conditon)
+                
+                    if(fn(tariff,invoice) || fn(tariff,invoice) === null){
+                        const formula = cnd.raw_formula.split(',').join('')
+                        const fnFormula = new Function(['tariff','invoice'],'return '+formula)
+                        total_charges = parseFloat(fnFormula(tariff,invoice)).toFixed(2)
+                        aggCondition = {
+                            ...aggCondition,
+                            condition:conditon,
+                            formula:formula
+                        }
+
+                        break; 
+                    }
+                }
+    
+                grouped[item] = {
+                    draft_bill_no:      null,
+                    contract_type:      df.tariff.contract_type,
+                    trip_no:            df.trip_no,
+                    service_type:       df.service_type,
+                    sub_service_type:   df.sub_service_type,
+                    draft_bill_date:    null,
+                    contract_id:        df.contract_id,
+                    tariff_id:          df.tariff.tariff_id,
+                    customer:           df.customer,
+                    vendor:             df.vendor,
+                    location:           df.location,
+                    stc_from:           df.ship_from,
+                    stc_to:             df.ship_point,
+                    delivery_date:      df.delivery_date,
+                    rate:               df.tariff.tariff_rate,
+                    vehicle_type:       df.vehicle_type,
+                    min_billable_value: df.tariff.min_value,
+                    max_billable_value: df.tariff.max_value,
+                    min_billable_unit:  df.tariff.min_billable_unit,
+                    ...aggCondition,
+                    ...aggregatedValues,
+                    total_charges,
+                    invoices:  df.invoices.map((item,index) => {
+                        let billing = 0
+                        if(String(df.tariff.min_billable_unit).toLowerCase() === 'cbm'){
+                            billing = ( item.actual_cbm / aggregatedValues.total_cbm ) * total_charges
+                        }     
+                        
+                        else if(String(df.tariff.min_billable_unit).toLowerCase() === 'weight'){
+                            billing = ( item.actual_weight / aggregatedValues.total_weight ) * total_charges
+                        }
+
+                        else if(['CASE','PIECE'].includes(String(df.tariff.min_billable_unit).toUpperCase())){
+                            billing = ( item.actual_qty / aggregatedValues.total_qty ) * total_charges
+                        }
+                        
+                        else {
+                            if(index === df.invoices.length - 1){
+                                billing=Math.floor(total_charges/df.invoices.length)  + (total_charges%df.invoices.length)
+                            }   
+                            else{
+                                billing=Math.floor(total_charges/df.invoices.length)
+                            }  
+                        }
+
+                        return {
+                            ...item,
+                            billing: billing.toFixed(2)
+                        }
+                    })   
+                }    
+            }
+        }
+
+
+        
 
         //Filter draftbills without computed rates
         return grouped.filter(item => item.total_charges)
@@ -812,7 +1019,7 @@ exports.generateDraftBillBuy = async({deliveryDate,location}) => {
             1. Assign Formula per Condition
             2. Compute Rate
         */
-        const withAgg    = await groupWithAgg(data.filter(item => item.tariff.with_agg))
+        const withAgg    = await groupWithAgg({data:data.filter(item => item.tariff.with_agg),contract_type:'BUY'})
         const withOutAgg = await groupWithoutAgg(data.filter(item => !item.tariff.with_agg))
         
          /**Combine generated draft_bills */
@@ -889,7 +1096,7 @@ exports.replanDraftBillBuy = async({deliveryDate,location})=>{
             1. Assign Formula per Condition
             2. Compute Rate
         */
-        const withAgg    = await groupWithAgg(data.filter(item => item.tariff.with_agg))
+        const withAgg    = await groupWithAgg({data:data.filter(item => item.tariff.with_agg),contract_type:'BUY'})
         const withOutAgg = await groupWithoutAgg(data.filter(item => !item.tariff.with_agg))
         
          /**Combine generated draft_bills */

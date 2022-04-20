@@ -1,5 +1,5 @@
 const models  = require('../models');
-const {podDB} = require('../database');
+const {podDB,scmdb} = require('../database');
 
 module.exports = async() => {
     try{
@@ -9,6 +9,10 @@ module.exports = async() => {
         await podDB.sequelize.authenticate().then(()=> {
             console.log('Connected to POD DB')
         });
+
+        await scmdb.sequelize.authenticate().then(()=>{
+            console.log('Connected to SCMDB')
+        })
     }
     catch(e){
         console.log(e)
