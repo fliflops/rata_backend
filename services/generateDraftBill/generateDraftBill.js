@@ -979,7 +979,7 @@ exports.generateDraftBill = async({deliveryDate,location}) => {
             1. Assign Formula per Condition
             2. Compute Rate
         */
-        const withAgg       = await groupWithAgg(data.filter(item => item.tariff.with_agg))
+        const withAgg       = await groupWithAgg({data:data.filter(item => item.tariff.with_agg),contract_type:'SELL'})
         const withOutAgg    = await groupWithoutAgg(data.filter(item => !item.tariff.with_agg))
         
         /**Append generated draft_bills */
@@ -1057,7 +1057,7 @@ exports.replanDraftBill = async({deliveryDate,location})=>{
         const contracts =   await getContracts({data:invoices,contract_type:'SELL'});
         const data      =   await assignTariff({invoices,contracts})
         
-        const withAgg       = await groupWithAgg(data.filter(item => item.tariff.with_agg))
+        const withAgg       = await groupWithAgg({data:data.filter(item => item.tariff.with_agg),contract_type:'SELL'})
         const withOutAgg    = await groupWithoutAgg(data.filter(item => !item.tariff.with_agg))
         
         /**Append generated draft_bills */
