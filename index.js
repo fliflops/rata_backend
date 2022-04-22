@@ -23,10 +23,12 @@ global.appRoot = path.resolve(__dirname);
 app.use(morgan('dev'))
 app.use(express.json({limit: '50mb'}));
 app.use(express.urlencoded({limit: '50mb'}));
-app.use(cors({
-    credentials:true,
-    origin: process.env.ORIGIN
-}));
+app.use(cors(
+    // {
+    // credentials:true,
+    // origin: process.env.ORIGIN
+    // }
+));
 
 app.use(helmet());
 app.set('trust proxy',1)
