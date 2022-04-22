@@ -25,11 +25,13 @@ app.use(express.json({limit: '50mb'}));
 app.use(express.urlencoded({limit: '50mb'}));
 app.use(cors(
     {
-    credentials:true,
-    origin: process.env.ORIGIN
+        credentials:true,
+        origin: process.env.ORIGIN
     }
 ));
 
+console.log(process.env.ORIGIN)
+// app.use(cors())
 app.use(helmet());
 app.set('trust proxy',1)
 
