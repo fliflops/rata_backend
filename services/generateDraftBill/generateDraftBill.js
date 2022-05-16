@@ -229,6 +229,7 @@ const getBuyInvoice = async({filters}) => {
 
 
 const getContracts = async({
+    rdd,
     contract_type,
     data
 }) => {
@@ -255,29 +256,34 @@ const getContracts = async({
                 ...filters,
                 '$contract.contract_type$':contract_type,
                 '$contract.valid_from$':{
-                    [Op.lte]: moment().toDate()
+                    [Op.lte]: rdd
+                    //moment().toDate()
                 },
                 '$contract.valid_to$':{
-                    [Op.gte]: moment().toDate()
+                    [Op.gte]: rdd
+                    //moment().toDate()
                 }
             }
         })
         .then(result => {
             let contract_tariff = result.map(item => {
                 const {tariff,contract,...contractDtl} = item
-
+        
                 return {
                     ...contractDtl,
                     ...contract,
-                    ...tariff
+                    ...tariff,
+                    valid_from: contractDtl?.valid_from || null,
+                    valid_to: contractDtl?.valid_to || null,
                 }
             })
-            .filter(item => moment(moment().format('YYYY-MM-DD')).isBetween(item.valid_from,item.valid_to))
-            
+            .filter(item => {
+                return  moment(rdd).isBetween(item.valid_from,item.valid_to)
+            })
+
             return contract_tariff
         })
 
-        // console.log(details)
         return details
     }
     catch(e){
@@ -972,7 +978,7 @@ exports.generateDraftBill = async({deliveryDate,location}) => {
         /*B. Assignment of Tariffs Per Contract 
         1.Get Contracts
         2.Assignment of Tariff per Invoice based on retrieved contracts*/
-        const contracts =   await getContracts({data:invoices,contract_type:'SELL'});
+        const contracts =   await getContracts({data:invoices,contract_type:'SELL',rdd:deliveryDate});
         const data      =   await assignTariff({invoices,contracts})
 
         /*C. Invoice Grouping
@@ -1012,7 +1018,7 @@ exports.generateDraftBillBuy = async({deliveryDate,location}) => {
         1.Get Contracts
         2.Assignment of Contract per Invoice
         3.Assignment of Tariff per Invoice based on contract*/
-        const contracts =           await getContracts({contract_type:'BUY',data:invoices});
+        const contracts =           await getContracts({contract_type:'BUY',data:invoices,rdd:deliveryDate});
         const invoices_contract =   await assignContract({contracts,data:invoices})
         const data =                await assignTariff({invoices:invoices_contract,contracts})
         /*C. Invoice Grouping
@@ -1054,7 +1060,7 @@ exports.replanDraftBill = async({deliveryDate,location})=>{
          /*B. Assignment of Tariffs Per Contract 
         1.Get Contracts
         2.Assignment of Tariff per Invoice based on retrieved contracts*/
-        const contracts =   await getContracts({data:invoices,contract_type:'SELL'});
+        const contracts =   await getContracts({data:invoices,contract_type:'SELL',rdd:deliveryDate});
         const data      =   await assignTariff({invoices,contracts})
         
         const withAgg       = await groupWithAgg({data:data.filter(item => item.tariff.with_agg),contract_type:'SELL'})
@@ -1088,7 +1094,7 @@ exports.replanDraftBillBuy = async({deliveryDate,location})=>{
         1.Get Contracts
         2.Assignment of Contract per Invoice
         3.Assignment of Tariff per Invoice based on contract*/
-        const contracts =           await getContracts({contract_type:'BUY',data:invoices});
+        const contracts =           await getContracts({contract_type:'BUY',data:invoices,rdd:deliveryDate});
         const invoices_contract =   await assignContract({contracts,data:invoices})
         const data =                await assignTariff({invoices:invoices_contract,contracts})
 

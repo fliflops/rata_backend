@@ -125,7 +125,7 @@ const getRevenueLeakInvoices = async({rdd,location,contract_type,draft_bill_invo
         for(const i in invoices){
             const invoice = invoices[i]
             const class_of_store = _.uniq(invoice.details.map(item => item.class_of_store))
-            // if(String(contract_type).toUpperCase() === 'SELL'){
+                //if(String(contract_type).toUpperCase() === 'SELL'){
                 if(class_of_store.length > 1){
                     for(let i in class_of_store){
                         let item = class_of_store[i]
@@ -225,7 +225,7 @@ const contract_validation = ({
     }
 }
 
-const tariff_validation = async ({data,contract_type})=>{
+const tariff_validation = async ({data,contract_type,rdd})=>{
     try{
 
         let revenue_leak = []
@@ -255,7 +255,8 @@ const tariff_validation = async ({data,contract_type})=>{
             const invoice       = data[i];
             const tariffs       = contractTariffs
             .filter(contract    => contract.contract_id === invoice.contract.contract_id)
-            .filter(contract => {
+            .filter(contract    => {
+
                 const {
                     service_type,
                     from_geo_type,
