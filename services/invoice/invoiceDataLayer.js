@@ -1,7 +1,6 @@
 const models = require('../../models');
 const {sequelize,Sequelize} = models;
-//const sequelize = require('sequelize')
-const {Op} = sequelize;
+const {Op} = Sequelize;
 const {useFormatFilters,viewFilters} = require('../../helper')
 
 

@@ -67,7 +67,7 @@ const formatFilters = ({
                     }
                 }
 
-                delete formattedFilters['delivery_date']
+                //delete formattedFilters['delivery_date']
             }
             if(field==='search'){
                 let fields = {}
@@ -101,6 +101,8 @@ const getPaginatedDraftBill = async({
             model:models.draft_bill_hdr_tbl.rawAttributes,
             filters:filters
         });
+
+        console.log(newFilter)
 
         const {count,rows} = await models.draft_bill_hdr_tbl.findAndCountAll({
             where:{
