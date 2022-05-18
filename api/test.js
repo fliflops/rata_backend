@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const sequelize = require('sequelize');
+const invoiceService = require('../services/invoice');
 const testService    = require('../services/draftBill/draftBillTest');
 const revenuLeakService = require('../services/revenueLeak');
 const contractService = require('../services/contract');
@@ -83,7 +84,7 @@ router.get('/contract',async(req,res)=>{
                     valid_to:   contractDtl?.valid_to || null,
                 }
             })
-            .filter(item => {
+            .filter(item => { 
                 return  moment(rdd).isBetween(item.valid_from,item.valid_to)
             })
 
@@ -96,6 +97,27 @@ router.get('/contract',async(req,res)=>{
     catch(e){
         console.log(e)
         res.status(500).json({message:`${e}`}) 
+    }
+})
+
+router.get('/invoice',async(req,res)=>{
+    try{
+        const {rdd,location,contract_type} = req.query;
+
+        const data = await invoiceService.getAllInvoice({
+            filters:{
+                rdd,
+                location,
+                is_processed_buy:true
+            }
+        })
+
+        res.status(200).json(data)
+
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({message:`${e}`})
     }
 })
 

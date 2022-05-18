@@ -1,5 +1,7 @@
 const models = require('../../models');
-const {sequelize,Sequelize} = models;
+// const {sequelize,Sequelize} = models;
+const sequelize = require('sequelize')
+const {Op} = sequelize;
 const {useFormatFilters,viewFilters} = require('../../helper')
 
 
@@ -82,6 +84,8 @@ const getLatestInvoice = async() => {
 
 const getAllInvoice = async({filters}) => {
     try{
+
+
         return await models.invoices_cleared_hdr.findAll({
             include:[
                 {
@@ -94,8 +98,11 @@ const getAllInvoice = async({filters}) => {
                     model:models.contract_hdr_tbl,
                     attributes:["contract_id","contract_type"],
                     where:{
+                        // [Op.and]:[
+                        //     sequelize.where(sequelize.col('contract.contract_status'),"APPROVED")
+                        // ]
                         contract_status:'APPROVED',
-                        contract_type:'SELL'
+                        contract_type: typeof filters.is_processed_sell !== 'undefined' ? 'SELL' : 'BUY' 
                     },
                     required:false,
                     as:"contract"
@@ -115,14 +122,19 @@ const getAllInvoice = async({filters}) => {
                 {
                     model:models.vendor_group_dtl_tbl,
                     attributes:['vg_code'],
-                    required:false,
+                    required:false, 
+                    where:{
+                        [Op.and]:[
+                            sequelize.where(sequelize.col('vendor_group.location'),sequelize.col('invoices_cleared_hdr.location'))
+                        ]
+                    },
                     as:'vendor_group'
                 }
             ],
             where:{
-                ...filters 
+                ...filters,
             },
-            logging:false
+            // logging:false
         })
         .then(result => JSON.parse(JSON.stringify(result)))
         
@@ -235,8 +247,9 @@ const getPaginatedRevenueLeak = async({
 
 const getAllRevenueLeak = async({filters}) => {
     try{
+        // console.log(filters)
         const attributes = Object.keys(models.invoices_cleared_hdr.rawAttributes)
-      
+        
         return await models.invoices_rev_leak_tbl.findAll({
             include:[
                 {
@@ -248,7 +261,7 @@ const getAllRevenueLeak = async({filters}) => {
                             attributes:["contract_id","contract_type"],
                             where:{
                                 contract_status:'APPROVED',
-                                contract_type:'SELL'
+                                contract_type:filters.draft_bill_type
                             },
                             required:false,
                             as:"contract"
@@ -274,7 +287,12 @@ const getAllRevenueLeak = async({filters}) => {
                         {
                             model:models.vendor_group_dtl_tbl,
                             attributes:['vg_code'],
-                            required:false,
+                            required:false, 
+                            where:{
+                                [Op.and]:[
+                                    sequelize.where(sequelize.col('invoice.vendor_group.location'),sequelize.col('invoice.location'))
+                                ]
+                            },
                             as:'vendor_group'
                         }
                     ],

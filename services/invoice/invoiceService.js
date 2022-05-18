@@ -51,6 +51,7 @@ exports.getLatestInvoice = async() => {
 
 exports.getAllInvoice = async({filters}) => {
     try{
+        
         return await dataLayer.getAllInvoice({
             filters
         })

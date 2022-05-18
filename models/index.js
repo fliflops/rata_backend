@@ -141,9 +141,19 @@ db.invoices_cleared_hdr.hasOne(db.vendor_group_dtl_tbl,{
 	as:'vendor_group'
 })
 
-db.vendor_group_dtl_tbl.belongsTo(db.invoices_cleared_hdr,{
-	foreignKey:'vg_vendor_id'
-})
+
+
+// db.vendor_group_dtl_tbl.belongsTo(db.invoices_cleared_hdr,{
+// 	foreignKey:'vg_vendor_id'
+// })
+
+// db.invoices_cleared_hdr.hasOne(db.vendor_group_tbl,{
+// 	foreignKey:'location',
+// 	sourceKey:'location',
+// 	foreignKey:'vendor'
+// })
+
+
 
 
 //Agg Associations

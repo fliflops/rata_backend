@@ -112,13 +112,12 @@ const getRevenueLeakInvoices = async({rdd,location,contract_type,draft_bill_invo
 
         const leak_invoices = await invoiceService.getAllRevenueLeak({
             filters:{
-                '$invoice.location$':   location,
-                '$invoice.rdd$':        rdd,
-                draft_bill_type:        contract_type,
-                is_draft_bill:          false
+                '$invoice.location$':       location,
+                '$invoice.rdd$':            rdd,
+                draft_bill_type:            contract_type,
+                is_draft_bill:              false
             }
         })
-        // console.log(leak_invoices)
 
         let invoices = _.differenceBy(leak_invoices,draft_bill_invoices,'fk_invoice_id')
 
@@ -679,16 +678,16 @@ exports.generateRevenueLeak = async({
 
         let invoices = await getInvoices({rdd,location,contract_type, draft_bill_invoices})
         
-
         const invoicesValidation = await invoice_validation({data:invoices,contract_type})
         invoices = invoicesValidation.invoices
         revenue_leaks = revenue_leaks.concat(invoicesValidation.revenue_leak)
 
-        const contractValidation = await contract_validation({data:invoices,contract_type})
-        invoices        = contractValidation.invoice
-        revenue_leaks   = revenue_leaks.concat(contractValidation.revenue_leak)
+        if(contract_type==='SELL'){
+            const contractValidation = await contract_validation({data:invoices,contract_type})
+            invoices        = contractValidation.invoice
+            revenue_leaks   = revenue_leaks.concat(contractValidation.revenue_leak)
+        }
         
-
         const tariffValidation  = await tariff_validation({data:invoices,contract_type})
         invoices        = tariffValidation.invoices
         revenue_leaks   = revenue_leaks.concat(tariffValidation.revenue_leak)
@@ -702,8 +701,6 @@ exports.generateRevenueLeak = async({
             data:invoices.filter(item => !item.tariff.with_agg),
             contract_type
         })
-
-        // console.log(withoutAggValidation)
 
         revenue_leaks = revenue_leaks.concat(withAggValidation.revenue_leak).concat(withoutAggValidation.revenue_leak)
 
@@ -727,19 +724,20 @@ exports.generateRevenueLeakReplan = async({rdd,location,contract_type,draft_bill
         let revenue_leaks = []
        
         let invoices = await getRevenueLeakInvoices({rdd,location,contract_type,draft_bill_invoices,})
+        // console.log(invoices)
         const count = _.uniqBy(invoices,'fk_invoice_id').length
 
         const invoicesValidation    = await invoice_validation({data:invoices,contract_type})
-        invoices                    =  invoicesValidation.invoices
+        invoices                    = invoicesValidation.invoices
         revenue_leaks               = revenue_leaks.concat(invoicesValidation.revenue_leak)
 
-        const contractValidation = await contract_validation({data:invoices,contract_type})
-        invoices        = contractValidation.invoice
-        revenue_leaks   = revenue_leaks.concat(contractValidation.revenue_leak)
+        const contractValidation    = await contract_validation({data:invoices,contract_type})
+        invoices                    = contractValidation.invoice
+        revenue_leaks               = revenue_leaks.concat(contractValidation.revenue_leak)
         
-        const tariffValidation  = await tariff_validation({data:invoices,contract_type})
-        invoices        = tariffValidation.invoices
-        revenue_leaks   = revenue_leaks.concat(tariffValidation.revenue_leak)
+        const tariffValidation      = await tariff_validation({data:invoices,contract_type})
+        invoices                    = tariffValidation.invoices
+        revenue_leaks               = revenue_leaks.concat(tariffValidation.revenue_leak)
         
         const withAggValidation = await with_agg_result_validation({
             data:invoices.filter(item => item.tariff.with_agg),
