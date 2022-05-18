@@ -1,6 +1,6 @@
 const models = require('../../models');
-// const {sequelize,Sequelize} = models;
-const sequelize = require('sequelize')
+const {sequelize,Sequelize} = models;
+//const sequelize = require('sequelize')
 const {Op} = sequelize;
 const {useFormatFilters,viewFilters} = require('../../helper')
 
@@ -84,8 +84,7 @@ const getLatestInvoice = async() => {
 
 const getAllInvoice = async({filters}) => {
     try{
-
-
+        
         return await models.invoices_cleared_hdr.findAll({
             include:[
                 {

@@ -262,7 +262,8 @@ const getContracts = async({
                 '$contract.valid_to$':{
                     [Op.gte]: rdd
                     //moment().toDate()
-                }
+                },
+                status:'ACTIVE'
             }
         })
         .then(result => {
