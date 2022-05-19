@@ -67,8 +67,10 @@ exports.getDraftBillBuy = async({
                 LOCATION_CODE:      item.ascii_loc_code,
                 UM_CODE:            invoices[0].vehicle_type,
                 QUANTITY:           1,
-                UNIT_PRICE:         parseFloat(item.rate).toFixed(2),
-                EXTENDED_AMT:       parseFloat(item.total_charges).toFixed(2)
+                UNIT_PRICE:         _.round(item.rate,2),
+                //parseFloat(item.rate).toFixed(2),
+                EXTENDED_AMT:       _.round(item.total_charges,2)
+                //parseFloat(item.total_charges).toFixed(2)
             }] 
              
             // invoices.map((inv,index)=>{
@@ -100,7 +102,7 @@ exports.getDraftBillBuy = async({
                 PARTICULAR:     invoices.map(i => i.invoice_no).join(','),
                 REF_SI_NO:      'n/a',
                 REF_CROSS:      item.contract_id,
-                CR_AMT:         parseFloat(item.total_charges).toFixed(2),
+                CR_AMT:         _.round(item.total_charges,2),
                 CONFIRMATION_RECEIPT_DETAIL
             }
         })
@@ -108,7 +110,6 @@ exports.getDraftBillBuy = async({
         return draftBills
     }
     catch(e){
-        console.log(e)
         throw e
     }
 }
@@ -133,12 +134,11 @@ exports.getDraftBill = async({
             }
         })
 
-        // console.log(details)
-
         const draftBills        = header.map(item => {
             const invoices      = details.filter(inv => inv.draft_bill_no === item.draft_bill_no)
             const serviceType   = _.find(serviceTypes,['service_type_code',item.service_type])
-            const SO_AMT        =  parseFloat(item.total_charges).toFixed(2)
+            const SO_AMT        =  _.round(item.total_charges,2)
+            //parseFloat(item.total_charges).toFixed(2)
 
             let SALES_ORDER_DETAIL
 
@@ -151,24 +151,24 @@ exports.getDraftBill = async({
                     LOCATION_CODE:  item.ascii_loc_code,
                     UM_CODE:        invoices[0].service_type === '2003'? invoices[0].vehicle_type :invoices[0].min_billable_unit,
                     QUANTITY:       1,
-                    UNIT_PRICE:     parseFloat(item.total_charges).toFixed(2),   
-                    EXTENDED_AMT:   parseFloat(item.total_charges).toFixed(2)                    
+                    UNIT_PRICE:     SO_AMT,//parseFloat(item.total_charges).toFixed(2),   
+                    EXTENDED_AMT:   SO_AMT//parseFloat(item.total_charges).toFixed(2)                    
                 }]
             }
             else{
                 
-                const quantity = invoices[0].service_type === '2003' ? 1 :     
-                _.sumBy(invoices,(i)=>{
-                    if(String(invoices[0].min_billable_unit).toLowerCase() === 'cbm'){
-                        return parseFloat(i.actual_cbm)
-                    }
-                    if(String(invoices[0].min_billable_unit).toLowerCase() === 'weigth'){
-                        return parseFloat(i.actual_weight)
-                    }
-                    if(['CASE','PIECE'].includes( String(invoices[0].min_billable_unit).toUpperCase())){
-                        return parseFloat(i.actual_qty)
-                    }
-                })
+                // const quantity = invoices[0].service_type === '2003' ? 1 :     
+                // _.sumBy(invoices,(i)=>{
+                //     if(String(invoices[0].min_billable_unit).toLowerCase() === 'cbm'){
+                //         return parseFloat(i.actual_cbm)
+                //     }
+                //     if(String(invoices[0].min_billable_unit).toLowerCase() === 'weigth'){
+                //         return parseFloat(i.actual_weight)
+                //     }
+                //     if(['CASE','PIECE'].includes( String(invoices[0].min_billable_unit).toUpperCase())){
+                //         return parseFloat(i.actual_qty)
+                //     }
+                // })
 
                 SALES_ORDER_DETAIL=[{
                     COMPANY_CODE:   '00001',
@@ -178,19 +178,19 @@ exports.getDraftBill = async({
                     LOCATION_CODE:  item.ascii_loc_code,
                     UM_CODE:        invoices[0].service_type === '2003'? invoices[0].vehicle_type :invoices[0].min_billable_unit,
                     QUANTITY:       invoices[0].service_type === '2003' ? 1 :     
-                    _.sumBy(invoices,(i)=>{
+                    _.round(_.sumBy(invoices,(i)=>{
                         if(String(invoices[0].min_billable_unit).toLowerCase() === 'cbm'){
-                            return parseFloat(i.actual_cbm).toFixed(2)
+                            return parseFloat(i.actual_cbm)
                         }
                         if(String(invoices[0].min_billable_unit).toLowerCase() === 'weight'){
-                            return parseFloat(i.actual_weight).toFixed(2)
+                            return parseFloat(i.actual_weight)
                         }
                         if(['CASE','PIECE'].includes( String(invoices[0].min_billable_unit).toUpperCase())){
-                            return parseFloat(i.actual_qty).toFixed(2)
+                            return parseFloat(i.actual_qty)
                         }
-                    }),
-                    UNIT_PRICE:     parseFloat(item.rate).toFixed(2),   
-                    EXTENDED_AMT:   parseFloat(item.total_charges).toFixed(2)                    
+                    }),2),
+                    UNIT_PRICE:     _.round(item.rate,2),   
+                    EXTENDED_AMT:   SO_AMT                    
                 }] 
             }
 
@@ -255,17 +255,11 @@ exports.createAsciiConfirmationReceipt = async({
             }
         })
         .then(result => {            
-            //const errors =result.data.ERROR.map(item => item.HEADER[0].REF_CODE) 
-            //const success = data.filter(item => !errors.includes(item.SO_CODE))
-            
+           
             return {
                 errors:result.data.ERROR,
                 success:result.data.SUMMARY
             }
-            // {
-                // errors:[]//result.data.ERROR,
-                // success
-            //}
         })
 
     }

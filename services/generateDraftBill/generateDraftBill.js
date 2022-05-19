@@ -263,7 +263,7 @@ const getContracts = async({
                     [Op.gte]: rdd
                     //moment().toDate()
                 },
-                status:'ACTIVE'
+            status:'ACTIVE'
             }
         })
         .then(result => {

@@ -1,7 +1,8 @@
 const { result } = require('lodash');
 const models = require('../../models');
 const moment = require('moment')
-const {sequelize,Sequelize} = models
+const {sequelize,Sequelize} = models;
+const {defaultFilter} = require('../../helper/useFormatFilters')
 
 const createDraftBillHeader = async({data,options}) => {
     try{
@@ -48,46 +49,46 @@ const createDraftBillTransaction = async({header,details}) => {
     }
 }
 
-const formatFilters = ({
-    model,
-    filters
-}) => {
-    try{
+// const formatFilters = ({
+//     model,
+//     filters
+// }) => {
+//     try{
 
-        let formattedFilters = filters;
-        const attributes = Object.keys(model)
-        Object.keys(filters).map(field => {
-            if(field === 'delivery_date'){
-                const rdd = filters.delivery_date.split(',')
-                formattedFilters={
-                    ...formattedFilters,
-                    delivery_date:{
-                        [Sequelize.Op.between]:rdd
-                        //[moment(rdd[0]).format('YYYY-MM-DD'),moment(rdd[1]).format('YYYY-MM-DD')]
-                    }
-                }
+//         let formattedFilters = filters;
+//         const attributes = Object.keys(model)
+//         Object.keys(filters).map(field => {
+//             if(field === 'delivery_date'){
+//                 const rdd = filters.delivery_date.split(',')
+//                 formattedFilters={
+//                     ...formattedFilters,
+//                     delivery_date:{
+//                         [Sequelize.Op.between]:rdd
+//                         //[moment(rdd[0]).format('YYYY-MM-DD'),moment(rdd[1]).format('YYYY-MM-DD')]
+//                     }
+//                 }
 
-                //delete formattedFilters['delivery_date']
-            }
-            if(field==='search'){
-                let fields = {}
-                attributes.map(item => (fields[item] = filters.search))
-                formattedFilters={
-                    ...formattedFilters,
-                    [Sequelize.Op.or]:fields
-                }
+//                 delete formattedFilters['delivery_date']
+//             }
+//             if(field==='search'){
+//                 let fields = {}
+//                 attributes.map(item => (fields[item] = filters.search))
+//                 formattedFilters={
+//                     ...formattedFilters,
+//                     [Sequelize.Op.or]:fields
+//                 }
 
-                delete formattedFilters["search"]
-            }
-        })
+//                 delete formattedFilters["search"]
+//             }
+//         })
 
-        return formattedFilters
+//         return formattedFilters
 
-    }
-    catch(e){
-        throw e
-    }
-}
+//     }
+//     catch(e){
+//         throw e
+//     }
+// }
 
 const getPaginatedDraftBill = async({
     filters,
@@ -97,13 +98,11 @@ const getPaginatedDraftBill = async({
 }) => { 
     try {
         
-        let newFilter=formatFilters({
+        let newFilter=defaultFilter({
             model:models.draft_bill_hdr_tbl.rawAttributes,
             filters:filters
         });
-
-        console.log(newFilter)
-
+        
         const {count,rows} = await models.draft_bill_hdr_tbl.findAndCountAll({
             where:{
                 ...newFilter

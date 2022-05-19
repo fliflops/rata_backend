@@ -8,6 +8,7 @@ const {
     generateDraftBill,
     revenueLeak
 } = require('../services')
+const dataDownload = require('../services/dataDownload');
 const test = require('../services/draftBill/draftBillTest');
 const {bookings} = helios
 
@@ -292,10 +293,15 @@ router.post('/ascii/sell',async(req,res)=>{
             }
         })
 
-        res.status(200).json({
-            // result: result,
+        // console.log(result)
+
+        const xlsx = await dataDownload.generateTransmittalResult({
+            success:result.success,
+            errors:result.errors,
             data
         })
+
+        res.status(200).json(xlsx)
     }
     catch(e){
         console.log(e)
@@ -318,7 +324,7 @@ router.post('/ascii/buy',async(req,res)=>{
             data
         })
 
-        //update draft bills
+  
         await draftBill.updateDraftBill({
             data:{
                 status:'DRAFT_BILL_POSTED',
@@ -329,11 +335,14 @@ router.post('/ascii/buy',async(req,res)=>{
                 // contract_type:'BUY'
             }
         })
-      
-        res.status(200).json({
-            result,
+
+        const xlsx = await dataDownload.generateTransmittalResult({
+            success:result.success,
+            errors:result.errors,
             data
         })
+      
+        res.status(200).json(xlsx)
     }
     catch(e){
         console.log(e)

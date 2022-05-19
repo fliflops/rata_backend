@@ -1,9 +1,10 @@
-const router = require('express').Router();
-const sequelize = require('sequelize');
+const router         = require('express').Router();
+const sequelize      = require('sequelize');
 const invoiceService = require('../services/invoice');
 const testService    = require('../services/draftBill/draftBillTest');
 const revenuLeakService = require('../services/revenueLeak');
 const contractService = require('../services/contract');
+const ascii = require('../services/ascii');
 const moment = require('moment')
 const {Op} = sequelize
 
@@ -118,6 +119,43 @@ router.get('/invoice',async(req,res)=>{
     catch(e){
         console.log(e)
         res.status(500).json({message:`${e}`})
+    }
+})
+
+router.get('/ascii',async(req,res)=>{
+    try{
+
+        const {rdd,location} = req.query
+
+        const data = await ascii.getDraftBill({
+            rdd,
+            location
+        })
+
+       res.status(200).json(data)
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({message:`${e}`})
+
+    }
+})
+
+router.get('/ascii/buy',async(req,res)=>{
+    try{
+        const {rdd,location} = req.query
+
+        const data = await ascii.getDraftBillBuy({
+            rdd,
+            location
+        })
+
+       res.status(200).json(data)
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({message:`${e}`})
+
     }
 })
 

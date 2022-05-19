@@ -96,3 +96,60 @@ exports.exportRevenueLeak = async({
         throw error
     }
 }
+
+exports.generateTransmittalResult = async({
+    errors,
+    success,
+    data
+})=>{
+    try{
+
+        const wb = xlsx.utils.book_new();
+ 
+        let error_details = []
+        let error_header = []
+        Object.keys(errors).map(item => {
+            const details = errors[item].DETAILS
+
+            details.map(item => {
+                Object.keys(item).map(key => {
+                    item[key].map(data => {
+                        error_details.push({
+                            ...data
+                        })
+                    })
+                })
+            })
+        })
+
+        // console.log()
+        errors.map(item => {
+            item.HEADER.map(item => {
+                error_header.push({
+                    ...item
+                })
+            })
+        })
+
+        const successWs = xlsx.utils.json_to_sheet(success)
+        xlsx.utils.book_append_sheet(wb,successWs,'success');
+     
+        const errorDetails = xlsx.utils.json_to_sheet(error_details)
+        xlsx.utils.book_append_sheet(wb,errorDetails,'error_details');
+
+        const errorHeader = xlsx.utils.json_to_sheet(error_header)
+        xlsx.utils.book_append_sheet(wb,errorHeader,'error_header');
+
+
+        const transmittalData = xlsx.utils.json_to_sheet(data)
+        xlsx.utils.book_append_sheet(wb,transmittalData,'data');
+
+        return buf = xlsx.write(wb,{
+            type:'buffer', bookType:"xlsx"
+        })
+
+    }
+    catch(e){
+        throw e
+    }
+}
