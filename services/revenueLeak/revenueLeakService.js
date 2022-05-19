@@ -1,10 +1,11 @@
 const _ = require('lodash')
-
+const moment = require('moment')
 const invoiceService        = require('../invoice')
 const draftBillService      = require('../draftBill')
 const contractTariffService = require('../contract')
 const aggService            = require('../aggregation')
 const dataLayer             = require('./revenueLeakDataLayer')
+const {Op} = require('sequelize')
 const sumByQty = ({data,uom,field}) => {
     return parseFloat(_.sumBy(data.filter(item => item.uom === uom),item =>parseFloat(item[field]))).toFixed(2)
 }
@@ -149,14 +150,7 @@ const getRevenueLeakInvoices = async({rdd,location,contract_type,draft_bill_invo
                         details:itemDetails
                     })
                 }
-            // }
-            // else{
-            //     data.push({
-            //         ...invoice,
-            //         id:invoice.fk_invoice_id,
-            //         class_of_store:class_of_store[0]
-            //     })
-            // }
+            
         }
 
         return data
@@ -209,11 +203,8 @@ const contract_validation = ({
         else if(String(contract_type).toUpperCase() === 'BUY'){
             const noVendors = no_vendor_group(data)
             revenue_leak = revenue_leak.concat(noVendors)
-
-            const noContracts = no_contract(data)
-            revenue_leak = revenue_leak.concat(noContracts)
-        }   
-
+        } 
+        
         return {
             revenue_leak,
             invoice:data.filter(item => !revenue_leak.map(item => item.fk_invoice_id).includes(item.id))
@@ -230,10 +221,32 @@ const tariff_validation = async ({data,contract_type,rdd})=>{
         let revenue_leak = []
         let invoices = []
 
-        const contractTariffs = await contractTariffService.getContractDetails({
-            filters:{
-                contract_id: _.uniq(data.map(item => item.contract.contract_id)),
+        let filters = {}
+
+        if(contract_type==='SELL'){
+            filters={
+                contract_id: _.uniq(data.map(item => item.contract?.contract_id)),
                 '$contract.contract_type$': contract_type
+            }
+        }
+        else{
+            filters={
+                '$contract.vendor_group$':_.uniq(data.map(item => item.vendor_group?.vg_code)),
+                '$contract.contract_type$': contract_type
+            }
+        }
+
+        const contractTariffs = await contractTariffService.getContractDetails({
+            filters
+            :{
+                ...filters,
+                '$contract.valid_from$':{
+                    [Op.lte]: rdd
+                },
+                '$contract.valid_to$':{
+                    [Op.gte]: rdd
+                },
+                status:'ACTIVE'
             }
         })
         .then(result => {
@@ -245,15 +258,30 @@ const tariff_validation = async ({data,contract_type,rdd})=>{
                     ...tariff,
                     ...contract,
                     vendor_group:contract.vendor_group,
-                    contract_type:contract.contract_type
+                    contract_type:contract.contract_type,
+                    valid_from: contractDtl?.valid_from || null,
+                    valid_to: contractDtl?.valid_to || null,
                 }
             })
+            .filter(item => {
+                return  moment(rdd).isBetween(item.valid_from,item.valid_to)
+            })
+
         })
+
 
         for(let i in data){
             const invoice       = data[i];
             const tariffs       = contractTariffs
-            .filter(contract    => contract.contract_id === invoice.contract.contract_id)
+            .filter(contract    => {
+                //contract.contract_id === invoice.contract.contract_id
+                if(contract_type==='SELL'){
+                    return contract.contract_id === invoice.contract.contract_id
+                }
+                else{
+                    return contract.vendor_group === invoice.vendor_group?.vg_code
+                }
+            })
             .filter(contract    => {
 
                 const {
@@ -341,7 +369,6 @@ const tariff_validation = async ({data,contract_type,rdd})=>{
                     reason:             'NO TARIFF'
                 })
 
-                // console.log(invoice)
             }
             else {
                 const tariff = {
@@ -403,7 +430,6 @@ const with_agg_result_validation = async({data,contract_type})=>{
         //Validate if the condition is valid
         for(const invoice of data){
             const algo = _.find(conditions,(item)=> item.agg_id === invoice.tariff.fk_agg_id)
-            // console.log(algo)
             if(!algo.raw_condition){
                 revenue_leak.push({
                     invoice_no:         invoice.invoice_no,
@@ -573,12 +599,10 @@ const without_agg_result_validation = async({data,contract_type})=>{
                 }
             ]
 
-            //console.log({invoice:invoice.invoice_no,conditions})
-
+            
             for(const cnd of conditions){
                 const conditon = cnd.raw_condition.split(',').join('')
                 const fn = new Function(['tariff','invoice'],'return ' +conditon)
-                // console.log(fn(invoice.tariff,invoice))
                 if(fn(invoice.tariff,invoice)){
                     const formula = cnd.raw_formula.split(',').join('')
                     const fnFormula = new Function(['tariff','invoice'],'return '+formula)
@@ -655,7 +679,6 @@ const invoice_validation = async({data,contract_type}) => {
             noShipPointValidtion(data)
         }
         
-        // console.log(revenue_leak)
 
         return {
            invoices:data.filter(item => !revenue_leak.map(item => item.fk_invoice_id).includes(item.id)),
@@ -677,18 +700,17 @@ exports.generateRevenueLeak = async({
         let revenue_leaks = []
 
         let invoices = await getInvoices({rdd,location,contract_type, draft_bill_invoices})
-        
         const invoicesValidation = await invoice_validation({data:invoices,contract_type})
         invoices = invoicesValidation.invoices
         revenue_leaks = revenue_leaks.concat(invoicesValidation.revenue_leak)
 
-        if(contract_type==='SELL'){
-            const contractValidation = await contract_validation({data:invoices,contract_type})
-            invoices        = contractValidation.invoice
-            revenue_leaks   = revenue_leaks.concat(contractValidation.revenue_leak)
-        }
+        const contractValidation = await contract_validation({data:invoices,contract_type})
+        invoices        = contractValidation.invoice
+        revenue_leaks   = revenue_leaks.concat(contractValidation.revenue_leak)
+
+        // console.log(contractValidation.invoice)
         
-        const tariffValidation  = await tariff_validation({data:invoices,contract_type})
+        const tariffValidation  = await tariff_validation({data:invoices,contract_type,rdd})
         invoices        = tariffValidation.invoices
         revenue_leaks   = revenue_leaks.concat(tariffValidation.revenue_leak)
 
@@ -723,7 +745,7 @@ exports.generateRevenueLeakReplan = async({rdd,location,contract_type,draft_bill
     try{
         let revenue_leaks = []
        
-        let invoices = await getRevenueLeakInvoices({rdd,location,contract_type,draft_bill_invoices,})
+        let invoices = await getRevenueLeakInvoices({rdd,location,contract_type,draft_bill_invoices})
         // console.log(invoices)
         const count = _.uniqBy(invoices,'fk_invoice_id').length
 
@@ -735,7 +757,7 @@ exports.generateRevenueLeakReplan = async({rdd,location,contract_type,draft_bill
         invoices                    = contractValidation.invoice
         revenue_leaks               = revenue_leaks.concat(contractValidation.revenue_leak)
         
-        const tariffValidation      = await tariff_validation({data:invoices,contract_type})
+        const tariffValidation      = await tariff_validation({data:invoices,contract_type,rdd})
         invoices                    = tariffValidation.invoices
         revenue_leaks               = revenue_leaks.concat(tariffValidation.revenue_leak)
         

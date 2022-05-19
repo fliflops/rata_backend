@@ -194,12 +194,12 @@ const getAllRevenueLeakInvoices = async({rdd,location,contract_type})=>{
 const getBuyInvoice = async({filters}) => {
     try{
 
-        const vendorGroups = await vendorService.getAllVendorGroupDtl({
-            filters:{
-                '$vendor_header.vg_status$':'ACTIVE',
-                '$vendor_header.location$':filters.location
-            }
-        })
+        // const vendorGroups = await vendorService.getAllVendorGroupDtl({
+        //     filters:{
+        //         '$vendor_header.vg_status$':'ACTIVE',
+        //         '$vendor_header.location$':filters.location
+        //     }
+        // })
 
         let data = await invoiceService.getAllInvoice({
             filters:{...filters}
@@ -207,13 +207,14 @@ const getBuyInvoice = async({filters}) => {
         .then(async result => {
 
             return result.map(item => {
-                let {contract,vendor_group,...newItem} = item
-                const vg_code = _.find(vendorGroups,['vg_vendor_id',newItem.trucker_id])
+                let {contract,vendor_group,...newItem} = item;
+
+                //const vg_code = _.find(vendorGroups,['vg_vendor_id',newItem.trucker_id])
             
                 return {
                     ...newItem,
                     contract_id:null,
-                    vg_code:vg_code?.vg_code,
+                    vg_code:vendor_group?.vg_code,
                     fk_invoice_id:item.id
                 }
             })
@@ -252,18 +253,15 @@ const getContracts = async({
 
         let details = await contractService.getContractDetails({
             filters:{
-                // contract_id:contractID,
                 ...filters,
                 '$contract.contract_type$':contract_type,
                 '$contract.valid_from$':{
                     [Op.lte]: rdd
-                    //moment().toDate()
                 },
                 '$contract.valid_to$':{
                     [Op.gte]: rdd
-                    //moment().toDate()
                 },
-            status:'ACTIVE'
+                status:'ACTIVE'
             }
         })
         .then(result => {
@@ -295,7 +293,7 @@ const getContracts = async({
 /**Used for Generating BUY Draft Bill */
 const assignContract = async({data,contracts}) => {
     try {   
-        
+
         const details = data.map(item => {
             const contract = _.find(contracts, c => {
                 return c.vendor_group === item.vg_code
@@ -307,6 +305,7 @@ const assignContract = async({data,contracts}) => {
             }
         })
 
+
         return details
 
         
@@ -317,7 +316,7 @@ const assignContract = async({data,contracts}) => {
 
 const assignTariff = async ({invoices,contracts}) => {
     
-    let data = [];  
+    let data = []; 
    
     for(let i in invoices){ 
         const invoice       = invoices[i];
@@ -403,7 +402,7 @@ const assignTariff = async ({invoices,contracts}) => {
                 contract_type:      tariffs[0].contract_type
             }
             
-            // console.log(tariff)
+
             
             data.push({
                 ...invoice,
@@ -413,6 +412,7 @@ const assignTariff = async ({invoices,contracts}) => {
 
         }
     }
+
 
     return data
 }
@@ -534,7 +534,6 @@ const groupWithAgg = async({data,contract_type}) => {
                 if(df.parameters){
             
                     df.parameters.map(item => {
-                        // console.log(df.min_billable_unit)
                         aggregatedValues={
                             ...aggregatedValues,
                             total_cbm:      isNaN (sumBy({data:df.invoices,field:'actual_cbm'})) ?                     0 :   sumBy({data:df.invoices,field:'actual_cbm'}),
@@ -735,7 +734,6 @@ const groupWithAgg = async({data,contract_type}) => {
                 if(df.parameters){
             
                     df.parameters.map(item => {
-                        // console.log(df.min_billable_unit)
                         aggregatedValues={
                             ...aggregatedValues,
                             total_cbm:      isNaN (sumBy({data:df.invoices,field:'actual_cbm'})) ?                     0 :   sumBy({data:df.invoices,field:'actual_cbm'}),
@@ -1014,6 +1012,7 @@ exports.generateDraftBillBuy = async({deliveryDate,location}) => {
                 is_processed_buy:false
             }
         })
+
 
         /*B. Assignment of Tariffs Per Contract 
         1.Get Contracts

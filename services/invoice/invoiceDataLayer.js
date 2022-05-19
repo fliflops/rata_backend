@@ -96,9 +96,6 @@ const getAllInvoice = async({filters}) => {
                     model:models.contract_hdr_tbl,
                     attributes:["contract_id","contract_type"],
                     where:{
-                        // [Op.and]:[
-                        //     sequelize.where(sequelize.col('contract.contract_status'),"APPROVED")
-                        // ]
                         contract_status:'APPROVED',
                         contract_type: typeof filters.is_processed_sell !== 'undefined' ? 'SELL' : 'BUY' 
                     },

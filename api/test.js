@@ -4,9 +4,44 @@ const invoiceService = require('../services/invoice');
 const testService    = require('../services/draftBill/draftBillTest');
 const revenuLeakService = require('../services/revenueLeak');
 const contractService = require('../services/contract');
+const generateDraftBill = require('../services/generateDraftBill')
+const draftBillService = require('../services/draftBill');
 const ascii = require('../services/ascii');
 const moment = require('moment')
 const {Op} = sequelize
+
+router.get('/draft-bill/buy',async(req,res)=>{
+    try{
+        const {rdd,location} = req.query
+        const draftBills = await generateDraftBill.generateDraftBillBuy({
+            deliveryDate:rdd,
+            location
+        })
+
+        const {data,invData} = await draftBillService.createDraftBill(draftBills)
+
+        const revenue_leak = await revenuLeakService.generateRevenueLeak({
+            rdd,
+            location,
+            contract_type:'BUY',
+            draft_bill_invoices:invData
+        })
+
+        const header  = data
+        const invoices = invData
+
+
+        res.status(200).json({
+            revenue_leak,
+            header,
+            invoices
+        })
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({message:`${e}`})    
+    }
+})
 
 router.get('/draft-bill/sell/:version',async(req,res)=>{
     try{
@@ -105,15 +140,22 @@ router.get('/invoice',async(req,res)=>{
     try{
         const {rdd,location,contract_type} = req.query;
 
-        const data = await invoiceService.getAllInvoice({
+        const draftBills = await invoiceService.getAllInvoice({
             filters:{
                 rdd,
                 location,
-                is_processed_buy:true
+                // is_processed_buy:true
             }
         })
 
-        res.status(200).json(data)
+
+
+
+        // res.status(200).json({
+        //     header,
+        //     invoices,
+        //     revenue_leak
+        // })
 
     }
     catch(e){
