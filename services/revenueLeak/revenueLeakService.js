@@ -430,7 +430,7 @@ const with_agg_result_validation = async({data,contract_type})=>{
         //Validate if the condition is valid
         for(const invoice of data){
             const algo = _.find(conditions,(item)=> item.agg_id === invoice.tariff.fk_agg_id)
-            if(!algo.raw_condition){
+            if(!algo?.raw_condition){
                 revenue_leak.push({
                     invoice_no:         invoice.invoice_no,
                     fk_invoice_id:      invoice.id,
