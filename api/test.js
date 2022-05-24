@@ -43,29 +43,52 @@ router.get('/draft-bill/buy',async(req,res)=>{
     }
 })
 
-router.get('/draft-bill/sell/:version',async(req,res)=>{
+router.get('/draft-bill/sell',async(req,res)=>{
     try{
-        const {version} = req.params
+        // const {version} = req.params
         const {location,rdd} = req.query
 
-        let data; 
-        if(version === 'v2'){
-            
-            data = await testService.generateDraftBillSell({
-                deliveryDate:rdd,
-                location
-            })
-        }
-        else{
-           data = await testService.generateDraftBillSellV1({
-                deliveryDate:rdd,
-                location
-           }) 
-        }
+        const draftBills = await generateDraftBill.generateDraftBill({
+            deliveryDate:rdd,
+            location
+        })
+
+        const {data,invData} = await draftBillService.createDraftBill(draftBills)
+
+        const revenue_leak = await revenuLeakService.generateRevenueLeak({
+            rdd,
+            location,
+            contract_type:'SELL',
+            draft_bill_invoices:invData
+        })
+
+        const header  = data
+        const invoices = invData
+
 
         res.status(200).json({
-            data
+            revenue_leak,
+            header,
+            invoices
         })
+        // let data; 
+        // if(version === 'v2'){
+            
+        //     data = await testService.generateDraftBillSell({
+        //         deliveryDate:rdd,
+        //         location
+        //     })
+        // }
+        // else{
+        //    data = await testService.generateDraftBillSellV1({
+        //         deliveryDate:rdd,
+        //         location
+        //    }) 
+        // }
+
+        // res.status(200).json({
+        //     data
+        // })
 
     }
     catch(e){
@@ -167,14 +190,23 @@ router.get('/invoice',async(req,res)=>{
 router.get('/ascii',async(req,res)=>{
     try{
 
-        const {rdd,location} = req.query
+        const {rdd,location} = req.query;
 
-        const data = await ascii.getDraftBill({
+        const token = await ascii.loginService()
+        const data = await ascii.getDraftBillBuy({
             rdd,
             location
         })
 
-       res.status(200).json(data)
+        const result = await ascii.createAsciiConfirmationReceipt({
+            token,
+            data
+        })
+
+       res.status(200).json({
+           data,
+           result
+       })
     }
     catch(e){
         console.log(e)

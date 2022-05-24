@@ -277,6 +277,12 @@ router.post('/ascii/sell',async(req,res)=>{
             location
         })
 
+        if(data.length === 0){
+            return res.status(400).json({
+                message:'No Data Found'
+            })
+        }
+
         const result = await ascii.createAsciiSalesOrder({
             token,
             data: JSON.parse(JSON.stringify(data))
@@ -319,12 +325,17 @@ router.post('/ascii/buy',async(req,res)=>{
             location
         })
 
+        if(data.length === 0){
+            return res.status(400).json({
+                message:'No Data Found'
+            })
+        }
+
         const result = await ascii.createAsciiConfirmationReceipt({
             token,
             data
         })
-
-  
+       
         await draftBill.updateDraftBill({
             data:{
                 status:'DRAFT_BILL_POSTED',
@@ -332,10 +343,9 @@ router.post('/ascii/buy',async(req,res)=>{
             },
             filters:{
                 draft_bill_no:result.success.map(item => item.CR_CODE),
-                // contract_type:'BUY'
             }
         })
-
+  
         const xlsx = await dataDownload.generateTransmittalResult({
             success:result.success,
             errors:result.errors,
