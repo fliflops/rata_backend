@@ -233,5 +233,55 @@ router.get('/ascii/buy',async(req,res)=>{
     }
 })
 
+router.get('/replan/sell', async(req,res)=>{
+    try{
+        const {rdd,location} = req.query;
+
+        
+        let draftBills;
+        let revenue_leak;
+
+        let header;
+        let invoices;
+
+        draftBills = await generateDraftBill.replanDraftBill({
+            deliveryDate:rdd,
+            location
+        })
+        const {data,invData} = await draftBillService.createDraftBill(draftBills)
+        
+        revenue_leak = await revenuLeakService.generateRevenueLeakReplan({
+            rdd,
+            location,
+            contract_type:'SELL',
+            draft_bill_invoices:invData
+        })
+
+        header  = data
+        invoices = invData
+
+        // const get_revenue_leaks = await invoice.getAllRevenueLeak({
+        //     filters:{
+        //         draft_bill_type:'SELL',
+        //         '$invoice.location$':   location,
+        //         '$invoice.rdd$':        rdd,
+        //         is_draft_bill:          false
+        //     }
+        // })
+
+        res.status(200).json({
+            draftBills,
+            header,
+            invoices,
+            revenue_leak
+        })
+
+
+    }   
+    catch(e){
+        throw e
+    }
+})
+
 
 module.exports = router 
