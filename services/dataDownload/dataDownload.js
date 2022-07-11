@@ -1,5 +1,9 @@
 const {getAllDraftBills, getAllInvoices} = require('../draftBill');
-const {getAllRevenueLeak} = require('../invoice')
+const {getAllRevenueLeak} = require('../invoice');
+const {getAllLocation} = require('../location');
+const {getAllPrincipal} = require('../principal');
+const {getAllShipPoint} = require('../shipPoint');
+const {getAllVendor,getAllVendorGroup,getAllVendorGroupDtl} = require('../vendor');
 const xlsx = require('xlsx');
 const sequelize = require('sequelize')
 
@@ -153,3 +157,72 @@ exports.generateTransmittalResult = async({
         throw e
     }
 }
+
+exports.exportLocation = async()=>{
+    try{
+        const locations = await getAllLocation({
+            filters:{}
+        })
+
+        const buffer = await generateExcel({
+            locations
+        })
+
+        return buffer
+
+    }
+    catch(e){
+        throw e
+    }
+}
+
+exports.exportPrincipal = async()=>{
+    try{
+        const principals = await getAllPrincipal({filters:{}})
+        const buffer = await generateExcel({
+            principals
+        })
+
+        return buffer
+    }
+    catch(e){
+        throw e
+    }
+}
+
+exports.exportShipPoint = async()=>{
+    try{
+        const ship_points = await getAllShipPoint({filters:{}})
+        const buffer = await generateExcel({
+            ship_points
+        })
+
+        return buffer
+    }
+    catch(e){
+        throw e
+    }
+}
+
+exports.exportVendors = async()=>{
+    try{
+        const vendors = await getAllVendor({})
+        const vendor_group = await getAllVendorGroup({})
+        const vendor_group_dtl = await getAllVendorGroupDtl({})
+
+        const buffer = await generateExcel({
+            vendors,
+            vendor_group,
+            vendor_group_dtl
+        })
+
+        return buffer
+    }   
+    catch(e){
+
+    }
+}
+
+
+
+

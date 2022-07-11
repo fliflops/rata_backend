@@ -57,4 +57,58 @@ router.get('/revenue-leak', async(req,res)=> {
     }
 })
 
+router.get('/locations',async(req,res)=>{
+    try{    
+
+        const data = await dataDownload.exportLocation()
+
+        res.status(200).json(data)
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({
+            message:`${e}`
+        })
+    }
+})
+
+router.get('/principal',async(req,res)=>{
+    try{    
+        const data = await dataDownload.exportPrincipal()
+        res.status(200).json(data)
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({
+            message:`${e}`
+        })
+    }
+})
+
+router.get('/ship-point', async(req,res)=>{
+    try{
+        const data = await dataDownload.exportShipPoint()
+        res.status(200).json(data)
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({
+            message:`${e}`
+        })
+    }
+})
+
+router.get('/vendor', async(req,res)=>{
+    try{
+        const data = await dataDownload.exportVendors()
+        res.status(200).json(data)
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({
+            message:`${e}`
+        })
+    }
+})
+
 module.exports = router

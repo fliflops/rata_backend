@@ -79,6 +79,7 @@ const getAllVendorGroup = async({filters,options}) => {
                 ...filters
             }
         })
+        .then(result => JSON.parse(JSON.stringify(result)))
     } 
     catch (e) {
         throw e

@@ -45,7 +45,6 @@ router.get('/draft-bill/buy',async(req,res)=>{
 
 router.get('/draft-bill/sell',async(req,res)=>{
     try{
-        // const {version} = req.params
         const {location,rdd} = req.query
 
         const draftBills = await generateDraftBill.generateDraftBill({
@@ -71,25 +70,6 @@ router.get('/draft-bill/sell',async(req,res)=>{
             header,
             invoices
         })
-        // let data; 
-        // if(version === 'v2'){
-            
-        //     data = await testService.generateDraftBillSell({
-        //         deliveryDate:rdd,
-        //         location
-        //     })
-        // }
-        // else{
-        //    data = await testService.generateDraftBillSellV1({
-        //         deliveryDate:rdd,
-        //         location
-        //    }) 
-        // }
-
-        // res.status(200).json({
-        //     data
-        // })
-
     }
     catch(e){
         console.log(e)

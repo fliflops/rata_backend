@@ -13,7 +13,7 @@ router.post('/tariff',async(req,res) => {
             tariff_ids:[data.tariff_id]
         })
 
-        console.log(results)
+        // console.log(results)
 
         
 

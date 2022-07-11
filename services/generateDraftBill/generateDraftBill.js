@@ -208,9 +208,7 @@ const getBuyInvoice = async({filters}) => {
 
             return result.map(item => {
                 let {contract,vendor_group,...newItem} = item;
-
-                //const vg_code = _.find(vendorGroups,['vg_vendor_id',newItem.trucker_id])
-            
+ 
                 return {
                     ...newItem,
                     contract_id:null,
@@ -277,7 +275,11 @@ const getContracts = async({
                 }
             })
             .filter(item => {
-                return  moment(rdd).isBetween(item.valid_from,item.valid_to)
+                const from = moment(item.valid_from)
+                const to = moment(item.valid_to)
+                
+                return moment(rdd).diff(from,'days') >= 0 && to.diff(moment(rdd),'days') >= 0
+                //return  moment(rdd).isBetween(item.valid_from,item.valid_to)
             })
 
             return contract_tariff
@@ -305,10 +307,8 @@ const assignContract = async({data,contracts}) => {
             }
         })
 
-
         return details
 
-        
     } catch (e) {
         throw e
     }
@@ -538,7 +538,7 @@ const groupWithAgg = async({data,contract_type}) => {
                             ...aggregatedValues,
                             total_cbm:      isNaN (sumBy({data:df.invoices,field:'actual_cbm'})) ?                     0 :   sumBy({data:df.invoices,field:'actual_cbm'}),
                             total_weight:   isNaN (sumBy({data:df.invoices,field:'actual_weight'})) ?                  0 :   sumBy({data:df.invoices,field:'actual_weight'}),
-                            total_qty:      sumQtyHeader({data:df.invoices,field:item})//100//isNaN (sumByQty({data:df.invoices,uom:df.min_billable_unit,field:item})) ? null :   sumByQty({data:df.invoices,uom:df.min_billable_unit,field:item})
+                            total_qty:      sumQtyHeader({data:df.invoices,field:item})
                         }
                     })
                 }

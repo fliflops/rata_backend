@@ -257,18 +257,23 @@ const tariff_validation = async ({data,contract_type,rdd})=>{
                     ...contractDtl,
                     ...tariff,
                     ...contract,
-                    vendor_group:contract.vendor_group,
-                    contract_type:contract.contract_type,
+                    vendor_group:   contract.vendor_group,
+                    contract_type:  contract.contract_type,
                     valid_from: contractDtl?.valid_from || null,
-                    valid_to: contractDtl?.valid_to || null,
+                    valid_to:   contractDtl?.valid_to || null,
                 }
             })
             .filter(item => {
-                return  moment(rdd).isBetween(item.valid_from,item.valid_to)
+                const from = moment(item.valid_from)
+                const to = moment(item.valid_to)
+                
+                return moment(rdd).diff(from,'days') >= 0 && to.diff(moment(rdd),'days') >= 0
+            //moment(rdd).isBetween(item.valid_from,item.valid_to)
+                
+                
             })
 
         })
-
 
         for(let i in data){
             const invoice       = data[i];
@@ -295,6 +300,10 @@ const tariff_validation = async ({data,contract_type,rdd})=>{
                     class_of_store,
                     sub_service_type,
                 } = contract
+
+                // if(from_geo==='CAINTA' && to_geo==='MEXICO'){
+                //     console.log(contract)
+                // }
 
                 const inv_stc_from              = invoice.ship_point_from[String(from_geo_type).toLowerCase()]
                 const inv_stc_to                = invoice.ship_point_to[String(to_geo_type).toLowerCase()]
@@ -363,12 +372,12 @@ const tariff_validation = async ({data,contract_type,rdd})=>{
             else if(tariffs.length === 0){
                 
                 revenue_leak.push({
+                    // ...invoice,
                     invoice_no:         invoice.invoice_no,
                     fk_invoice_id:      invoice.id,
                     draft_bill_type:    contract_type,
                     reason:             'NO TARIFF'
                 })
-
             }
             else {
                 const tariff = {
@@ -401,10 +410,8 @@ const tariff_validation = async ({data,contract_type,rdd})=>{
                     ...invoice,
                     tariff,
                     group_id: tariff.group_by === 'string' ?  tariff.group_by.split(',').map(item =>  invoice[item]).join('|') : null,
-                
                 })       
             }
-
         }
 
         return {
@@ -545,6 +552,7 @@ const with_agg_result_validation = async({data,contract_type})=>{
             if(!aggCondition.condition){
                 draftBill.invoices.map(item => {
                     revenue_leak.push({
+                        //...draftBill,
                         invoice_no:         item.invoice_no,
                         fk_invoice_id:      item.id,
                         draft_bill_type:    contract_type,
