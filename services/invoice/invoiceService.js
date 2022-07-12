@@ -1,6 +1,7 @@
 const dataLayer = require('./invoiceDataLayer');
 const draftBill = require('../draftBill');
 const _ = require('lodash');
+const { Op } = require('sequelize');
 
 exports.createInvoiceTransaction = async({
     invoices,
@@ -178,6 +179,37 @@ exports.getAllRevenueLeak = async({
                 }
             })
         })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+
+exports.getRevenueLeakDetails = async({
+    filters 
+}) => {
+    try{
+
+        return await dataLayer.getInvoiceDetails({
+            filters:{
+                '$invoices_rev_leak.invoice_no$': {
+                    [Op.not]:null
+                },
+                ...filters
+            }
+        })
+        .then(result => {
+            return result.map(item => {
+                const {invoices_cleared,invoices_rev_leak,...leak} = item;
+
+                return {
+                    ...leak,
+                    draft_bill_type:invoices_rev_leak?.draft_bill_type
+                }
+            })
+        })
+
     }
     catch(e){
         throw e

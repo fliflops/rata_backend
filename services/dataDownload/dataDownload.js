@@ -1,9 +1,12 @@
 const {getAllDraftBills, getAllInvoices} = require('../draftBill');
-const {getAllRevenueLeak} = require('../invoice');
+const {getAllRevenueLeak,getRevenueLeakDetails} = require('../invoice');
 const {getAllLocation} = require('../location');
 const {getAllPrincipal} = require('../principal');
 const {getAllShipPoint} = require('../shipPoint');
 const {getAllVendor,getAllVendorGroup,getAllVendorGroupDtl} = require('../vendor');
+const {getContractDetails} = require('../contract');
+const {getAllQuickCodes} = require('../quickCodes')
+const {getAllAggCondition,getAllAggregation} = require('../aggregation');
 const xlsx = require('xlsx');
 const sequelize = require('sequelize')
 
@@ -88,9 +91,33 @@ exports.exportRevenueLeak = async({
                 }
             }
         })
+        .then(result => {
+            return result.map(item => {
+                const {contract,ship_point_from,ship_point_to,details,vendor_group,principal_tbl,...newItem}=item
+                return {
+                    ...newItem,
+                    ship_point_from_name: ship_point_from?.stc_description,
+                    ship_point_to_name: ship_point_to?.stc_description,
+                    principal_name: principal_tbl?.principal_name
+                }
+            })
+        })
+
+        const details = await getRevenueLeakDetails({
+            filters:{
+                ['$invoices_rev_leak.draft_bill_type$']: contract_type, 
+                ['$invoices_cleared.location$']:location,
+                ['$invoices_cleared.rdd$']:{
+                    [sequelize.Op.between]:[from,to]
+                }
+            }
+        })
+
+       // console.log(details)
 
         const buffer = await generateExcel({
-            invoices:data
+            invoices:data,
+            details
         })
 
         return buffer
@@ -206,9 +233,9 @@ exports.exportShipPoint = async()=>{
 
 exports.exportVendors = async()=>{
     try{
-        const vendors = await getAllVendor({})
-        const vendor_group = await getAllVendorGroup({})
-        const vendor_group_dtl = await getAllVendorGroupDtl({})
+        const vendors           = await getAllVendor({})
+        const vendor_group      = await getAllVendorGroup({})
+        const vendor_group_dtl  = await getAllVendorGroupDtl({})
 
         const buffer = await generateExcel({
             vendors,
@@ -219,10 +246,65 @@ exports.exportVendors = async()=>{
         return buffer
     }   
     catch(e){
-
+        throw e
     }
 }
 
+
+exports.exportContractTariff = async({
+    contract_id
+}) => {
+    try{
+        const contract_details = await getContractDetails({
+            filters:{
+                contract_id
+            }
+        })
+
+        const buffer = await generateExcel({
+            contract_details
+        })
+
+        return buffer
+    }
+    catch(e){
+        throw e
+    }
+}
+
+exports.exportQuickCode = async()=>{
+    try{
+
+        const quick_code = await getAllQuickCodes({})
+
+        const buffer = await generateExcel({
+            quick_code
+        })
+
+        return buffer
+
+    }
+    catch(e){
+        throw e
+    }
+}
+
+exports.exportAlgo = async()=>{
+    try{
+        const conditions = await getAllAggCondition({})
+        const aggregation = await getAllAggregation({})
+
+        const buffer = await generateExcel({
+            conditions,
+            aggregation
+        })
+
+        return buffer
+    }
+    catch(e){
+        throw e
+    }
+}
 
 
 

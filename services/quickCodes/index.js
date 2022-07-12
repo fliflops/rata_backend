@@ -8,3 +8,12 @@ exports.getAllQuickCode = async ({type}) => {
         throw e
     }
 }
+
+exports.getAllQuickCodes = async({filters}) => {
+    try{
+        return await dataLayer.getAllQuickCodes({filters})
+    }
+    catch(e){
+        throw e
+    }
+}

@@ -1,7 +1,7 @@
 const dataLayer = require('./vendorDatalayer')
 
 exports.bulkCreateVendor = async({data})=>{
-    try {
+    try{
         return await dataLayer.bulkCreateVendor({
             data,
             options:{
