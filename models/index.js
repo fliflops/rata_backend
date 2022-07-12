@@ -141,6 +141,25 @@ db.invoices_cleared_hdr.hasOne(db.vendor_group_dtl_tbl,{
 	as:'vendor_group'
 })
 
+db.invoices_cleared_hdr.hasOne(db.principal_tbl,{
+	foreignKey:'principal_code',
+	sourceKey:'principal_code',
+	as:'principal_tbl'
+})
+
+//Invoice details assoc
+db.invoices_dtl_tbl.hasOne(db.invoices_cleared_hdr,{
+	foreignKey:'id',
+	sourceKey:'fk_invoice_id',
+	as:'invoices_cleared'
+})
+
+db.invoices_dtl_tbl.hasOne(db.invoices_rev_leak_tbl,{
+	foreignKey:'fk_invoice_id',
+	sourceKey:'fk_invoice_id',
+	as:'invoices_rev_leak'
+})
+
 
 
 // db.vendor_group_dtl_tbl.belongsTo(db.invoices_cleared_hdr,{
@@ -173,9 +192,10 @@ db.invoices_rev_leak_tbl.hasOne(db.invoices_cleared_hdr,{
 	sourceKey:'fk_invoice_id',
 	as:'invoice'
 })
-db.invoices_cleared_hdr.belongsTo(db.invoices_rev_leak_tbl,{
-	foreignKey:'id'
-})
+
+// db.invoices_cleared_hdr.belongsTo(db.invoices_rev_leak_tbl,{
+// 	foreignKey:'id'
+// })
 
 //Vendor Associations
 db.vendor_group_tbl.hasOne(db.vendor_group_dtl_tbl,{

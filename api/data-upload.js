@@ -211,6 +211,7 @@ router.post('/contract',async(req,res)=>{
             const valid_to   =  moment(contract?.valid_to).format('YYYY-MM-DD');
             
             if(!moment(today).isBetween(valid_from,valid_to)){
+
                 contract_header.push({
                     contract_id:contract.contract_id,
                     reason:'Invalid contract validity'
@@ -266,6 +267,13 @@ router.post('/contract',async(req,res)=>{
 
                 continue;
             }
+
+            // console.log({
+            //     valid_from,
+            //     valid_to,
+            //     today,
+            //     valid:moment(today).isBetween(valid_from,valid_to)
+            // })
 
             if(!moment(today).isBetween(valid_from,valid_to)){
                 contract_details.push({

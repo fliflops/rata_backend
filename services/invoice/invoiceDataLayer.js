@@ -289,6 +289,11 @@ const getAllRevenueLeak = async({filters}) => {
                                 ]
                             },
                             as:'vendor_group'
+                        },
+                        {
+                            model:models.principal_tbl,
+                            attributes:['principal_name'],
+                            as:'principal_tbl'
                         }
                     ],
                     as:"invoice"
@@ -373,6 +378,30 @@ const getPaginatedInvoices = async({
     }
 }
 
+const getInvoiceDetails = async({filters})=>{
+    try{
+        return await models.invoices_dtl_tbl.findAll({
+            include:[
+                {
+                    model:models.invoices_cleared_hdr,
+                    as:'invoices_cleared'
+                },
+                {
+                    model:models.invoices_rev_leak_tbl,
+                    as:'invoices_rev_leak'
+                }
+            ],
+            where:{
+                ...filters
+            }
+        })
+        .then(result=> JSON.parse(JSON.stringify(result)))
+    }
+    catch(e){
+        throw e
+    }
+}
+
 module.exports={
     createInvoice,
     createInvoiceDtl,
@@ -385,5 +414,6 @@ module.exports={
     getPaginatedRevenueLeak,
     getAllRevenueLeak,
     getPaginatedRevenueLeak,
-    getPaginatedInvoices
+    getPaginatedInvoices,
+    getInvoiceDetails
 }
