@@ -68,28 +68,9 @@ exports.getDraftBillBuy = async({
                 UM_CODE:            invoices[0].vehicle_type,
                 QUANTITY:           1,
                 UNIT_PRICE:         _.round(item.rate,2),
-                //parseFloat(item.rate).toFixed(2),
                 EXTENDED_AMT:       _.round(item.total_charges,2)
-                //parseFloat(item.total_charges).toFixed(2)
             }] 
              
-            // invoices.map((inv,index)=>{
-            //     let quantity = 0
-            //     return {
-            //         COMPANY_CODE:       '00001',
-            //         CR_CODE:            item.draft_bill_no,
-            //         ITEM_CODE:          serviceType?.ascii_item_code,
-            //         LINE_NO:            index+1,
-            //         SERVICE_TYPE_CODE:  serviceType?.ascii_service_type,
-            //         PRINCIPAL_CODE:     item.ascii_principal_code,
-            //         LOCATION_CODE:      item.ascii_loc_code,
-            //         UM_CODE:            inv.vehicle_type,
-            //         QUANTITY:           1,
-            //         UNIT_PRICE:         parseFloat(item.rate).toFixed(2),
-            //         EXTENDED_AMT:       parseFloat(inv.billing).toFixed(2), 
-            //     }
-            // })
-
             return {
                 COMPANY_CODE:   '00001',
                 CR_CODE:        item.draft_bill_no,
@@ -127,6 +108,8 @@ exports.getDraftBill = async({
                 contract_type:'SELL'
             }
         })
+
+        console.log(header)
 
         const details = await draftBill.getAllInvoices({
             filters:{
@@ -199,7 +182,7 @@ exports.getDraftBill = async({
                 SO_CODE:        item.draft_bill_no,
                 ITEM_TYPE:      'S',
                 SO_DATE:        item.draft_bill_date,
-                CUSTOMER_CODE:  item.customer,
+                CUSTOMER_CODE:  item.ascii_customer_code,
                 PARTICULAR:     invoices.map(i => i.invoice_no).join(','),
                 REF_EUPO:       invoices[0].trip_plan,
                 REF_CROSS:      item.contract_id,

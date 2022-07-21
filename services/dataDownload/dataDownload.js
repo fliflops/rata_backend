@@ -9,6 +9,7 @@ const {getAllQuickCodes} = require('../quickCodes')
 const {getAllAggCondition,getAllAggregation} = require('../aggregation');
 const xlsx = require('xlsx');
 const sequelize = require('sequelize')
+const _ = require('lodash')
 
 const generateExcel = (data) => {
     try{
@@ -252,15 +253,31 @@ exports.exportVendors = async()=>{
 
 
 exports.exportContractTariff = async({
-    contract_id
+    contract_id,
+    from,
+    to
 }) => {
     try{
         const contract_details = await getContractDetails({
             filters:{
-                contract_id
+                contract_id,
+                valid_from:{
+                    [sequelize.Op.gte]: from
+                },
+                valid_to:{
+                    [sequelize.Op.lte]: to
+                }
             }
         })
-
+        .then(result => {
+            return result.map(item => {
+                return {
+                    ...item,
+                    tariff_rate: _.round(item.tariff_rate,2).toFixed(2)
+                }
+            })
+        })
+       
         const buffer = await generateExcel({
             contract_details
         })

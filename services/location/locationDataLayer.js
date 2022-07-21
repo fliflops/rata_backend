@@ -1,5 +1,40 @@
 const models = require('../../models');
-const {sequelize,Sequelize} = models
+const {sequelize,Sequelize} = models;
+const {useFormatFilters,viewFilters} = require('../../helper')
+
+
+const getPaginatedLocation = async({
+    filters,
+    orderBy,
+    page,
+    totalPage
+})=>{
+    try{    
+        let where = viewFilters.globalSearchFilter({
+            model:models.location_tbl.rawAttributes,
+            filters
+        })
+
+        return await models.location_tbl.findAndCountAll({
+            where:{
+                ...where
+            },
+            offset:parseInt(page) * parseInt(totalPage),
+            limit:parseInt(totalPage)
+        })
+        .then(result => {
+            let {count,rows} = JSON.parse(JSON.stringify(result))
+            return {
+                count,
+                rows
+            }
+        })
+
+    }
+    catch(e){
+        throw e
+    }
+}
 
 const getAllLocation = async ({filters}) => {
     try{
@@ -9,12 +44,6 @@ const getAllLocation = async ({filters}) => {
             }
         })
         .then(result => JSON.parse(JSON.stringify(result)))
-
-
-        // return await sequelize.query(`
-        //     Select * from location_tbl where loc_status = 'ACTIVE'`,{
-        //     type:Sequelize.QueryTypes.SELECT
-        // })
     }
     catch(e){
         throw e
@@ -34,5 +63,6 @@ const bulkCreateLocation = async({data,options})=>{
 
 module.exports = {
     getAllLocation,
-    bulkCreateLocation
+    bulkCreateLocation,
+    getPaginatedLocation
 }

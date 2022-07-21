@@ -194,7 +194,7 @@ const getAllDraftBills = async({filters})=>{
                 },
                 {
                     model:models.principal_tbl,
-                    attributes:['ascii_principal_code'],
+                    attributes:['ascii_principal_code','ascii_customer_code'],
                     required:false,
                     as:'principal_tbl'
                 }
@@ -205,6 +205,7 @@ const getAllDraftBills = async({filters})=>{
         })
         .then(result=>{
             data = JSON.parse(JSON.stringify(result))
+            // console.log(data)
 
             return data.map(item => {
                 const {location_tbl,vendor_tbl,principal_tbl,...newItem} = item
@@ -213,7 +214,8 @@ const getAllDraftBills = async({filters})=>{
                     ...newItem,
                     ascii_vendor_code: typeof  vendor_tbl?.ascii_vendor_code === 'undefined' ? null: vendor_tbl?.ascii_vendor_code,
                     ascii_loc_code: typeof location_tbl?.ascii_loc_code === 'undefined' ? null :location_tbl?.ascii_loc_code, 
-                    ascii_principal_code: typeof principal_tbl?.ascii_principal_code === 'undefined' ? null : principal_tbl?.ascii_principal_code
+                    ascii_principal_code: typeof principal_tbl?.ascii_principal_code === 'undefined' ? null : principal_tbl?.ascii_principal_code,
+                    ascii_customer_code: typeof principal_tbl?.ascii_customer_code === 'undefined' ? null : principal_tbl?.ascii_customer_code
                 }
             })
         })

@@ -111,8 +111,19 @@ router.get('/vendor', async(req,res)=>{
 
 router.get('/contract-tariff/:contract', async(req,res)=>{
     try{
+
+        const {from,to} = req.query;
+
+        if(!from || !to){
+            return res.status(400).json({
+                message:'From and To Parameters are required!'
+            })
+        }
+
         const data = await dataDownload.exportContractTariff({
-            contract_id:req.params.contract
+            contract_id:req.params.contract,
+            from,
+            to
         })
 
         res.status(200).json(data)

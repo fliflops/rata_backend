@@ -1,5 +1,20 @@
 const dataLayer = require('./vendorDatalayer')
 
+exports.getPaginatedVendor = async({filters})=>{
+    try{
+        let {orderBy,page,totalPage,...newFilters} = filters
+        return await dataLayer.getPaginatedVendor({
+            orderBy:[],
+            page,
+            totalPage,
+            filters:newFilters
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
 exports.bulkCreateVendor = async({data})=>{
     try{
         return await dataLayer.bulkCreateVendor({

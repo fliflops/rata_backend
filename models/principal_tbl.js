@@ -16,13 +16,18 @@ module.exports = (sequelize, DataTypes) => {
         address:{
             type: DataTypes.STRING(255)
         },
+        is_active:{
+            type: DataTypes.INTEGER
+        },
         ascii_principal_code:{
+            type: DataTypes.STRING(255)
+        },
+        ascii_customer_code:{
             type: DataTypes.STRING(255)
         },
         created_date:{
             allowNull:false,
             type: Sequelize.DATE
-            
         },
         modified_date:{
             allowNull:false,

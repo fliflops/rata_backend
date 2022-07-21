@@ -1,5 +1,7 @@
 const models = require('../../models');
 const {sequelize,Sequelize} = models;
+const {useFormatFilters,viewFilters} = require('../../helper')
+
 
 const getShipPoint = async({
     page,
@@ -49,8 +51,39 @@ const getAllShipPoint = async({filters})=>{
     }
 }
 
+const getPaginatedShipPoint=async({filters,
+    orderBy,
+    page,
+    totalPage})=>{
+    try{
+        let where = viewFilters.globalSearchFilter({
+            model:models.ship_point_tbl.rawAttributes,
+            filters
+        })
+
+        return await models.ship_point_tbl.findAndCountAll({
+            where:{
+                ...where
+            },
+            offset:parseInt(page) * parseInt(totalPage),
+            limit:parseInt(totalPage),
+        })
+        .then(result => {
+            let {count,rows} = JSON.parse(JSON.stringify(result))
+            return {
+                count,
+                rows
+            }
+        })
+    }   
+    catch(e){
+        throw e
+    }
+}
+
 module.exports={
     getShipPoint,
     bulkCreateShipPoint,
-    getAllShipPoint
+    getAllShipPoint,
+    getPaginatedShipPoint
 }

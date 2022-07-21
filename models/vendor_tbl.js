@@ -18,12 +18,14 @@ module.exports = (sequelize, DataTypes) => {
             allowNull:false,
 			type: DataTypes.STRING(255)
         },
+        vendor_status:{
+            type: DataTypes.STRING(255)
+        },
         vendor_address:{
             allowNull:false,
 			type: DataTypes.STRING(255)
         },
         country:{
-            
 			type: DataTypes.STRING(255)
         },
         region:{
@@ -43,6 +45,9 @@ module.exports = (sequelize, DataTypes) => {
         },
         ascii_vendor_code:{
             type: DataTypes.STRING(255)
+        },
+        is_ic:{
+            type:DataTypes.INTEGER
         },
         createdAt:Sequelize.DATE,
         created_by:{

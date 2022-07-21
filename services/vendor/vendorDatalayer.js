@@ -1,6 +1,7 @@
 const models = require('../../models');
 const moment = require('moment');
 const { sequelize } = require('../../models');
+const {useFormatFilters,viewFilters} = require('../../helper');
 
 const bulkCreateVendor = async({data,options})=>{
     try{
@@ -122,12 +123,50 @@ const getAllVendors = async({filters})=> {
     }
 }
 
+const getPaginatedVendor = async({
+    filters,
+    orderBy,
+    page,
+    totalPage
+})=>{
+    try{
+        let where = viewFilters.globalSearchFilter({
+            model:models.vendor_tbl.rawAttributes,
+            filters
+        })
+        return await models.vendor_tbl.findAndCountAll({
+            include:[
+                {
+                    model:models.vendor_group_dtl_tbl,
+                    as:'vendor_groups'
+                }
+            ],
+            where:{
+                ...where
+            },
+            offset:parseInt(page) * parseInt(totalPage),
+            limit:parseInt(totalPage)
+        })
+        .then(result => {
+            let {count,rows} = JSON.parse(JSON.stringify(result))
+            return {
+                count,
+                rows
+            }
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
 module.exports = {
     bulkCreateVendor,
     getAllVendorGroup,
     getAllVendorGroupDtl,
     getAllVendors,
-    bulkCreateTransaction
+    bulkCreateTransaction,
+    getPaginatedVendor
 }
 
 

@@ -111,7 +111,7 @@ exports.getPaginatedRevenueLeak = async({
     try{
         let {orderBy,page,totalPage,...newFilters} = filters
     
-        return  await dataLayer.getPaginatedRevenueLeak({
+        return await dataLayer.getPaginatedRevenueLeak({
             orderBy:orderBy.split(','),
             page,
             totalPage,

@@ -48,3 +48,24 @@ exports.getAllShipPoint = async({filters}) => {
         throw e
     }
 }
+
+
+exports.getPaginatedShipPoint = async({filters})=>{
+    try{
+        let {orderBy,page,totalPage,...newFilters} = filters
+
+        return await dataLayer.getPaginatedShipPoint({
+            filters:{
+                ...newFilters
+            },
+            page,
+            totalPage,
+            orderBy:[]
+        })
+
+    }
+    catch(e){
+        throw e
+    }
+}
+

@@ -1,5 +1,6 @@
 const models = require('../../models');
 const {sequelize,Sequelize} = models;
+const {useFormatFilters,viewFilters} = require('../../helper')
 
 const getPrincipal = async ({
     page,
@@ -21,17 +22,45 @@ const getPrincipal = async ({
     }
 }
 
+const getPaginatedPrincipal = async({
+    filters,
+    orderBy,
+    page,
+    totalPage
+})=>{
+    try{
+        const attributes = Object.keys(models.principal_tbl.rawAttributes)
+        let where = viewFilters.globalSearchFilter({
+            model:models.principal_tbl.rawAttributes,
+            filters
+        })
+
+        return await models.principal_tbl.findAndCountAll({
+            where:{
+                ...where
+            },
+            offset:parseInt(page) * parseInt(totalPage),
+            limit:parseInt(totalPage)
+        })
+        .then(result => {
+            let {count,rows} = JSON.parse(JSON.stringify(result))
+            return {
+                count,
+                rows
+            }
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
 const getAllPrincipal = async ({filters}) => {
     try{
-
         return await models.principal_tbl.findAll({
             ...filters
         })
         .then(result => JSON.parse(JSON.stringify(result)))
-        // return await sequelize.query(`
-        //     Select * from principal_tbl where is_active = 1`,{
-        //     type:Sequelize.QueryTypes.SELECT
-        // })
     }
     catch(e){
         throw e
@@ -52,5 +81,6 @@ const bulkCreatePrincipal = async({data,options})=>{
 module.exports = {
     getPrincipal,
     getAllPrincipal,
+    getPaginatedPrincipal,
     bulkCreatePrincipal
 }

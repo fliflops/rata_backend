@@ -287,7 +287,6 @@ router.post('/ascii/sell',async(req,res)=>{
             token,
             data: JSON.parse(JSON.stringify(data))
         })
-
         //update draft bills
         await draftBill.updateDraftBill({
             data:{

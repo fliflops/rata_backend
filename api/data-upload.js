@@ -606,6 +606,13 @@ router.post('/principal',async(req,res)=> {
                 reason:'Principal code mapping to ascii is required!'
             })
         }
+
+        if(!principalData.ascii_customer_code){
+            principal_validation.push({
+                principal_code:principalData.principal_code,
+                reason:'Customer code mapping to ascii is required!'
+            })
+        }
     }
 
     await principal.bulkCreatePrincipal({
@@ -709,9 +716,5 @@ router.get('/template',async(req,res)=>{
     }
     
 })
-
-
-
-
 
 module.exports = router;

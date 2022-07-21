@@ -1,9 +1,8 @@
 const router = require('express').Router();
-const {geography,principal,shipPoint} = require('../services')
+const {geography,principal,shipPoint,location,quickCode,vendor} = require('../services')
 
 router.get('/geography',async(req,res)=>{
     try{
-
         const {page,totalPage,search} = req.query;
         const getGeo = await geography.getGeography({
             page,
@@ -75,22 +74,20 @@ router.get('/geography/:variant',async(req,res) => {
     }
 })     
 
-
 router.get('/principal',async(req,res) => {
     try{
-        const {page,totalPage,search} = req.query;
-
-        const getPrincipal = await principal.getPrincipal({
-            page,
-            totalPage,
-            search
+        let query = req.query;
+        
+        const {count,rows} = await principal.getPaginatedPrincipal({
+            filters:{
+                ...query
+            }
         })
-
+    
         res.status(200).json({
-            data:getPrincipal.data,
-            totalRows:getPrincipal.count
+            data:rows,
+            rows:count
         })
-
     }
     catch(e){
         console.log(e);
@@ -102,15 +99,16 @@ router.get('/principal',async(req,res) => {
 
 router.get('/ship-point',async(req,res) => {
     try{
-        const {page,totalPage,search} = req.query;
-        const data = await shipPoint.getShipPoint({
-            page,
-            totalPage,
-            search
+        const query = req.query;
+        const {count,rows} = await shipPoint.getPaginatedShipPoint({
+            filters:{
+                ...query
+            }
         })
+
         res.status(200).json({
-            data:data.data,
-            totalRows:data.count
+            data:rows,
+            rows:count
         })
     }
     catch(e){
@@ -120,5 +118,74 @@ router.get('/ship-point',async(req,res) => {
         })
     }
 })
+
+router.get('/location',async(req,res)=>{
+    try {
+        const query = req.query;
+        const {count,rows} = await location.getPaginatedLocation({
+            filters:{
+                ...query
+            }
+        })
+
+        res.status(200).json({
+            data:rows,
+            rows:count
+        })
+    } 
+    catch (e) {
+        console.log(e);
+        res.status(500).json({
+            message:`${e}`
+        })
+    }
+})
+
+router.get('/quick-code',async(req,res)=>{
+    try {
+        const query = req.query
+
+        const {count,rows} = await quickCode.getPaginatedQuickCode({
+            filters:{
+                ...query
+            }
+        })
+
+        res.status(200).json({
+            data:rows,
+            rows:count
+        })
+    } 
+    catch (e) {
+        console.log(e);
+        res.status(500).json({
+            message:`${e}`
+        })
+    }
+})
+
+router.get('/vendor',async(req,res)=>{
+    try{
+
+        const query = req.query;
+        const {rows,count} = await vendor.getPaginatedVendor({
+            filters:{
+                ...query
+            }
+        })
+
+        res.status(200).json({
+            data:rows,
+            rows:count
+        })
+    }
+    catch(e){
+        console.log(e);
+        res.status(500).json({
+            message:`${e}`
+        })
+    }
+})
+
 
 module.exports = router;

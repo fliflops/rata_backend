@@ -218,6 +218,12 @@ db.vendor_group_tbl.belongsTo(db.vendor_group_dtl_tbl,{
 	foreignKey:'vg_code',
 })
 
+db.vendor_tbl.hasMany(db.vendor_group_dtl_tbl,{
+	foreignKey:'vg_vendor_id',
+	sourceKey:'vendor_id',
+	as:'vendor_groups'
+})
+
 
 //Draft Bill Association 
 db.draft_bill_hdr_tbl.hasOne(db.location_tbl,{

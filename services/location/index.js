@@ -17,3 +17,21 @@ exports.bulkCreateLocation = async({data,options}) => {
         throw e
     }
 }
+
+exports.getPaginatedLocation = async({filters})=>{
+    try {
+        let {orderBy,page,totalPage,...newFilters} = filters
+
+        return await dataLayer.getPaginatedLocation({
+            orderBy:[],
+            page,
+            totalPage,
+            filters:newFilters
+        })
+        
+
+        
+    } catch (e) {
+        throw e
+    }
+}
