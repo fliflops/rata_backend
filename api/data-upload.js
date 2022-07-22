@@ -153,7 +153,13 @@ router.post('/tariff',async(req,res)=>{
 
         
         await tariff.bulkCreateTariff({
-            data:data.tariff.filter(item => !_.uniq(tariff_header.map(item => item.tariff_id)).includes(item.tariff_id))
+            data:data.tariff.filter(item => !_.uniq(tariff_header.map(item => item.tariff_id)).includes(item.tariff_id)).map(item => {
+                return {
+                    ...item,
+                    from_geo:String(item.from_geo).trim(),
+                    to_geo:String(item.to_geo).trim()
+                }
+            })
         })
 
         res.status(200).json({
