@@ -156,8 +156,11 @@ router.post('/tariff',async(req,res)=>{
             data:data.tariff.filter(item => !_.uniq(tariff_header.map(item => item.tariff_id)).includes(item.tariff_id)).map(item => {
                 return {
                     ...item,
+                    tariff_id:String(item.tariff_id).trim(),
                     from_geo:String(item.from_geo).trim(),
-                    to_geo:String(item.to_geo).trim()
+                    to_geo:String(item.to_geo).trim(),
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
                 }
             })
         })
@@ -183,6 +186,8 @@ router.post('/contract',async(req,res)=>{
         let contracts   = data.contracts;
         let details     = data.contract_details;
         const today     = moment().format('YYYY-MM-DD')
+
+        // console.log(details)
 
         let contract_header = []
         let contract_details = []
@@ -261,7 +266,7 @@ router.post('/contract',async(req,res)=>{
             const valid_to=moment(contract_tariff?.valid_to).format('YYYY-MM-DD')
 
             const tariff = _.find(getTariffs,(value)=>{
-                return value.tariff_id === contract_tariff.tariff_id
+                return String(value.tariff_id).toLowerCase() === String(contract_tariff.tariff_id).toLowerCase()
             })
 
             if(!tariff){
@@ -274,13 +279,6 @@ router.post('/contract',async(req,res)=>{
                 continue;
             }
 
-            // console.log({
-            //     valid_from,
-            //     valid_to,
-            //     today,
-            //     valid:moment(today).isBetween(valid_from,valid_to)
-            // })
-
             if(!moment(today).isBetween(valid_from,valid_to)){
                 contract_details.push({
                     contract_id:contract_tariff.contract_id,
@@ -291,7 +289,13 @@ router.post('/contract',async(req,res)=>{
         }
 
         await contract.bulkCreateContractDetails({
-            contract:contracts.filter(item => !contract_header.map(x => x.contract_id).includes(item.contract_id)),
+            contract:contracts.filter(item => !contract_header.map(x => x.contract_id).includes(item.contract_id)).map(item => {
+                return {
+                    ...item,
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
+            }),
             details: details.filter(item => {
                 const isInvalid = _.some(contract_details,{
                     contract_id:item.contract_id,
@@ -299,6 +303,13 @@ router.post('/contract',async(req,res)=>{
                 })
     
                 return !isInvalid
+            })
+            .map(item => {
+                return{
+                    ...item,
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
             })
         })
 
@@ -391,8 +402,6 @@ router.post('/vendor',async(req,res)=>{
                 return value.vg_code === vendorGroupDetails.vg_code && value.vg_vendor_id === vendorGroupDetails.vg_vendor_id
             })
 
-            console.log(isExist)
-
             if(isExist){
                 vendor_group_details.push({
                     vg_code: vendorGroupDetails.vg_code,
@@ -402,12 +411,21 @@ router.post('/vendor',async(req,res)=>{
             }
         }
         
-
-        console.log(data.vendor_group_details)
-
         await vendor.bulkCreateTransaction({
-            vendor:             data.vendor.filter(item => !vendor_header.map(x=>x.vendor_id).includes(item.vendor_id)),
-            vendorGroup:        data.vendor_group.filter(item => !vendor_group.map(x=>x.vg_code).includes(item.vg_code)),
+            vendor:             data.vendor.filter(item => !vendor_header.map(x=>x.vendor_id).includes(item.vendor_id)).map(item => {
+                return {
+                    ...item,
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
+            }),
+            vendorGroup:        data.vendor_group.filter(item => !vendor_group.map(x=>x.vg_code).includes(item.vg_code)).map(item => {
+                return {
+                    ...item,
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
+            }),
             vendorGroupDetails: data.vendor_group_details.filter(item => {
                 const isInvalid = _.some(vendor_group_details,{
                     vg_code:item.vg_code,
@@ -415,6 +433,13 @@ router.post('/vendor',async(req,res)=>{
                 })
 
                 return !isInvalid
+            }).
+            map(item => {
+                return {
+                    ...item,
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
             })
         })
 
@@ -542,7 +567,13 @@ router.post('/ship-point',async(req,res)=>{
         }
 
         await shipPoint.bulkCreateShipPoint({
-            data:_.differenceBy(data.ship_point,shipPoint_validation,'stc_code')
+            data:_.differenceBy(data.ship_point,shipPoint_validation,'stc_code').map(item => {
+                return {
+                    ...item,
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
+            })
         })
 
         res.status(200).json({
@@ -622,7 +653,13 @@ router.post('/principal',async(req,res)=> {
     }
 
     await principal.bulkCreatePrincipal({
-        data:_.differenceBy(data.principal,principal_validation,'principal_code')
+        data:_.differenceBy(data.principal,principal_validation,'principal_code').map(item => {
+            return {
+                ...item,
+                created_by:req.processor.id,
+                updated_by:req.processor.id
+            }
+        })
     })
 
     res.status(200).json({
@@ -682,7 +719,13 @@ router.post('/location',async(req,res)=>{
         }
 
         await locationService.bulkCreateLocation({
-            data:_.differenceBy(data.location,location_validation,'loc_code')
+            data:_.differenceBy(data.location,location_validation,'loc_code').map(item => {
+                return {
+                    ...item,
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
+            })
         })
 
         res.status(200).json({

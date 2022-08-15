@@ -6,7 +6,9 @@ const revenuLeakService = require('../services/revenueLeak');
 const contractService = require('../services/contract');
 const generateDraftBill = require('../services/generateDraftBill')
 const draftBillService = require('../services/draftBill');
+const heliosService = require('../services/Helios');
 const ascii = require('../services/ascii');
+const redisActions = require('../helper').redisActions;
 const moment = require('moment')
 const {Op} = sequelize
 
@@ -262,6 +264,49 @@ router.get('/replan/sell', async(req,res)=>{
         throw e
     }
 })
+
+router.post('/redis', async(req,res)=>{
+    try{
+        const {rdd,location} = req.query
+
+        const invoices = await heliosService.bookings.getInvoices({
+            rdd,
+            location
+        })
+        await Promise.all(
+            invoices.map(item => {
+                return new Promise((resolve,reject) => {
+                    try{
+                        
+                        resolve(redisActions.HSET({
+                            key:`helios:invoice:${item.br_no}`,
+                            values:{
+                                rdd:moment(item.rdd).unix(),
+                                location:item.location,
+                                data:JSON.stringify(item)
+                            }
+                        }))
+                    }
+                    catch(e){
+                        reject(e)
+                    }
+                })
+            })
+        )
+
+        res.status(200).json({
+            invoices
+        })
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({
+            message:`${e}`
+        })
+    }
+})
+
+// router.get()
 
 
 module.exports = router 

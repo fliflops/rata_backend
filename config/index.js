@@ -1,5 +1,5 @@
 
-
+const redis = require('./redis');
 
 const podConfig = {
     username:       process.env.POD_DB_USER_NAME,
@@ -30,6 +30,7 @@ const dbConfig = {
     password:   process.env.DB_PASSWORD,
     dialect:    'mysql',
     database:   process.env.DB,
+    logging: false,
     pool:{
         max: 10,
         min: 1,
@@ -64,5 +65,6 @@ const scmdbConfig = {
 module.exports = {
     dbConfig,
     podConfig,
-    scmdbConfig
+    scmdbConfig,
+    redis
 }

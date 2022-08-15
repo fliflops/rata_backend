@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const {redisActions} = require('../helper');
 const secret = process.env.TOKEN_SECRET;
 
 exports.sessionAuthentication = async(req,res,next) => {
@@ -6,31 +7,52 @@ exports.sessionAuthentication = async(req,res,next) => {
         const path = req.originalUrl
         if(!['/auth/token','/auth/sign-out'].includes(path))
         {
-            // console.log(req.headers)
-            // console.log(req.session)
             const token = req.headers['x-access-token']
             
             if(!token){
                 throw Error('Token is Required')
             }
 
-            if(!req.session.user_email){
-                throw Error('Invalid Session')
-            }
-
             const decode = jwt.verify(token,secret);
-            const session = {
-                email:req.session.user_email,
-                exp: req.session.token_expiry
-            }
+            const redisSession = await redisActions.GET({key:`session:${decode.id}`})
 
-            if(decode.email !== session.email || decode.exp !== session.exp){
+            if(!redisSession){
+                return res.status(440).json({
+                    message:'No active session!'
+                })
+            }
+            
+            if(token !== redisSession.token){
                 return res.status(403).json({
                     message:'The session is Invalid!'
                 })
-            }           
+            } 
+            
+            req.processor = decode
         }
 
+        if(path === '/auth/sign-out'){
+            const token = req.headers['x-access-token']
+
+            if(!token) {
+                req.processor = null
+                return next()
+            }
+
+            const decode = jwt.verify(token,secret,(err,data)=>{
+                if(err) {
+                    req.processor = null
+                    return next()
+                }
+
+                return data
+            });
+            
+            //const redisSession = await redisActions.GET({key:`session:${decode.id}`})
+
+            req.processor = decode
+        }
+        
         next()        
     }
     catch(e){

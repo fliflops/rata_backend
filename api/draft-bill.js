@@ -144,10 +144,29 @@ router.post('/:contract_type/invoice',async(req,res)=>{
         }
 
         await generateDraftBill.createDraftBillTransaction({
-            header,
-            details: invoices,
-            revenueLeak: revenue_leak.revenue_leaks,
-            contract_type
+            header:header.map(item => {
+                return {
+                    ...item,
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
+            }),
+            details: invoices.map(item => {
+                return {
+                    ...item,
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
+            }),
+            revenueLeak: revenue_leak.revenue_leaks.map(item => {
+                return {
+                    ...item,
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
+            }),
+            contract_type,
+            user_id:req.processor.id
         })
 
         res.status(200).json({
@@ -248,12 +267,10 @@ router.post('/helios',async(req,res)=>{
         const getDetails    = await bookings.getInvoicesDtl({rdd,location})
         const invoices      = getInvoices.filter(item => !['SHORT_CLOSED'].includes(item.trip_status))
 
-       const {inv_details} = await invoice.createInvoiceTransaction({
+        const {inv_details} = await invoice.createInvoiceTransaction({
             invoices,
             details:getDetails
         })
-
-        // console.log(invoices)
 
         res.status(200).json({
             data:invoices,

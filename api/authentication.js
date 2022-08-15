@@ -1,31 +1,24 @@
 const router = require('express').Router();
 const bcrypt = require('bcryptjs');
 const {users,auth,roles} = require('../services');
+const {redisActions} = require('../helper'); 
 
- 
-router.post('/sign-out',(req,res) => {
-    // console.log(req.session)
-    // req.session.destroy(err => {
-    //     if(err){
-    //         return res.status(400).end()
-    //     }
-        
-    //});
+router.post('/sign-out',async (req,res) => {
+   
+    if(!req.processor) {
+        return  res.status(200).end();
+    }
+
+    await redisActions.DELETE({
+        key:`session:${req.processor.id}`
+    })
+
     res.status(200).end();
    
 })
 
 router.post('/connection',async(req,res) => {
     try{
-
-        // req.session.save()
-        // // console.log(req.session)
-        // if(!req.session.userId){
-        //     return res.status(400).json({
-        //         message:'Session Expired!'
-        //     })
-        // }
-
         res.status(200).end()
     }
     catch(e){
@@ -40,6 +33,12 @@ router.post('/token', async(req,res) => {
     try{
         const {email,password} = req.body;
 
+        if(!email || !password) {
+            return res.status(400).json({
+                message: 'Invalid email or password'
+            })
+        }
+        
         const getUsers = await users.getUser({
             filters:{
                 email
@@ -59,7 +58,8 @@ router.post('/token', async(req,res) => {
         }
 
         const token = await auth.generateToken({
-            email
+            email,
+            id:getUsers.id
         })
 
         const rawModules = await roles.getRoleModule({
@@ -69,12 +69,16 @@ router.post('/token', async(req,res) => {
             }
         })
 
-       const modules = await roles.formatRoleModules({data:rawModules})
-        // console.log(modules)
-
-        // req.session.userId = getUsers.id
-        // req.session.token_expiry = token.expiry
-        
+        const modules = await roles.formatRoleModules({data:rawModules})
+        await redisActions.SET({
+            key:`session:${getUsers.id}`,
+            value:{ 
+                ...token,
+                id:getUsers.id,
+                email:email   
+            }
+        })
+ 
         res.status(200).json({
             token,
             modules

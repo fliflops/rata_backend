@@ -4,11 +4,10 @@ const revenueLeakService = require('../revenueLeak');
 const invoiceService = require('../invoice');
 const {sequelize,Sequelize} = models;
 
-const createDraftBillTransaction = async({header,details,revenueLeak,contract_type})=>{
+const createDraftBillTransaction = async({header,details,revenueLeak,contract_type,user_id})=>{
     try{
 
         const fk_invoice_id = details.map(item => item.fk_invoice_id).concat(revenueLeak.map(item => item.fk_invoice_id))
-        // console.log(fk_invoice_id)
         return await sequelize.transaction(async t => {
             await draftBillService.createDraftBillHeader({
                 data:header,
@@ -35,12 +34,14 @@ const createDraftBillTransaction = async({header,details,revenueLeak,contract_ty
 
             if(String(contract_type).toUpperCase() === 'SELL'){
                 data = {
-                    is_processed_sell:true
+                    is_processed_sell:true,
+                    updated_by:user_id
                 }
             }
             else{
                 data = {
-                    is_processed_buy:true
+                    is_processed_buy:true,
+                    updated_by:user_id
                 }
             }
 

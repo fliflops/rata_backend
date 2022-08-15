@@ -6,7 +6,7 @@ router.post('/tariff',async(req,res) => {
     try{
         const {data} = req.body;
 
-        console.log(data)
+        // console.log(data)
         /*Validations*/
         //1. Check if tariff exists
         const {isExist,results} = await tariff.isTariffExists({
@@ -34,7 +34,10 @@ router.post('/tariff',async(req,res) => {
         }
         
         await tariff.createTariff({
-            data 
+            data: {
+                ...data,
+                created_by:req.processor.id,
+            }
         })
 
         res.status(200).end()
@@ -54,9 +57,9 @@ router.post('/contract',async(req,res) => {
         await contract.createContract({
             contract:{
                 ...data.contract,
-                // created_by:req.session.userId,
-                // modified_by:req.session.userId,
-                // approved_by:req.session.userId
+                created_by:req.processor.id,
+                modified_by:req.processor.id,
+                approved_by:req.processor.id
             }
             //details:data.details
         })
@@ -105,6 +108,7 @@ router.post('/contract/:contract_id',async (req,res)=>{
             data:{
                 ...data,
                 contract_id,
+                created_by:req.processor.id
                 // created_by:req.session.userId
             }
         })
@@ -132,6 +136,7 @@ router.post('/aggregation',async(req,res)=>{
         await aggregation.createAggRules({
             header:{
                 ...header,
+                created_by:req.processor.id,
                 // created_by:req.session.userId
             },
             conditions:conditions.map((item,index) => {
@@ -361,7 +366,7 @@ router.put('/tariff/:tariff_id',async(req,res)=>{
             },
             data:{
                 ...req.body,
-                // modified_by:req.session.userId
+                modified_by:req.processor.id
             }
         })
 
@@ -386,7 +391,8 @@ router.put('/contract/:contract_id/:tariff_id', async(req,res)=>{
         await contract.updateContractTariff({
             data:{
                 ...req.body,
-                // modified_by:req.session.userId
+                modified_by:req.processor.id,
+                
             },
             filters:{
                 status:'ACTIVE',

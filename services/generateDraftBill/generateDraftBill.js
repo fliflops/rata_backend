@@ -1116,14 +1116,14 @@ exports.replanDraftBillBuy = async({deliveryDate,location})=>{
     }
 }
 /**Replan Buy Process Ends Here */
-exports.createDraftBillTransaction = async({header,details,revenueLeak,contract_type})=>{
+exports.createDraftBillTransaction = async({header,details,revenueLeak,contract_type,user_id})=>{
     try{
-
         return await dataLayer.createDraftBillTransaction({
             header,
             details,
             revenueLeak,
-            contract_type
+            contract_type,
+            user_id
         })
 
     }   
