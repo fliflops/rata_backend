@@ -36,7 +36,7 @@ const getAggCondition = async(aggId)=>{
 
 const getAllInvoice = async ({filters}) => {
     try{
-        let invoiceWithClassOfStore = []
+        let invoiceWithClassOfStore = [];
         const invoices = await invoiceService.getAllInvoice({
             filters:{
                 ...filters
@@ -65,6 +65,7 @@ const getAllInvoice = async ({filters}) => {
 
                     //Replace the item details per class of store
                     const itemDetails = invoice.details.filter(i => i.class_of_store === item)
+                    
                     invoiceWithClassOfStore.push({
                         ...invoice,
                         invoice_no:`${invoice.invoice_no}-${parseInt(i)+1}`,
@@ -832,9 +833,6 @@ const groupWithAgg = async({data,contract_type}) => {
             }
         }
 
-
-        
-
         //Filter draftbills without computed rates
         return grouped.filter(item => item.total_charges)
     }
@@ -1082,7 +1080,7 @@ exports.replanDraftBillBuy = async({deliveryDate,location})=>{
     try{
         let draft_bills = [];
         
-         /*A. Get Invoices
+        /*A. Get Invoices
         1. Assignment of Vendor Groups Per Invoices */
         const invoices = await getAllRevenueLeakInvoices({
             rdd:deliveryDate,
@@ -1108,7 +1106,6 @@ exports.replanDraftBillBuy = async({deliveryDate,location})=>{
          /**Combine generated draft_bills */
         draft_bills = draft_bills.concat(withAgg).concat(withOutAgg)
 
-            
         return draft_bills
     }
     catch(e){

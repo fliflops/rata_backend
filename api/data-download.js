@@ -166,4 +166,48 @@ router.get('/algorithm',async(req,res)=>{
     }
 })
 
+router.get('/wms-draftbill',async(req,res)=>{
+    try{
+        const {from,to} = req.query
+
+        if(!from || !to ){
+            return res.status(400).json({
+                message:'Invalid Parameters'
+            })
+        }
+
+        const data = await dataDownload.exportWmsDraftbill({
+            from,
+            to
+        })
+
+        res.status(200).json(data)
+    }
+    catch(e){
+        throw e
+    }
+})
+
+router.get('/wms-revenue-leak',async(req,res)=>{
+    try{
+        const {from,to} = req.query
+
+        if(!from || !to ){
+            return res.status(400).json({
+                message:'Invalid Parameters'
+            })
+        }
+
+        const data = await dataDownload.exportWmsRevenueLeak({
+            from,to
+        })
+
+        res.status(200).json(data)
+    }
+    catch(e){
+        throw e
+    }
+})
+
+
 module.exports = router

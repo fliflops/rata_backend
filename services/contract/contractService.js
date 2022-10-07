@@ -6,25 +6,20 @@ exports.createContract = async({contract,details}) => {
         return await dataLayer.createContract({
             data:contract
         })
-
-        // let contractData = contract;
-        //let detailsData = details;
-
-        // detailsData = detailsData.map(item => {
-        //     return {
-        //         ...item,
-        //         contract_id:contractData.contract_id,
-        //         modified_by:contractData.modified_by,
-        //         created_by:contractData.created_by
-        //     }
-        // })
-
-        // return await dataLayer.transactionCreateContract({
-        //     contract:contractData,
-        //     //details:detailsData
-        // })
     }
     catch(e){
+        throw e
+    }
+}
+
+exports.createWMSContract = async ({contract}) => {
+    try{
+        
+        return await dataLayer.createWMSContract({
+            data:contract
+        })
+    } 
+    catch (e) {
         throw e
     }
 }
@@ -36,6 +31,17 @@ exports.createContractTariff = async({
        return await dataLayer.createContractTariff({
            data
        }) 
+    }
+    catch(e){
+        throw e
+    }
+}
+
+exports.createWMSContractTariff=async({data})=>{
+    try{
+        return await dataLayer.createWMSContractTariff({
+            data
+        })
     }
     catch(e){
         throw e
@@ -100,6 +106,30 @@ exports.getPaginatedContract = async({
     }
 }
 
+exports.getPaginatedWMSContract=async({filters})=>{
+    try {
+        let {orderBy,order,page,totalPage,...newFilters} = filters;
+
+        if(!orderBy){
+            orderBy=[]
+        }
+        else{
+            orderBy=[orderBy]
+        }
+
+        return await dataLayer.getPaginatedWMSContract({
+            filters:newFilters,
+            page,
+            totalPage,
+            orderBy
+        })
+        
+    } 
+    catch (e) {
+        throw e
+    }   
+}
+
 exports.getContract = async({filters}) => {
     try {
         return await dataLayer.getContract({
@@ -111,9 +141,32 @@ exports.getContract = async({filters}) => {
     }
 }
 
+
+exports.getWMSContract = async({filters}) => {
+    try {
+        return await dataLayer.getWMSContract({
+            filters
+        })
+    } 
+    catch (e) {
+        throw e
+    }
+}
+
 exports.getAllContracts = async({filters})=>{
     try{
         return await dataLayer.getAllContracts({
+            filters
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+exports.getAllWMSContracts = async({filters})=>{
+    try{
+        return await dataLayer.getAllWMSContracts({
             filters
         })
     }
@@ -134,6 +187,18 @@ exports.bulkCreateContractDetails = async({contract,details}) => {
     }
 }
 
+exports.bulkCreateWMSContractDetails = async({contract,details}) => {
+    try{
+        return await dataLayer.bulkCreateWMSContractDetailsTransaction({
+            contract,
+            details
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
 exports.getContractDetails = async({filters})=>{
     try{
         return await dataLayer.getContractDetails({
@@ -145,11 +210,23 @@ exports.getContractDetails = async({filters})=>{
     }
 }
 
+
+exports.getAllWMSContractTariff = async({filters})=>{
+    try{
+        return await dataLayer.getAllWMSContractTariff({
+            filters
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+
 exports.getPaginatedContractTariff = async({
     filters,
     page,
-    totalPage})=>
-    {
+    totalPage})=>{
         try{
             return await dataLayer.getPaginatedContractTariff({
                 filters,
@@ -160,6 +237,29 @@ exports.getPaginatedContractTariff = async({
         catch(e){
             throw e
         }
+}
+
+exports.getPaginatedWMSContractTariff=async({filters})=>{
+    try{
+
+        let {orderBy,order,page,totalPage,...newFilters} = filters;
+
+        if(!orderBy){
+            orderBy=[]
+        }
+        else{
+            orderBy=[orderBy]
+        }
+
+        return await dataLayer.getPaginatedWMSContractTariff({
+            filters:newFilters,
+            page,
+            totalPage,
+            orderBy
+        })    }
+    catch(e){
+        throw e
+    }
 }
 
 exports.updateContractDetails = async({
@@ -176,3 +276,17 @@ exports.updateContractDetails = async({
         throw e
     }
 }
+
+exports.updateWMSContractTariff = async({filters,data})=>{
+    try{
+        return await dataLayer.updateWMSContractTariff({
+            filters,
+            data
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+

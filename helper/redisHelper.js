@@ -2,9 +2,7 @@ const redisClient = require('../config').redis;
 
 exports.SET = async({key,value}) => {
     try{
-        // await redisClient.connect();
         await redisClient.SETEX(key,Number(process.env.REDIS_SESSION_EXPIRE),JSON.stringify(value))
-        // await redisClient.quit();
     }
     catch(e){
         throw e
@@ -22,9 +20,7 @@ exports.EXIST = async({key}) => {
 
 exports.GET = async({key})=>{
     try{
-        // await redisClient.connect()
         const data = await redisClient.get(key)
-        // await redisClient.quit();
 
         if(!data){
             return null
@@ -48,16 +44,14 @@ exports.DELETE = async({key}) => {
 }
 
 exports.HSET = async({key,values})=>{
-    console.log(key,values)
+    // console.log(key,values)
     try{
-        await  redisClient.HSET(key,values);
-          
+        await redisClient.HSET(key,values);     
     }
     catch(e){
         throw e
     }
 }
-
 
 const validateRedisConnection = async() => {
     try{

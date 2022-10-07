@@ -133,18 +133,18 @@ exports.updateRoleTransaction = async({
             roleData = roleData.concat(sub_modules.map(i => {
                 return {
                     module_name:    module.name,
+                    role_id:        role_id,
                     module_label:   module.label,
                     route:          module.route,
                     sub_module_name: i.name,
                     sub_module_label:i.label,
                     sub_module_route: i.route,
-                    has_access: i.has_access ? 1 : 0
+                    has_access: i.has_access ? 1 : 0,
+                    modified_by: module.modified_by
                 }
             }))
         }
 
-        //console.log(roleData)
-        console.log(modules)
         return await sequelize.transaction(async t => {
             await dataLayer.updateRole({
                 data:role,
@@ -156,21 +156,30 @@ exports.updateRoleTransaction = async({
                 }
             })
 
-            for(const module of roleData){
-                await dataLayer.updateRoleModule({
-                    data:{
-                        has_access:module.has_access
-                    },
-                    filters:{
-                        sub_module_route:module.sub_module_route,
-                        role_id:role_id
-                    },
-                    options:{
-                        transaction:t
-                    }
-                })
+            await dataLayer.bulkCreateRoleModules({
+                data:roleData,
+                options:{
+                    updateOnDuplicate:['has_access','modified_by','updatedAt'],
+                    transaction:t
+                }
+            })
+            /* for(const module of roleData){
+                
+                // await dataLayer.updateRoleModule({
+                //     data:{
+                //         has_access:module.has_access,
+                //         modified_by:module.modified_by
+                //     },
+                //     filters:{
+                //         sub_module_route:module.sub_module_route,
+                //         role_id:role_id
+                //     },
+                //     options:{
+                //         transaction:t
+                //     }
+                // })
             }
-
+ */
         })
 
 

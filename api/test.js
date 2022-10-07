@@ -8,11 +8,14 @@ const generateDraftBill = require('../services/generateDraftBill')
 const draftBillService = require('../services/draftBill');
 const heliosService = require('../services/Helios');
 const ascii = require('../services/ascii');
+const wmsService = require('../services/wms');
+const wmsDraftBill = require('../services/wms-draftbill');
 const redisActions = require('../helper').redisActions;
-const moment = require('moment')
-const {Op} = sequelize
+const moment = require('moment');
 
-router.get('/draft-bill/buy',async(req,res)=>{
+const {Op} = sequelize;
+const {dataLayer,service} = wmsDraftBill;
+/* router.get('/draft-bill/buy',async(req,res)=>{
     try{
         const {rdd,location} = req.query
         const draftBills = await generateDraftBill.generateDraftBillBuy({
@@ -304,9 +307,40 @@ router.post('/redis', async(req,res)=>{
             message:`${e}`
         })
     }
+}) */
+
+router.post('/wms',async(req,res)=>{
+    const {date} = req.query;
+
+    const data = await wmsService.getWMSData({
+        date
+    })
+
+    // const wms_draft_bill = await wmsDraftBill({
+    //     wms_data:data
+    // })
+
+
+    res.status(200).json(data)
 })
 
-// router.get()
+router.post('/wms/draft-bill',async(req,res)=>{
+    const {date} = req.query;
 
+    const data = await wmsService.getWMSData({
+        date
+    })
+
+    await wmsService.bulkCreateWMSDataHeader({
+        data:data
+    })
+
+    const wms_draft_bill = await wmsDraftBill.generateDraftBill({
+        wms_data:data,
+        transaction_date:date
+    })
+
+    res.status(200).json(wms_draft_bill)
+})
 
 module.exports = router 

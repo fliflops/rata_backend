@@ -58,7 +58,9 @@ const getPaginatedPrincipal = async({
 const getAllPrincipal = async ({filters}) => {
     try{
         return await models.principal_tbl.findAll({
-            ...filters
+            where:{
+                ...filters
+            }
         })
         .then(result => JSON.parse(JSON.stringify(result)))
     }

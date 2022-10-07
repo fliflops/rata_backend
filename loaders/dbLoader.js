@@ -2,7 +2,8 @@ const models  = require('../models');
 const {podDB,scmdb} = require('../database');
 const redis = require('../config').redis
 const {redisIndex} = require('../helper');
-
+const backgroundWorker = require('./backgroundWorker');
+const schedulerService = require('../services/scheduler')
 
 module.exports = async() => {
     const {searchHashes} = redisIndex;
@@ -11,9 +12,12 @@ module.exports = async() => {
         (async()=> {
             redis.on("error", (error) => console.error(`Error : ${error}`));
             await redis.connect();
-            await searchHashes()
+            await searchHashes();
+            await schedulerService.setRedisScheduler();
+
         })();
 
+        await backgroundWorker()
        
         await models.sequelize.authenticate().then(() => {
             console.log('Connected to RB DB')

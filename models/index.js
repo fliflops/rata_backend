@@ -53,16 +53,32 @@ db.principal_tbl.belongsTo(db.contract_hdr_tbl,{
 	foreignKey:"principal_code"
 })
 
+//WMS Contract Tariff
+db.contract_tariff_wms_tbl.hasOne(db.agg_tbl,{
+	foreignKey:'id',
+	sourceKey:'fk_agg_id',
+	as:'agg_rule'
+})
+
+db.contract_tariff_wms_tbl.hasOne(db.tariff_wms_tbl,{
+	foreignKey:'tariff_id',
+	sourceKey:'tariff_id',
+	as:'tariff'
+})
+
+db.contract_tariff_wms_tbl.hasOne(db.contract_wms_tbl,{
+	foreignKey:'contract_id',
+	sourceKey:'contract_id',
+	as:'contract'
+})
+
+
 
 //Contract Table Associations
 db.contract_tariff_dtl.hasOne(db.agg_tbl,{
 	foreignKey:'id',
 	sourceKey:'fk_agg_id',
 	as:'agg_rule'
-})
-
-db.agg_tbl.belongsTo(db.contract_tariff_dtl,{
-	foreignKey:'id'
 })
 
 db.contract_tariff_dtl.hasOne(db.tariff_sell_hdr_tbl,{
@@ -85,6 +101,13 @@ db.contract_hdr_tbl.belongsTo(db.contract_tariff_dtl,{
 	foreignKey:'contract_id'
 })
 
+//Contract WMS Association
+db.contract_wms_tbl.hasOne(db.principal_tbl,{
+	foreignKey:"principal_code",
+	sourceKey:"principal_code",
+	as:"principal"
+})
+
 //Tariff Associations
 db.tariff_sell_hdr_tbl.hasOne(db.contract_tariff_dtl,{
 	foreignKey:'tariff_id',
@@ -95,7 +118,6 @@ db.tariff_sell_hdr_tbl.hasOne(db.contract_tariff_dtl,{
 db.contract_tariff_dtl.belongsTo(db.tariff_sell_hdr_tbl,{
 	foreignKey:'tariff_id'
 })
-
 
 //Invoice Associations
 db.invoices_cleared_hdr.hasMany(db.invoices_dtl_tbl,{
@@ -160,8 +182,6 @@ db.invoices_dtl_tbl.hasOne(db.invoices_rev_leak_tbl,{
 	as:'invoices_rev_leak'
 })
 
-
-
 // db.vendor_group_dtl_tbl.belongsTo(db.invoices_cleared_hdr,{
 // 	foreignKey:'vg_vendor_id'
 // })
@@ -171,8 +191,6 @@ db.invoices_dtl_tbl.hasOne(db.invoices_rev_leak_tbl,{
 // 	sourceKey:'location',
 // 	foreignKey:'vendor'
 // })
-
-
 
 
 //Agg Associations
@@ -224,6 +242,25 @@ db.vendor_tbl.hasMany(db.vendor_group_dtl_tbl,{
 	as:'vendor_groups'
 })
 
+//WMS Draft Bill Association
+db.wms_draft_bill_hdr_tbl.hasOne(db.location_tbl,{
+	foreignKey:'loc_code',
+	sourceKey:'location',
+	as:'location_tbl'
+})
+
+db.wms_draft_bill_hdr_tbl.hasOne(db.principal_tbl,{
+	foreignKey:'principal_code',
+	sourceKey:'principal',
+	as:'principal_tbl'
+})
+
+
+db.wms_draft_bill_hdr_tbl.hasMany(db.wms_draft_bill_dtl_tbl,{
+	foreignKey:'draft_bill_no',
+	sourceKey:'draft_bill_no',
+	as:'draft_bill_details'
+})
 
 //Draft Bill Association 
 db.draft_bill_hdr_tbl.hasOne(db.location_tbl,{
@@ -275,6 +312,21 @@ db.user_tbl.hasOne(db.role_tbl,{
 
 db.role_tbl.belongsTo(db.user_tbl,{
 	foreignKey:'role_id'
+})
+
+
+//WMS Data Association
+db.wms_data_header_tbl.hasMany(db.wms_data_details_tbl,{
+	foreignKey:'wms_reference_no',
+	sourceKey:'wms_reference_no',
+	as:'details'
+})
+
+//wms revenue leak associations
+db.wms_rev_leak_tbl.hasMany(db.wms_rev_leak_dtl_tbl,{
+	foreignKey:'wms_reference_no',
+	sourceKey:'wms_reference_no',
+	as:'details'
 })
 
 module.exports = db;

@@ -1,5 +1,6 @@
 
 const redis = require('./redis');
+const ioredis = require('./ioredis');
 
 const podConfig = {
     username:       process.env.POD_DB_USER_NAME,
@@ -30,13 +31,20 @@ const dbConfig = {
     password:   process.env.DB_PASSWORD,
     dialect:    'mysql',
     database:   process.env.DB,
-    logging: false,
+    // logging: false,
     pool:{
         max: 10,
         min: 1,
         idle: 2000000,
         acquire: 2000000
-    }
+    },
+    dialectOptions: {
+		//useUTC: false, //for reading from database
+		dateStrings: true,
+		typeCast: true
+	},
+	timezone: '+08:00' /**for writing to database**/
+
 }
 
 const scmdbConfig = {
@@ -66,5 +74,6 @@ module.exports = {
     dbConfig,
     podConfig,
     scmdbConfig,
-    redis
+    redis,
+    ioredis
 }

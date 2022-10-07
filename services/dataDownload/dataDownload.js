@@ -7,9 +7,14 @@ const {getAllVendor,getAllVendorGroup,getAllVendorGroupDtl} = require('../vendor
 const {getContractDetails} = require('../contract');
 const {getAllQuickCodes} = require('../quickCodes')
 const {getAllAggCondition,getAllAggregation} = require('../aggregation');
+const {service} = require('../wms-draftbill')
+const {wmsRevenueLeakService} = require('../wms-revenueLeak');
+
 const xlsx = require('xlsx');
 const sequelize = require('sequelize')
 const _ = require('lodash')
+
+const wmsDraftBillService =service;
 
 const generateExcel = (data) => {
     try{
@@ -278,9 +283,7 @@ exports.exportContractTariff = async({
             })
         })
        
-        const buffer = await generateExcel({
-            contract_details
-        })
+        const buffer = await generateExcel({contract_details})
 
         return buffer
     }
@@ -323,5 +326,60 @@ exports.exportAlgo = async()=>{
     }
 }
 
+exports.exportWmsDraftbill = async({
+    from,
+    to,
+}) => {
+    try{
+        
+        const data = await wmsDraftBillService.getAllDraftBills({
+            filters:{
+                draft_bill_date: {
+                    [sequelize.Op.between]:[from,to]
+                }
+            }
+        })
+
+        const buffer = await generateExcel({
+            draft_bill: data
+        })
+
+
+        return buffer
+        
+
+    }
+    catch(e){
+        throw e
+    }
+}
+
+exports.exportWmsRevenueLeak = async({
+    from,
+    to,
+}) => {
+    try{
+
+        const data = await wmsRevenueLeakService.getAllRevenueLeak({
+            filters:{
+                transaction_date: {
+                    [sequelize.Op.between]:[from,to]
+                },
+                is_draft_bill:0
+            }
+        })
+
+        const buffer = await generateExcel({
+            revenue_leak: data
+        })
+
+        return buffer
+
+
+    }
+    catch(e){
+        throw e
+    }
+}
 
 

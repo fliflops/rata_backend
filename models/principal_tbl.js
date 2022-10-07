@@ -20,10 +20,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.INTEGER
         },
         ascii_principal_code:{
-            type: DataTypes.STRING(255)
+            type: DataTypes.STRING
         },
         ascii_customer_code:{
-            type: DataTypes.STRING(255)
+            type: DataTypes.STRING
         },
         created_date:{
             allowNull:false,

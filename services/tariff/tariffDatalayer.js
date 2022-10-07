@@ -3,21 +3,6 @@ const {sequelize,Sequelize} = models;
 const moment = require('moment');
 const {viewFilters} = require('../../helper');
 
-const createTariffTypeHeader = async({
-    data,
-    options
-}) => {
-    try{
-        return await models.tariff_type_tbl.create({
-            ...data
-        },{
-            ...options
-        })
-    }
-    catch(e){
-        throw e
-    }
-}
 
 const createTariffCondition = async({
     data,
@@ -28,45 +13,6 @@ const createTariffCondition = async({
             ...options
         })
     }
-    catch(e){
-        throw e
-    }
-}
-
-const createTariffType = async({
-    header,
-    conditions
-}) => {
-    try{
-        return await sequelize.transaction(async t => {
-            await createTariffTypeHeader({
-                data:header,
-                options:{
-                    transaction: t
-                }
-            })
-
-            await createTariffCondition({
-                data:conditions,
-                options:{
-                    transaction: t
-                }
-            })
-        })
-    }
-    catch(e){
-        throw e 
-    }
-}
-
-const getAllTariffTypes = async({filters}) => {
-    try{
-        return await models.tariff_type_tbl.findAll({
-            where:{
-                ...filters
-            }
-        })
-    }   
     catch(e){
         throw e
     }
@@ -172,6 +118,19 @@ const bulkCreateTariff = async({data,options}) => {
     }
 }
 
+const bulkCreateWMSTariff = async({data,options})=>{
+    try{
+
+        return await models.tariff_wms_tbl.bulkCreate(data,{
+            ...options
+        })
+
+    }
+    catch(e){
+        throw e
+    }
+}
+
 
 const getPaginatedTariff = async({
     filters,
@@ -230,15 +189,102 @@ const getAllTariff = async({filters}) => {
     }
 }
 
+
+//wms tariff section
+const createWMSTariff = async({data,options})=>{
+    try{
+
+        return await models.tariff_wms_tbl.create(data,{
+            ...options
+        })
+
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const getAllWMSTariff = async({filters}) => {
+    try{
+        return await models.tariff_wms_tbl.findAll({
+            where:{
+                ...filters
+            }
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const updateWMSTariff = async({filters,data,options})=>{
+    try {
+
+        return await models.tariff_wms_tbl.update({
+            ...data
+        },{
+            where:{
+                ...filters
+            },
+            ...options
+        })
+
+    } 
+    catch (e) {
+        throw e    
+    }
+}
+
+const getPaginatedWMSTariff = async({
+    filters,
+    page,
+    totalPage,
+    orderBy
+})=>{
+    try {
+
+        let newFilter=viewFilters.globalSearchFilter({
+            model:models.tariff_wms_tbl.rawAttributes,
+            filters:{
+                ...filters
+            }
+        });
+
+        return await models.tariff_wms_tbl.findAndCountAll({
+            where:{
+                ...newFilter
+            },
+            offset:parseInt(page)*parseInt(totalPage),
+            limit:parseInt(totalPage),
+            order:orderBy
+        })
+        .then(result => {
+            let {count,rows} = JSON.parse(JSON.stringify(result))
+            return {
+                count,
+                rows
+            }
+        })
+        
+    } 
+    catch (e) {
+        throw e
+    }
+}
+
 module.exports = {
     createTariffCondition,
-    createTariffType,
-    createTariffTypeHeader,
+    // createTariffType,
     createTariff,
     bulkCreateTariff,
-    getAllTariffTypes,
+    bulkCreateWMSTariff,
+    // getAllTariffTypes,
     getPaginatedTariff,
     updateTariff,
     getTariff,
-    getAllTariff
+    getAllTariff,
+    createWMSTariff,
+    getAllWMSTariff,
+    updateWMSTariff,
+    getPaginatedWMSTariff
 }

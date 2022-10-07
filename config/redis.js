@@ -1,11 +1,19 @@
 const redis = require('redis');
 
-module.exports = process.env.NODE_ENV === 'development' ?redis.createClient() : redis.createClient({
-        socket:{
-            host:process.env.REDIS_URL,
-            port:process.env.REDIS_PORT
-        }
-    })
+// module.exports = process.env.NODE_ENV === 'development' ?redis.createClient() : redis.createClient({
+//         socket:{
+//             host:process.env.REDIS_URL,
+//             port:process.env.REDIS_PORT
+//         }
+//     })
+
+module.exports = redis.createClient({
+    socket:{
+        host:process.env.REDIS_URL,
+        port:process.env.REDIS_PORT
+    }
+})
+
 
 
 // const redis = require('redis');

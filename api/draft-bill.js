@@ -7,15 +7,21 @@ const {
     contract,
     generateDraftBill,
     revenueLeak
-} = require('../services')
+} = require('../services');
+
+const wmsDraftBill = require('../services/wms-draftbill');
 const dataDownload = require('../services/dataDownload');
+const {wmsRevenueLeak,wmsRevenueLeakService} = require('../services/wms-revenueLeak');
 const test = require('../services/draftBill/draftBillTest');
-const {bookings} = helios
+
+const {bookings} = helios;
+const wmsDraftBillService = wmsDraftBill.service;
+
 
 router.get('/',async(req,res)=>{
     try{
         let query = req.query;
-        /*Filtersf
+        /*Filters
             filters,
             orderBy,
             page,
@@ -375,6 +381,170 @@ router.post('/ascii/buy',async(req,res)=>{
         res.status(500).json({message:`${e}`})
     }
 })
+
+
+router.route('/wms')
+.get(async(req,res)=> {
+    try{
+
+        const query = req.query;
+        const {count,rows} = await wmsDraftBillService.getPaginatedDraftBills({
+            filters:query
+        })
+
+        res.status(200).json({
+            data:rows,
+            rows:count
+        })
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({message:`${e}`})
+    }
+})
+
+router.route('/wms/draft-bill/:draft_bill_no')
+/* Get Draft Bill Details */
+.get(async(req,res)=>{
+    try{
+        
+        const query = req.query;
+        const {draft_bill_no} = req.params;
+
+        const header = await wmsDraftBillService.getAllDraftBills({
+            filters:{
+                draft_bill_no
+            }
+        })
+
+        const {count,rows} = await wmsDraftBillService.getPaginatedDraftBillDetails({
+            filters:{
+                ...query,
+                draft_bill_no
+            }
+        })
+
+        res.status(200).json({
+            data:rows,
+            rows:count,
+            header: header[0] 
+        })
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({message:`${e}`})
+    }
+})
+/* Transmittal to Ascii */
+.post(async(req,res)=>{
+    try{
+        const draft_bill_date = req.params.draft_bill_no;
+
+        const token = await ascii.loginService()
+        const draft_bills = await wmsDraftBillService.getAllDraftBills({
+            filters:{
+                draft_bill_date
+            }
+        })
+
+        const asciiData = await ascii.getWMSDraftBill({data:draft_bills})
+
+        const asciiResponse = await ascii.createAsciiSalesOrder({
+            data:asciiData,
+            token
+        })
+
+        const xlsx = await dataDownload.generateTransmittalResult({
+            success:asciiResponse.success,
+            errors:asciiResponse.errors,
+            data:asciiData
+        })
+
+        res.status(200).json(xlsx)
+        // res.status(200).json(asciiData)
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({message:`${e}`})
+    }
+})
+
+
+router.route('/wms/revenue-leak')
+.get(async(req,res)=>{
+    try{
+        const query = req.query;
+        const {count,rows} = await wmsRevenueLeakService.getPaginatedRevLeak({
+            filters:query
+        })
+
+        res.status(200).json({
+            data:rows,
+            rows:count
+        })
+        
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({message:`${e}`})
+    }
+})
+
+router.route('/wms/revenue-leak/:reference_no')
+.get(async(req,res)=>{
+    try{
+        const {reference_no} = req.params
+
+        const {count,rows} = await wmsRevenueLeakService.getPaginatedRevLeakDetails({
+            filters:{
+                ...req.query,
+                wms_reference_no: reference_no
+            }
+        })
+
+        res.status(200).json({
+            data:rows,
+            rows:count
+        })
+
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({message:`${e}`})
+    }
+})
+.post(async(req,res)=> {
+    try{
+        const transaction_date = req.params.reference_no
+
+        const revenueLeaks = await wmsRevenueLeakService.getAllRevenueLeak({
+            filters:{
+                transaction_date,
+                is_draft_bill:0
+            }
+        }) 
+
+        const data = await wmsRevenueLeak({
+            rev_leak_data:revenueLeaks,
+            transaction_date
+        })
+
+        res.status(200).json({
+           data : {
+                revenue_leaks:revenueLeaks,
+                wms_data: data.wms_reference_no,
+                wms_revenue_leak: data.revenue_leak
+           }  
+        })
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({message:`${e}`})
+    }
+})
+
+
+
 
 
 module.exports = router;

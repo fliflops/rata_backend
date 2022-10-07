@@ -121,6 +121,40 @@ router.get('/tariff-types', async(req,res) => {
     }
 })
 
+router.get('/wms-tariff', async(req,res)=> {
+    try{
+
+        const {type} = req.query;
+        let data = null;
+
+        data = await tariff.getAllWMSTariff({
+            filters:{
+                tariff_status:'APPROVED'
+            }
+        })
+
+        .then(result => {
+            return result.map(i => {
+                return {
+                    label:`${i.tariff_id}:${i.tariff_desc}`,
+                    value:i.tariff_id
+                }
+            })
+        })
+
+        res.status(200).json({
+            data
+        })
+
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({
+            message:`${e}`
+        })
+    }
+})
+
 router.get('/tariff',async(req,res)=>{
     try{
         const {type} = req.query;

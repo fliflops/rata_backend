@@ -67,10 +67,9 @@ router.get('/:role_id',async(req,res)=>{
 router.post('/',async(req,res)=>{
     try{
         const {data} = req.body;
-        // const userId=req.session.userId
         await roles.createRole({
             data,
-            userId
+            userId:req.processor.id
         })
 
         res.status(200).end()
@@ -83,17 +82,22 @@ router.post('/',async(req,res)=>{
     }
 })
 
-
 router.put('/:role_id',async(req,res)=> {
     try{
         const {data} = req.body;
         const {role_id} = req.params;
-
-        // console.log(data)
-
+        
         await roles.updateRoleTransaction({
-            roles:data.role,
-            modules:data.modules
+            roles:{
+                ...data.role,
+                modified_by:req.processor.id
+            },
+            modules:data.modules.map(item => {
+                return {
+                    ...item,
+                    modified_by:req.processor.id
+                }
+            })
         })
 
         res.status(200).end()

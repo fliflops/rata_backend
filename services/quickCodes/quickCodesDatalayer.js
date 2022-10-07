@@ -45,7 +45,7 @@ const getPaginatedQuickCode = async({
 })=>{
     try{
         let where = viewFilters.globalSearchFilter({
-            model:models.location_tbl.rawAttributes,
+            model:models.quick_code_tbl.rawAttributes,
             filters
         })
 

@@ -5,6 +5,87 @@ const path = require('path');
 const _ = require('lodash');
 const moment = require('moment');
 
+router.post('/wms-tariff',async(req,res)=>{
+    try{
+        let {data} = req.body;
+        let tariff_header = [];
+
+        const tariffs = await tariff.getAllWMSTariff({
+            filters:{
+                tariff_id: data.tariff.map(item => item.tariff_id)
+            }
+        })
+
+        const locations = await locationService.getAllLocation({
+            filters:{}
+        })
+
+        for(let i in data.tariff){
+            const tariff=data.tariff[i]
+            const isExists=_.find(tariffs,(value)=>{
+                return value.tariff_id === tariff.tariff_id
+            }) 
+
+            const isLocation = _.find(locations,(value) => {
+                return String(value.loc_code).toLowerCase() === String(tariff.location).toLowerCase()
+            }) 
+
+            if(isExists){
+                tariff_header.push({
+                    tariff_id:tariff.tariff_id,
+                    reason:'Tariff Already Exists!'
+                })
+            }
+
+            if(!tariff.service_type || tariff.service_type===''){
+                tariff_header.push({
+                    tariff_id:tariff.tariff_id,
+                    reason:'Service Type is required'
+                })
+            }
+
+            if(!tariff.location || tariff.location===''){
+                tariff_header.push({
+                    tariff_id:tariff.tariff_id,
+                    reason:'Location is required'
+                })
+            }
+
+            if(!isLocation) {
+                tariff_header.push({
+                    tariff_id:tariff.tariff_id,
+                    reason:`Location ${tariff.location} is not maintained`
+                })
+            }
+        }
+
+        await tariff.bulkCreateWMSTariff({
+            data:data.tariff.filter(item => !_.uniq(tariff_header.map(item => item.tariff_id)).includes(item.tariff_id)).map(item => {
+                return {
+                    ...item,
+                    tariff_id:String(item.tariff_id).trim(),
+                    location:String(item.location).toLowerCase(),
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
+            })
+        })
+
+        res.status(200).json({
+            results:{
+                tariff_header
+            }
+        })
+
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({
+            message:`${e}`
+        })
+    }
+})
+
 router.post('/tariff',async(req,res)=>{
     try{
         let {data} = req.body;
@@ -180,14 +261,163 @@ router.post('/tariff',async(req,res)=>{
     }
 })
 
+router.post('/wms-contract', async(req,res)=>{
+    try{
+        const {data}    = req.body;
+        const contracts   = data.contracts;
+        const details     = data.contract_details;
+
+        // validation variables
+        let contract_header = []
+        let contract_details = []
+
+        if(typeof data.contracts === 'undefined' || typeof data.contract_details === 'undefined'){
+            return res.status(400).json({
+                message:'Invalid File!'
+            })
+        }
+        
+        //Validate if the principal is valid
+        const principals = await principal.getAllPrincipal({
+            filters:{
+                //principal_code:contracts.map(item => item.principal_code)
+            }
+        })
+    
+        const getContracts = await contract.getAllWMSContracts({
+            filters:{
+                //contract_id: contracts.map(item => item.contract_id)
+            }
+        })
+
+        const getCustomers = await contract.getAllWMSContracts({
+            filters:{
+                principal_code: contracts.map(item => item.principal_code)
+            }
+        })
+
+        for(let i in contracts){
+            const contractData = contracts[i];
+
+            const dbContract = _.find(getContracts,(value)=>{
+                return value.contract_id === contractData.contract_id
+            })
+
+            if(dbContract?.contract_status === 'CANCELLED'){
+                contract_header.push({
+                    contract_id:contractData.contract_id,
+                    reason:'Cancelled Contract'
+                })
+            }
+
+            const isPrincipal = _.find(principals,(value)=> {
+                return String(value.principal_code).toLowerCase() == String(contractData.principal_code).toLowerCase()
+            })
+
+            if(!isPrincipal){
+                contract_header.push({
+                    contract_id:contractData.contract_id,
+                    reason: `Principal Code ${contractData.principal_code} is not maintained`
+                })
+            }
+
+            const isCustomerExists = _.find(getCustomers,(value)=>{
+                return value.principal_code == contractData.principal_code
+            }) 
+
+            if(isCustomerExists && isCustomerExists?.contract_status === 'APPROVED'){
+                contract_header.push({
+                    contract_id:contractData.contract_id,
+                    reason:'Principal is already mapped to a contract'
+                })
+            }   
+        }
+
+        //Contract Details Validation
+        const getTariffs = await tariff.getAllWMSTariff({
+            filters:{
+                tariff_id:_.uniq(details.map(item => item.tariff_id))
+            }
+        })
+
+        for(let i in details){
+            const contract_tariff = details[i]
+    
+            const tariff = _.find(getTariffs,(value)=>{
+                return String(value.tariff_id).toLowerCase()=== String(contract_tariff.tariff_id).toLowerCase()
+            })
+
+            if(!tariff){
+                contract_details.push({
+                    contract_id:contract_tariff.contract_id,
+                    tariff_id:contract_tariff.tariff_id,
+                    reason:'Tariff does not exists!'
+                })
+
+                continue;
+            }
+
+            const dbContract = _.find(getContracts,(value)=>{
+                return value.contract_id === contract_tariff.contract_id
+            })
+
+            if(!dbContract){
+                contract_details.push({
+                    contract_id:contract_tariff.contract_id,
+                    tariff_id:contract_tariff.tariff_id,
+                    reason:'Contract does not exists!'
+                })
+            }
+        }
+
+        await contract.bulkCreateWMSContractDetails({
+            contract:contracts.filter(item => !contract_header.map(x => x.contract_id).includes(item.contract_id)).map(item => {
+                return {
+                    ...item,
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
+            }),
+            details: details.filter(item => {
+                const isInvalid = _.some(contract_details,{
+                    contract_id:item.contract_id,
+                    tariff_id:item.tariff_id
+                })
+    
+                return !isInvalid
+            })
+            .map(item => {
+                return{
+                    ...item,
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
+            })
+        })
+
+        res.status(200).json({
+            results:{
+                contract_header,
+                contract_details
+            }
+        })
+
+
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({
+            message:`${e}`
+        })
+    }
+})
+
 router.post('/contract',async(req,res)=>{
     try{    
         const {data}    = req.body;
         let contracts   = data.contracts;
         let details     = data.contract_details;
         const today     = moment().format('YYYY-MM-DD')
-
-        // console.log(details)
 
         let contract_header = []
         let contract_details = []
@@ -199,13 +429,13 @@ router.post('/contract',async(req,res)=>{
         }
 
         //Contract Header validation
-        const getContracts = await contract.getAllContracts({
+        const getContracts = await contract.getAllWMSContracts({
             filters:{
                 contract_id: contracts.map(item => item.contract_id)
             }
         })
 
-        const getCustomers = await contract.getAllContracts({
+        const getCustomers = await contract.getAllWMSContracts({
             filters:{
                 principal_code: contracts.map(item => item.principal_code)
             }

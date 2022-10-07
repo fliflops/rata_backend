@@ -27,6 +27,25 @@ exports.globalSearchFilter = ({
 
                 delete formattedFilters["search"]
             }
+
+            if(field === 'draft_bill_date'){
+
+                formattedFilters={
+                    ...formattedFilters,
+                    draft_bill_date : {
+                        [Sequelize.Op.between]: filters.draft_bill_date.split(',')
+                    }
+                }
+            }
+
+            if(field === 'transaction_date'){
+                formattedFilters={
+                    ...formattedFilters,
+                    transaction_date : {
+                        [Sequelize.Op.between]: filters.transaction_date.split(',')
+                    }
+                }
+            }
         })
 
         return formattedFilters

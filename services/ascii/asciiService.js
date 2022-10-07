@@ -109,8 +109,6 @@ exports.getDraftBill = async({
             }
         })
 
-        console.log(header)
-
         const details = await draftBill.getAllInvoices({
             filters:{
                 delivery_date:rdd
@@ -199,6 +197,60 @@ exports.getDraftBill = async({
     }
 }
 
+
+exports.getWMSDraftBill = async({
+    data
+})=>{
+    try{
+        const serviceTypes = await dataMaster.getServiceTypes();
+        
+        return data.map(header => {
+            const service_type = _.find(serviceTypes,['service_type_code',header.service_type])
+            const SO_AMT       = _.round(header.total_charges,2)
+            const details = header.draft_bill_details
+            let SALES_ORDER_DETAIL = [
+                {
+                    COMPANY_CODE:   '00001',
+                    SO_CODE:        header.draft_bill_no,
+                    ITEM_CODE:      service_type?.ascii_item_code,
+                    LINE_NO:        1,
+                    LOCATION_CODE:  header.ascii_loc_code,
+                    UM_CODE:        details[0].service_type,
+                    QUANTITY:       
+                    _.round(_.sumBy(details,(i)=>{
+                        if(String(details[0].min_billable_unit).toLowerCase() === 'cbm'){
+                            return parseFloat(i.actual_cbm)
+                        }
+
+                        return parseFloat(i.actual_qty)
+
+                    }),2),
+                    UNIT_PRICE:     _.round(header.rate,2),   
+                    EXTENDED_AMT:   SO_AMT
+                }
+            ];
+
+            return {
+                COMPANY_CODE:   '00001',
+                SO_CODE:        header.draft_bill_no,
+                ITEM_TYPE:      'S',
+                SO_DATE:        header.draft_bill_date,
+                CUSTOMER_CODE:  header.ascii_customer_code,
+                PARTICULAR:     _.uniq(header.draft_bill_details.map(item => item.primary_ref_doc)),
+                REF_EUPO:       '',//invoices[0].trip_plan,
+                REF_CROSS:      header.contract_id,
+                SO_AMT,
+                SALES_ORDER_DETAIL
+
+            }
+            
+        })
+
+    }
+    catch(e){
+        throw e
+    }
+}
 
 exports.createAsciiSalesOrder = async({
     token,

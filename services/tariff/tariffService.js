@@ -1,20 +1,5 @@
 const dataLayer = require('./tariffDatalayer');
 
-exports.createTariffType = async({
-    header,
-    conditions
-}) => {
-    try{
-        return await dataLayer.createTariffType({
-            header,
-            conditions
-        })
-    }
-    catch(e){
-        throw e
-    }
-}
-
 exports.createTariff = async({
     data
 }) => {
@@ -42,6 +27,26 @@ exports.bulkCreateTariff = async({data})=>{
             options:{
                 logging:false,
                 updateOnDuplicate:['updatedAt','vehicle_type','from_geo_type','to_geo_type','from_geo','to_geo']
+            }
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+exports.bulkCreateWMSTariff =async({data})=>{
+    try{
+        return await dataLayer.bulkCreateWMSTariff({
+            data: data.map(item => {
+                return {
+                    ...item,
+                    tariff_status:'DRAFT'
+                }
+            }),
+            options:{
+                logging:false,
+                updateOnDuplicate:['updatedAt','vehicle_type']
             }
         })
     }
@@ -129,12 +134,11 @@ exports.updateTariff = async({filters,data})=>{
 
 
 //Validations
-
 exports.isTariffExists = async({
     tariff_ids
 })=>{
     try{
-        console.log(tariff_ids)
+        // console.log(tariff_ids)
         let isExist = false
 
         let results = await dataLayer.getAllTariff({
@@ -156,4 +160,71 @@ exports.isTariffExists = async({
     catch(e){
         throw e
     }
+}
+
+
+exports.createWMSTariff = async({data}) => {
+    try{
+        return await dataLayer.createWMSTariff({
+            data,
+            options:{}
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+
+exports.getAllWMSTariff = async({filters}) => {
+    try{
+
+        return await dataLayer.getAllWMSTariff({
+            filters
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+
+    }
+    catch(e){
+        throw e
+    }
+}
+
+exports.updateWMSTariff = async({filters,data})=>{
+    try {
+
+        return await dataLayer.updateWMSTariff({
+            data,
+            filters,
+            options:{}
+        })
+        
+    } 
+    catch (e) {
+        throw e    
+    }
+}
+
+exports.getPaginatedWMSTariff=async({filters})=>{
+    try {
+        let {orderBy,order,page,totalPage,...newFilters} = filters;
+
+        if(!orderBy){
+            orderBy=[]
+        }
+        else{
+            orderBy=[orderBy]
+        }
+
+        return await dataLayer.getPaginatedWMSTariff({
+            filters:newFilters,
+            page,
+            totalPage,
+            orderBy
+        })
+        
+    } 
+    catch (e) {
+        throw e
+    }   
 }

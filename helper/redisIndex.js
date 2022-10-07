@@ -3,7 +3,7 @@ const {SchemaFieldTypes} = require('redis');
 
 exports.searchHashes = async() => {
     try{
-        await redisClient.ft.create('idx:invoice', {
+        await redisClient.ft.create('idx:helios:sell', {
             rdd:{
                 type: SchemaFieldTypes.NUMERIC,
                 SORTABLE: true
@@ -14,7 +14,7 @@ exports.searchHashes = async() => {
             
         },{
             ON: 'HASH',
-            PREFIX: 'helios:invoice'
+            PREFIX: 'helios:sell'
         })
     }
     catch(e){
