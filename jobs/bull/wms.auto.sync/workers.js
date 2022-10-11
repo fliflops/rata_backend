@@ -14,7 +14,7 @@ exports.wmsautosyncWorker = async(connection) => {
             try{    
 
                 //Note: Cancel the job if there's an existing transaction date inside the database
-                const jobId = job.opts.repeat.jobId
+                const jobId = typeof job.opts.repeat?.jobId === 'undefined' ? job.id : job.opts.repeat.jobId
                 
                 //create transaction log
                 await schedulerService.createJobTracker({
@@ -52,28 +52,32 @@ exports.wmsautosyncWorker = async(connection) => {
         })
 
         worker.on('completed', async job => {
+            const jobId = typeof job.opts.repeat?.jobId === 'undefined' ? job.id : job.opts.repeat.jobId
+                
             await schedulerService.updateJobTracker({
                 filters:{
-                    job_id:job.opts.repeat.jobId
+                    job_id:jobId
                 },
                 data:{
                     job_status:'COMPLETED'
                 }
             })
-            console.info(`${job.opts.repeat.jobId} has completed!`);
+            console.info(`${jobId} has completed!`);
         });
    
         worker.on('failed', async (job, err) => {
+            const jobId = typeof job.opts.repeat?.jobId === 'undefined' ? job.id : job.opts.repeat.jobId
+                
             await schedulerService.updateJobTracker({
                 filters:{
-                    job_id:job.opts.repeat.jobId
+                    job_id:jobId
                 },
                 data:{
                     job_status:'FAILED',
                     error_info: err.message
                 }
             })
-            console.error(`${job.opts.repeat.jobId} has failed with ${err.message}`);
+            console.error(`${jobId} has failed with ${err.message}`);
         });
 
     }

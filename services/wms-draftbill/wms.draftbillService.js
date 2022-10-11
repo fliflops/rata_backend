@@ -35,7 +35,7 @@ exports.createDraftBill = async({
         const getDraftBills = await dataLayer.getAllDraftBills({
             filters:{
                 [Op.and]:[
-                    Sequelize.where(Sequelize.fn('date',Sequelize.col('createdAt')),'=',moment().format('YYYY-MM-DD'))
+                    Sequelize.where(Sequelize.fn('date',Sequelize.col('wms_draft_bill_hdr_tbl.createdAt')),'=',moment().format('YYYY-MM-DD'))
                 ]
             }
         })
@@ -160,4 +160,17 @@ exports.createDraftBillTransaction = async({
 }
 
 
+exports.getAllDraftBillDetails = async({
+    filters
+}) => {
+    try{
+        return await dataLayer.getAllDraftBillDetails({
+            filters
+        })
+        
+    }
+    catch(e){
+        throw e
+    }
+}
 

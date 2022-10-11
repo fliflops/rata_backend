@@ -1,9 +1,10 @@
 const router = require('express').Router();
 const schedulerService = require('../services/scheduler');
-// const {queue} = require('../jobs/bull/wms.auto.sync');
+const wmsDraftBillService = require('../services/wms-draftbill/wms.draftbillService');
+const {queue} = require('../jobs/bull/wms.auto.sync');
 const {redis,ioredis} = require('../config');
-const jobs = require('../jobs')
-const moment = require('moment')
+const jobs = require('../jobs');
+const moment = require('moment');
 
 const connection = ioredis;
 
@@ -81,6 +82,41 @@ router.route('/:id')
         });    
     }
 })
+.post(async(req,res)=> {
+    try {
+        const {id} = req.params;
+        const body = req.body;
+
+        if (id === 'WMS_DATA_SYNC') {
+            //validation
+            const details = await wmsDraftBillService.getAllDraftBillDetails({
+                filters:{
+                    transaction_date: moment(body.transaction_date).format('YYYY-MM-DD')
+                }
+            })
+
+            if(details.length > 0){
+                return res.status(400).json({
+                    message:'Draft Bill Already Created!'
+                })
+            }
+
+            await queue.wmsAutoSyncManual({
+                date:moment(body.transaction_date).format('YYYY-MM-DD'),
+                connection
+            })
+        }
+        
+
+        res.status(200).end()
+    } 
+    catch (e) {
+        console.log(e)
+        res.status(500).json({
+            message:`${e}`
+        });
+    }
+})
 
 router.route('/details/:job_id')
 .post(async(req,res) => {
@@ -96,6 +132,7 @@ router.route('/details/:job_id')
         });  
     }
 })
+
 
 
 // router.get('/bull', async(req,res) => {

@@ -169,11 +169,29 @@ const createDraftBillTransaction = async({
     }
 }
 
+const getAllDraftBillDetails = async ({
+    filters
+}) => { 
+    try{
+
+        return await models.wms_draft_bill_dtl_tbl.findAll({
+            where :{
+                ...filters
+            }
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
+    catch(e){
+        throw e
+    }
+}
+
 
 module.exports = {
     bulkCreateDraftbill,
     getAllDraftBills,
     getPaginatedDraftBills,
     getPaginatedDraftBillDetails,
-    createDraftBillTransaction
+    createDraftBillTransaction,
+    getAllDraftBillDetails
 }

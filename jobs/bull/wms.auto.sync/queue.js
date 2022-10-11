@@ -1,6 +1,6 @@
 const{Queue} = require('bullmq');
 const {v4:uuidv4} = require('uuid');
-const redis = require('../../../config').redis
+const redis = require('../../../config').redis;
 
 exports.wmsAutoSyncProduce = async({date,connection}) => {
     try{
@@ -27,6 +27,32 @@ exports.wmsAutoSyncProduce = async({date,connection}) => {
         })
 
         console.log(await myQueue.getRepeatableJobs())
+    }
+    catch(e){
+        throw e
+    }
+}
+
+exports.wmsAutoSyncManual = async({
+    date,connection
+})=>{
+    try{
+        const redis_key = 'rata:wms_data_sync';
+        //queue id 
+        const myQueue = new Queue('rata:wmsautosync',{connection})
+        
+        await myQueue.add('wmsautosync',{date},{
+            // repeat:{
+            //     pattern:`* ${cron.start_time_cron}`,
+            //     limit:1,
+            //     jobId:uuidv4(),
+            //     //tz:'PHT'
+            // },
+            removeOnComplete:true,
+            removeOnFail:true,
+            jobId:uuidv4()
+        })
+
     }
     catch(e){
         throw e
