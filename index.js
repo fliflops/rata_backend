@@ -6,24 +6,28 @@ const path          = require('path');
 const methodOverride = require('method-override');
 const compress = require('compression')
 
-
-
 const api           = require('./api');
 const v2            = require('./src/api');
 const error         = require('./src/middleware/error');
 
 const app           = express();
 
-
-const {dbLoader,middleware}       = require('./loaders');
+const {dbLoader}       = require('./loaders');
 const oneDay = 1000 * 60 * 60 * 24;
+const allowedOrigins = [
+    'http://localhost:3003',
+    'http://localhost:3002',
+    'https://tmsuat.automoto.ph:60001',
+    'https://tmsuat.automoto.ph:60000',
+    'https://tmsdev.automoto.ph:60001',
+    'https://tmsdev.automoto.ph:60000',
+]
 
 global.appRoot = path.resolve(__dirname);
 
 app.use(morgan('dev'))
 app.use(express.json({limit: '50mb'}));
 app.use(express.urlencoded({limit: '50mb'}));
-
 
 // gzip compression
 app.use(compress());
@@ -34,18 +38,19 @@ app.use(methodOverride());
 
 app.use(helmet());
 
-app.use(cors(
-    {
-        credentials:true,
-        origin: process.env.ORIGIN
-    }
-));
+app.use(cors({
+    origin:(origin,callback) => {
+        if(allowedOrigins.indexOf(origin) !== -1 || !origin){
+            callback(null, true)
+        }
+        else {
+            callback(new Error('Not allowed by CORS'))
+        }
+    },
+    optionsSuccessStatus: 200
+}));
 
 app.set('trust proxy',1)
-
-
-// app.use(middleware.sessionAuthentication);
-
 
 app.use(api);
 
