@@ -38,11 +38,7 @@ app.use(methodOverride());
 
 app.use(helmet());
 
-app.use(cors({
-    origin:true,
-    optionsSuccessStatus: 200,
-    credentials:true
-}));
+app.use(cors());
 
 app.set('trust proxy',1)
 
