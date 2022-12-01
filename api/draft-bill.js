@@ -35,7 +35,8 @@ router.get('/',async(req,res)=>{
 
         res.status(200).json({
             data:rows,
-            rows:count
+            rows:count,
+            pageCount: Math.ceil(count / query.totalPage)
         })
     }
     catch(e){

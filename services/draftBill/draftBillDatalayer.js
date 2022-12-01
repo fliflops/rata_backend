@@ -112,7 +112,7 @@ const getPaginatedDraftBill = async({
             offset:parseInt(page) * parseInt(totalPage),
             limit:parseInt(totalPage),
             //order: [[orderBy,desc]]
-            order:[orderBy]
+            order:[['createdAt','DESC']]
         })
         .then(result => {
             let {count,rows} = JSON.parse(JSON.stringify(result))

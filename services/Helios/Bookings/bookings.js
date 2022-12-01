@@ -39,3 +39,37 @@ exports.getInvoicesDtl = async({
         throw e
     }
 }
+
+exports.getBookingRequest = async ({
+    rdd
+}) => {
+    try{
+
+        const header =  await dataLayer.getBookingRequest({
+            rdd
+        })
+
+        const details = await dataLayer.getBookingRequestDetails({
+            rdd
+        })
+
+
+        return header.map(item => {
+            const bookingDetails = details
+            .filter(dtl => dtl.br_no === item.tms_reference_no)
+            const invoice = String(item.invoice_no).split('|')
+            
+            return {
+                ...item,
+                is_billable: item.reason_code === null ? true : item.is_billable,
+                invoice_no: invoice[0],
+                redel_remarks: typeof invoice[1] === 'undefined' ? null : invoice[1],
+                details:bookingDetails
+            }
+        })
+        
+    }
+    catch(e){
+        throw e
+    }
+}

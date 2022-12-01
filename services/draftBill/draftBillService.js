@@ -36,7 +36,6 @@ exports.getPaginatedDraftBill = async({
         // console.log(filters)
         let {orderBy,page,totalPage,...newFilters} = filters
         return await dataLayer.getPaginatedDraftBill({
-            orderBy:orderBy.split(','),
             page,
             totalPage,
             filters:{

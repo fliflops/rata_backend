@@ -37,7 +37,7 @@ exports.wmsAutoSyncManual = async({
     date,connection
 })=>{
     try{
-        const redis_key = 'rata:wms_data_sync';
+        //const redis_key = 'rata:wms_data_sync';
         //queue id 
         const myQueue = new Queue('rata:wmsautosync',{connection})
         

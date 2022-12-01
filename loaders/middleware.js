@@ -9,7 +9,7 @@ exports.sessionAuthentication = async(req,res,next) => {
         {
             const token = req.headers['x-access-token']
             
-            if(!token){
+            if(token === null || typeof token === 'undefined'){
                 throw Error('Token is Required')
             }
 

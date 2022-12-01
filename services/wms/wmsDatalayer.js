@@ -79,56 +79,56 @@ const getGi = async({date,options}) => {
 const getGr = async({date,options}) => {
     try{
         return await sequelize.query(`
-        Select 
-        'HANDLING_IN'			  'service_type',
-		c.wms_div_code			  'location',
-        d.wms_customer_profile_id 'principal_code',
-		a.wms_gr_asn_no			  'wms_reference_no',
-        b.wms_asn_prefdoc_no	  'primary_ref_doc',
-        b.wms_asn_shp_vh_typ	  'vehicle_type',
-        e.sku_code,
-        e.order_uom				'uom',
-        e.qty					'actual_qty',
-        ((f.wms_itm_length * f.wms_itm_breadth * f.wms_itm_height) / 1000000 ) * e.case_qty 'actual_cbm',
-        CAST(a.wms_gr_exec_date as date) 'transaction_date',
-		UPPER(f.wms_itm_itemgroup)	'class_of_store'
-        from 
-        wms_gr_exec_dtl	a (NOLOCK)
-        left join wms_asn_header b (NOLOCK)				on a.wms_gr_asn_no = b.wms_asn_no
-		left join wms_div_location_list_dtl c (NOLOCK)  on a.wms_gr_loc_code = c.wms_div_loc_code
-		left join wms_customer_hdr d (NOLOCK)			on  b.wms_asn_cust_code = d.wms_customer_id
-        OUTER APPLY (
             Select 
-            cx.wms_asn_no,
-            ax.wms_gr_item			'sku_code',
-            SUM(
-                CASE WHEN ex.wms_ex_itm_quantity is not null 
-                THEN ax.wms_gr_acpt_qty/ex.wms_ex_itm_quantity
-                ELSE ax.wms_gr_acpt_qty
-                END 
-            ) 'qty',
-            SUM(ax.wms_gr_acpt_qty/fx.wms_ex_itm_quantity) 'case_qty',
-            ax.wms_gr_mas_uom		'master_uom',
-            cx.wms_asn_order_uom	'order_uom'
-            from wms_gr_exec_item_dtl ax (NOLOCK)		 	
-            left join wms_gr_exec_dtl bx (NOLOCK)	on ax.wms_gr_exec_no = bx.wms_gr_exec_no
-            left join (Select distinct wms_asn_no,wms_asn_itm_code, wms_asn_order_uom from wms_asn_detail (NOLOCK)) cx on bx.wms_gr_asn_no = cx.wms_asn_no and ax.wms_gr_item = cx.wms_asn_itm_code
-            left join wms_ex_itm_su_conversion_dtl ex (NOLOCK) on ax.wms_gr_loc_code = ex.wms_ex_itm_loc_code and ax.wms_gr_item = ex.wms_ex_itm_code and cx.wms_asn_order_uom = ex.wms_ex_itm_storage_unit
-            left join wms_ex_itm_su_conversion_dtl fx (NOLOCK) on ax.wms_gr_loc_code = fx.wms_ex_itm_loc_code and ax.wms_gr_item = fx.wms_ex_itm_code and fx.wms_ex_itm_storage_unit = 'CASE'
-            where cx.wms_asn_no=b.wms_asn_no
-            group by 
-            ax.wms_gr_item,
-            cx.wms_asn_no,
-            ax.wms_gr_mas_uom,
-            cx.wms_asn_order_uom
+            'HANDLING_IN'			  'service_type',
+            c.wms_div_code			  'location',
+            d.wms_customer_profile_id 'principal_code',
+            a.wms_gr_asn_no			  'wms_reference_no',
+            b.wms_asn_prefdoc_no	  'primary_ref_doc',
+            b.wms_asn_shp_vh_typ	  'vehicle_type',
+            e.sku_code,
+            e.order_uom				'uom',
+            e.qty					'actual_qty',
+            ((f.wms_itm_length * f.wms_itm_breadth * f.wms_itm_height) / 1000000 ) * e.case_qty 'actual_cbm',
+            CAST(a.wms_gr_exec_date as date) 'transaction_date',
+            UPPER(f.wms_itm_itemgroup)	'class_of_store'
+            from 
+            wms_gr_exec_dtl	a (NOLOCK)
+            left join wms_asn_header b (NOLOCK)				on a.wms_gr_asn_no = b.wms_asn_no
+            left join wms_div_location_list_dtl c (NOLOCK)  on a.wms_gr_loc_code = c.wms_div_loc_code
+            left join wms_customer_hdr d (NOLOCK)			on  b.wms_asn_cust_code = d.wms_customer_id
+            OUTER APPLY (
+                Select 
+                cx.wms_asn_no,
+                ax.wms_gr_item			'sku_code',
+                SUM(
+                    CASE WHEN ex.wms_ex_itm_quantity is not null 
+                    THEN ax.wms_gr_acpt_qty/ex.wms_ex_itm_quantity
+                    ELSE ax.wms_gr_acpt_qty
+                    END 
+                ) 'qty',
+                SUM(ax.wms_gr_acpt_qty/fx.wms_ex_itm_quantity) 'case_qty',
+                ax.wms_gr_mas_uom		'master_uom',
+                cx.wms_asn_order_uom	'order_uom'
+                from wms_gr_exec_item_dtl ax (NOLOCK)		 	
+                left join wms_gr_exec_dtl bx (NOLOCK)	on ax.wms_gr_exec_no = bx.wms_gr_exec_no
+                left join (Select distinct wms_asn_no,wms_asn_itm_code, wms_asn_order_uom from wms_asn_detail (NOLOCK)) cx on bx.wms_gr_asn_no = cx.wms_asn_no and ax.wms_gr_item = cx.wms_asn_itm_code
+                left join wms_ex_itm_su_conversion_dtl ex (NOLOCK) on ax.wms_gr_loc_code = ex.wms_ex_itm_loc_code and ax.wms_gr_item = ex.wms_ex_itm_code and cx.wms_asn_order_uom = ex.wms_ex_itm_storage_unit
+                left join wms_ex_itm_su_conversion_dtl fx (NOLOCK) on ax.wms_gr_loc_code = fx.wms_ex_itm_loc_code and ax.wms_gr_item = fx.wms_ex_itm_code and fx.wms_ex_itm_storage_unit = 'CASE'
+                where cx.wms_asn_no=b.wms_asn_no
+                group by 
+                ax.wms_gr_item,
+                cx.wms_asn_no,
+                ax.wms_gr_mas_uom,
+                cx.wms_asn_order_uom
 
-        ) e
-        left join wms_item_hdr (NOLOCK) f on e.sku_code = f.wms_itm_code
-		
-        where 
-        a.wms_gr_exec_status in ('PC','SC','CM')
-        and e.qty > 0
-        and CAST(a.wms_gr_exec_date as date) = :date
+            ) e
+            left join wms_item_hdr (NOLOCK) f on e.sku_code = f.wms_itm_code
+            
+            where 
+            a.wms_gr_exec_status in ('PC','SC','CM')
+            and e.qty > 0
+            and CAST(a.wms_gr_exec_date as date) = :date
     `,{
         replacements: { date },
         type: QueryTypes.SELECT,

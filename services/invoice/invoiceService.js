@@ -3,6 +3,19 @@ const draftBill = require('../draftBill');
 const _ = require('lodash');
 const { Op } = require('sequelize');
 
+exports.bulkCreateHeliosInvoices = async ({
+    data
+})=>{
+    try{
+        return await dataLayer.bulkCreateHeliosInvoices({
+            data
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
 exports.createInvoiceTransaction = async({
     invoices,
     details

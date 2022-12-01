@@ -57,10 +57,7 @@ router.post('/token', async(req,res) => {
             })
         }
 
-        const token = await auth.generateToken({
-            email,
-            id:getUsers.id
-        })
+        
 
         const rawModules = await roles.getRoleModule({
             filters:{
@@ -70,6 +67,15 @@ router.post('/token', async(req,res) => {
         })
 
         const modules = await roles.formatRoleModules({data:rawModules})
+        // console.log(getUsers)
+        
+        const token = await auth.generateToken({
+            email,
+            role:getUsers.role_name,
+            id:getUsers.id,
+            modules
+        })
+
         await redisActions.SET({
             key:`session:${getUsers.id}`,
             value:{ 
@@ -80,7 +86,7 @@ router.post('/token', async(req,res) => {
         })
  
         res.status(200).json({
-            token,
+            token:token.token,
             modules
         })
     }

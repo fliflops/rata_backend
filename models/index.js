@@ -119,7 +119,19 @@ db.contract_tariff_dtl.belongsTo(db.tariff_sell_hdr_tbl,{
 	foreignKey:'tariff_id'
 })
 
-//Invoice Associations
+//Helios Invoice Associations
+db.helios_invoices_hdr_tbl.hasMany(db.helios_invoices_dtl_tbl,{
+	foreignKey:'br_no',
+	sourceKey:'tms_reference_no',
+	as:'details'
+})
+
+
+
+
+/* 
+Update: Old invoice table
+Invoice Associations */
 db.invoices_cleared_hdr.hasMany(db.invoices_dtl_tbl,{
 	foreignKey:'br_no',
 	sourceKey:'br_no',
@@ -168,6 +180,8 @@ db.invoices_cleared_hdr.hasOne(db.principal_tbl,{
 	sourceKey:'principal_code',
 	as:'principal_tbl'
 })
+
+
 
 //Invoice details assoc
 db.invoices_dtl_tbl.hasOne(db.invoices_cleared_hdr,{

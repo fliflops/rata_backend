@@ -403,14 +403,11 @@ const assignTariff = async ({invoices,contracts}) => {
                 contract_type:      tariffs[0].contract_type
             }
             
-
-            
             data.push({
                 ...invoice,
                 group_id: typeof tariff.group_by === 'string' ?  tariff.group_by.split(',').map(item =>  invoice[item]).join('|') : null,
                 tariff
             })
-
         }
     }
 
@@ -453,6 +450,7 @@ const groupWithAgg = async({data,contract_type}) => {
                     const actual_weight  =sumBy({data:item.details,field:'actual_weight'})
                     const actual_cbm     =sumBy({data:item.details,field:'actual_cbm'})
                     const return_qty     =sumBy({data:item.details,field:'return_qty'})
+                    
                     return {
                         draft_bill_no:      '',
                         delivery_date:      item.rdd,
@@ -522,9 +520,9 @@ const groupWithAgg = async({data,contract_type}) => {
 
                 //declare variable
                 let aggregatedValues = {
-                    total_cbm:null,
-                    total_weight:null,
-                    total_qty:null
+                    total_cbm:      null,
+                    total_weight:   null,
+                    total_qty:      null
                 }
 
                 let total_charges = null;
@@ -961,7 +959,7 @@ const groupWithoutAgg = async(data) => {
 exports.generateDraftBill = async({deliveryDate,location}) => {
     try{
         
-        let draft_bills = []
+        let draft_bills = [];
         /*A. Get Invoices
         1. Assignment of Contracts per Invoices */
         const invoices = await getAllInvoice({

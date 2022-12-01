@@ -56,7 +56,7 @@ exports.setRedisScheduler = async()=>{
         for(const rows of data){
             await redis.json.set(rows.redis_key,'.',rows)
         }
-
+        
     }
     catch(e){
         throw e

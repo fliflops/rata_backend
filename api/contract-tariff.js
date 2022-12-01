@@ -65,6 +65,7 @@ router.post('/wms-tariff',async(req,res)=> {
     }
 })
 
+//handles the creation of tariff
 router.post('/tariff',async(req,res) => {
     try{
         const {data} = req.body;
@@ -132,7 +133,6 @@ router.post('/contract',async(req,res) => {
                 modified_by:req.processor.id,
                 approved_by:req.processor.id
             }
-            //details:data.details
         })
 
         res.status(200).end()
@@ -309,7 +309,8 @@ router.get('/tariff',async(req,res)=>{
 
         res.status(200).json({
             data:rows,
-            rows:count
+            rows:count,
+            pageCount:Math.ceil(count/totalPage)
         })
     }
     catch(e){

@@ -149,6 +149,7 @@ const getPaginatedTariff = async({
             where:{
                 ...newFilter
             },
+            order:[['createdAt','DESC']],
             offset:parseInt(page) * parseInt(totalPage),
             limit:parseInt(totalPage)
         })

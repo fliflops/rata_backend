@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const {principal,shipPoint,quickCode,location,tariff,geography,aggregation,vendor,roles} = require('../services')
 
+
 router.get('/principal',async(req,res) => {
     try{
 
@@ -289,10 +290,12 @@ router.get('/aggregation',async(req,res)=>{
 router.get('/vendor-group',async(req,res)=>{
     try{
         let data
+        const query = req.query;
         
         data = await vendor.getAllVendorGroup({
             filters:{
-                vg_status:'ACTIVE'
+                vg_status:'ACTIVE',
+                ...query
             }
         })
 

@@ -13,4 +13,6 @@ module.exports = async () => {
         date:moment().format('YYYY-MM-DD'),
         connection
     })
+
+    
 }

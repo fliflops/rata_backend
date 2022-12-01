@@ -4,14 +4,16 @@ const secret = process.env.TOKEN_SECRET;
 
 exports.generateToken = async({
     id,
-    email
+    email,
+    modules,
+    role
 }) => {
     try{
-        const token = await jwt.sign({email,id},secret,{
+        const token = jwt.sign({email,id,modules,role},secret,{
             expiresIn:"24h"
         })
-        const decode = await jwt.verify(token,secret)
-
+       
+       const decode =jwt.verify(token,secret)
         return {
             token,
             expiry:decode.exp

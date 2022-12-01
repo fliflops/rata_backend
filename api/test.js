@@ -11,6 +11,8 @@ const ascii = require('../services/ascii');
 const wmsService = require('../services/wms');
 const wmsDraftBill = require('../services/wms-draftbill');
 const redisActions = require('../helper').redisActions;
+const redis=require('../config/redis');
+
 const moment = require('moment');
 
 const {Op} = sequelize;
@@ -342,5 +344,33 @@ router.post('/wms/draft-bill',async(req,res)=>{
 
     res.status(200).json(wms_draft_bill)
 })
+
+router.post('/pod',async(req,res)=>{
+    try{
+        const {rdd} = req.query;
+
+        const invoice = await heliosService.bookings.getBookingRequest({
+            rdd
+        })
+
+        // invoice.map(async item => {
+        //     await redis.json.set(`rata:invoices:${item.tms_reference_no}`,'.',{
+        //         ...item
+        //     })
+        // })
+
+        // await invoiceService.bulkCreateHeliosInvoices({
+        //     data:invoice
+        // })
+
+        res.status(200).json(invoice)
+    }
+    catch(e){
+        throw e
+    }
+})
+
+
+
 
 module.exports = router 

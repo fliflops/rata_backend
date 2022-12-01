@@ -4,6 +4,30 @@ const {Op} = Sequelize;
 const {useFormatFilters,viewFilters} = require('../../helper')
 
 
+//Helios Invoice Table
+
+const bulkCreateHeliosInvoices = async ({
+    data,
+    options
+}) => {
+    try{
+        return await models.helios_invoices_hdr_tbl.bulkCreate(data,{
+            ...options,
+            updateOnDuplicate: ['updatedAt','vehicle_type','vehicle_id','trip_no'],
+            include:[
+                {
+                    model:models.helios_invoices_dtl_tbl,
+                    as:'details'
+                }
+            ]
+        })
+    }
+    catch(e){
+        throw e
+    }
+}
+
+
 const createInvoice = async({
     data,
     options
@@ -19,7 +43,6 @@ const createInvoice = async({
         throw e
     }
 }
-
 
 const createInvoiceDtl = async ({
     data,
@@ -415,5 +438,6 @@ module.exports={
     getAllRevenueLeak,
     getPaginatedRevenueLeak,
     getPaginatedInvoices,
-    getInvoiceDetails
+    getInvoiceDetails,
+    bulkCreateHeliosInvoices
 }
