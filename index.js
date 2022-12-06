@@ -38,7 +38,17 @@ app.use(methodOverride());
 
 app.use(helmet());
 
-app.use(cors());
+app.use(cors({
+    credentials:true,
+    origin: (origin,callback) => {
+        if(allowedOrigins.indexOf(origin) !== -1){
+            callback(null,true)
+        }
+        else{
+            callback(new Error('Not allowed by CORS'))
+        }
+    }
+}));
 
 app.set('trust proxy',1)
 
