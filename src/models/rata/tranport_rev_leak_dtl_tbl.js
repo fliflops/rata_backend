@@ -1,7 +1,7 @@
-const {Sequelize,DataTypes,Model} = require('sequelize')
+const {Sequelize,DataTypes,Model} = require('sequelize');
 
-class helios_invoices_dtl_tbl extends Model {
-    static init(sequelize) {
+class tranport_rev_leak_dtl_tbl extends Model {
+    static init (sequelize) {
         return super.init({
             id: {
                 allowNull: false,
@@ -9,10 +9,14 @@ class helios_invoices_dtl_tbl extends Model {
                 type: DataTypes.UUID,
                 defaultValue: DataTypes.UUIDV4
             },
+            draft_bill_type:{
+                type: DataTypes.STRING
+            },
             trip_no:{
                 type: DataTypes.STRING
             },
             br_no:{
+                primaryKey:true,
                 type: DataTypes.STRING
             },
             class_of_store:{
@@ -46,10 +50,9 @@ class helios_invoices_dtl_tbl extends Model {
             updatedAt:Sequelize.DATE,
         },
         {
-            freezeTableName:true,
             sequelize,
-            tableName:'helios_invoices_dtl_tbl',
-            
+            tableName:'tranport_rev_leak_dtl_tbl',
+            freezeTableName:true
         })
     }
 
@@ -61,4 +64,4 @@ class helios_invoices_dtl_tbl extends Model {
     }
 }
 
-module.exports = helios_invoices_dtl_tbl
+module.exports = tranport_rev_leak_dtl_tbl

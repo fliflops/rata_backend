@@ -59,6 +59,27 @@ class contract_tariff_dtl extends Model {
         })
     }
 
+    static async paginated({
+        filters,
+        options,
+        order,
+        page,
+        totalPage
+    }) {
+        const {search,...newFilters} = filters
+
+        return await this.findAndCountAll({
+            where:{
+                ...newFilters
+            },
+            ...options,
+            offset: parseInt(page) * parseInt(totalPage),
+            limit:parseInt(totalPage),
+            order
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
+
     static associate (models) {
         this.tariff = this.hasOne(models.tariff_sell_hdr_tbl,{
             foreignKey:'tariff_id',

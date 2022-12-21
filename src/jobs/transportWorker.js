@@ -1,0 +1,255 @@
+const {TMS_DATA_SYNC,RATA_DRAFT_BILL_BUY,RATA_DRAFT_BILL_SELL} = require('./queues/queues');
+const heliosService = require('../../services/Helios');
+const draftBillService = require('../services/draftbillService');
+
+const models = require('../models/rata');
+const { sequelize,Sequelize } = require('../models/rata');
+
+exports.tmsautosync = () => {
+    const scheduler_id = 'TMS_DATA_SYNC';
+    TMS_DATA_SYNC.process(async(job,done) => {
+        try{
+            await models.scheduler_auto_sync_trckr_tbl.createData({
+                data:{
+                    job_id:             job.id,
+                    scheduler_id:       scheduler_id,
+                    transaction_date:   job.data.date,
+                    job_status: 'INPROGRESS'
+                }
+            })
+
+
+            const invoice = await heliosService.bookings.getBookingRequest({
+                rdd: job.data.date
+            })
+
+            await sequelize.transaction( async t => {
+                await models.helios_invoices_hdr_tbl.bulkCreateData({
+                    data:invoice.header,
+                    options:{
+                        transaction:t,
+                        updateOnDuplicate: ['updatedAt','vehicle_type','vehicle_id','trip_no'],
+                        logging:false
+                    }
+                })
+    
+                await models.helios_invoices_dtl_tbl.bulkCreateData({
+                    data:invoice.details,
+                    options:{
+                        transaction:t,
+                        ignoreDuplicates:true,
+                        logging: false
+                    }
+                })
+            })
+
+            done()
+            return invoice
+
+        }
+        catch(e){
+            done(e)
+        }
+    })
+
+    
+    TMS_DATA_SYNC.on('completed',async (job) => {
+        await models.scheduler_auto_sync_trckr_tbl.updateData({
+            data:{
+                job_status:'COMPLETED'
+            },
+            where: {
+                job_id: job.id
+            }
+        })
+
+        console.log(`Job with id ${job.id} has been completed`)
+    })
+
+    TMS_DATA_SYNC.on('error', (err) => {
+        console.log(err)
+    })
+
+    TMS_DATA_SYNC.on('failed', async (job,err) => {
+        await models.scheduler_auto_sync_trckr_tbl.updateData({
+            data:{
+                job_status:'FAILED',
+                error_info: err.message
+            },
+            where: {
+                job_id: job.id
+            }
+        })
+        .catch(e => {
+            console.log(e)
+        })
+        console.error(err)
+    })
+}
+
+exports.transportSell = () => {
+    const scheduler_id = 'RATA_DRAFT_BILL_SELL';
+    RATA_DRAFT_BILL_SELL.process(async (job,done) => {
+        try{
+
+            await models.scheduler_auto_sync_trckr_tbl.createData({
+                data:{
+                    job_id:             job.id,
+                    scheduler_id:       scheduler_id,
+                    transaction_date:   job.data.date,
+                    job_status: 'INPROGRESS'
+                }
+            })
+
+            const invoices = await models.helios_invoices_hdr_tbl.getData({
+                where:{
+                    rdd: job.data.date,
+                    is_processed_sell: 0
+                },
+                options:{
+                    include:[
+                       {model: models.helios_invoices_dtl_tbl},
+                       {model: models.vendor_tbl},
+                       {model: models.ship_point_tbl, as:'ship_point_from'},
+                       {model: models.ship_point_tbl, as:'ship_point_to'}
+                    ]
+                }
+            })
+          
+            const {data,revenue_leak} = await draftBillService.sell({
+                invoices,
+                rdd: job.data.date
+            })
+
+
+            done();
+            return {data,revenue_leak}
+            
+        }
+        catch(e){
+            done(e)
+        }
+    })
+
+    RATA_DRAFT_BILL_SELL.on('completed',async (job) => {
+        await models.scheduler_auto_sync_trckr_tbl.updateData({
+            data:{
+                job_status:'COMPLETED'
+            },
+            where: {
+                job_id: job.id
+            }
+        })
+
+        console.log(`Job with id ${job.id} has been completed`)
+    })
+
+    RATA_DRAFT_BILL_SELL.on('failed', async (job,err) => {
+        await models.scheduler_auto_sync_trckr_tbl.updateData({
+            data:{
+                job_status:'FAILED',
+                error_info: err.message
+            },
+            where: {
+                job_id: job.id
+            }
+        })
+        .catch(e => {
+            console.log(e)
+        })
+        console.error('Job failed ',err)
+    })
+}
+
+exports.transportBuy = () => {
+    const scheduler_id = 'RATA_DRAFT_BILL_BUY';
+    RATA_DRAFT_BILL_BUY.process(async (job,done) => {
+        try{
+
+            await models.scheduler_auto_sync_trckr_tbl.createData({
+                data:{
+                    job_id:             job.id,
+                    scheduler_id:       scheduler_id,
+                    transaction_date:   job.data.date,
+                    job_status: 'INPROGRESS'
+                }
+            })
+
+            const invoices = await (models.helios_invoices_hdr_tbl.getData({
+                where:{
+                    rdd: job.data.date,
+                    is_processed_buy: 0
+                },
+                options:{
+                    include:[
+                        {model: models.ship_point_tbl, as:'ship_point_from'},
+                        {model: models.ship_point_tbl, as:'ship_point_to'},
+                        {model: models.helios_invoices_dtl_tbl},
+                        {model: models.vendor_tbl},
+                        {
+                            model: models.vendor_group_dtl_tbl,
+                            required: false,
+                            where:Sequelize.where(Sequelize.col('vendor_group_dtl_tbl.location'),Sequelize.col('helios_invoices_hdr_tbl.location'))
+                        },
+                    ]
+                }
+            }))
+            .then(result => {
+                return result.map(item => {
+                    const {
+                        vendor_tbl,
+                        vendor_group_dtl_tbl,
+                        ...invoice
+                    } = item;
+    
+                    return {
+                        ...invoice,
+                        vg_code:vendor_group_dtl_tbl?.vg_code || null,
+                        is_ic: vendor_tbl?.is_ic || 0
+                    }
+                })
+            })
+    
+            const {data,revenue_leak} = await draftBillService.buy({
+                invoices,
+                rdd: job.data.date
+            })
+    
+            done()
+            return {data,revenue_leak}
+
+        }
+        catch(e){
+            done(e)
+        }
+    })
+
+    RATA_DRAFT_BILL_BUY.on('completed',async (job) => {
+        await models.scheduler_auto_sync_trckr_tbl.updateData({
+            data:{
+                job_status:'COMPLETED'
+            },
+            where: {
+                job_id: job.id
+            }
+        })
+
+        console.log(`Job with id ${job.id} has been completed`)
+    })
+
+    RATA_DRAFT_BILL_BUY.on('failed', async (job,err) => {
+        await models.scheduler_auto_sync_trckr_tbl.updateData({
+            data:{
+                job_status:'FAILED',
+                error_info: err.message
+            },
+            where: {
+                job_id: job.id
+            }
+        })
+        .catch(e => {
+            console.log(e)
+        })
+        console.error('Job failed ',err)
+    })
+}

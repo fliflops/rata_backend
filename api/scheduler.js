@@ -1,9 +1,9 @@
 const router = require('express').Router();
 const schedulerService = require('../services/scheduler');
 const wmsDraftBillService = require('../services/wms-draftbill/wms.draftbillService');
-const {queue} = require('../jobs/bull/wms.auto.sync');
+// const {queue} = require('../jobs/bull/wms.auto.sync');
 const {redis,ioredis} = require('../config');
-const jobs = require('../jobs');
+// const jobs = require('../jobs');
 const moment = require('moment');
 
 const connection = ioredis;

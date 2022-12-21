@@ -63,7 +63,6 @@ const getContracts = async ({rdd,where}) => {
                             {
                                 model:models.agg_tbl,
                                 required:false,
-                                //include:models.agg_conditions_tbl,
                             },
                             {
                                 model:models.agg_conditions_tbl,
@@ -176,13 +175,18 @@ const formatByClassOfStore = async({invoices}) => {
             const group = _.groupBy(helios_invoices_dtl_tbls, item => item.class_of_store)
             Object.keys(group).map((class_of_store,i) => {
                 const details = group[class_of_store];
-
+                const tms_reference_no = i > 0 ? `${header.tms_reference_no}-${i}` : header.tms_reference_no
                 invoiceData.push({
                     ...header,
-                    tms_reference_no: i > 0 ? `${header.tms_reference_no}-${i}` : header.tms_reference_no,
+                    tms_reference_no,
                     fk_tms_reference_no: header.tms_reference_no,
                     class_of_store: class_of_store,
-                    details
+                    details: details.map(item => {
+                        return {
+                            ...item,
+                            br_no: tms_reference_no
+                        }
+                    })
                 })
             })
         })
@@ -459,8 +463,8 @@ const draftBillIC = async({invoices}) => {
                     contract_id:        item.contract_id,
                     service_type:       item.service_type,
                     sub_service_type:   item.sub_service_type,
-                    min_billable_value: item.tariff.min_value,
-                    max_billable_value: item.tariff.max_value,
+                    min_billable_value: Number(item.tariff.min_value) || item.tariff.min_value,
+                    max_billable_value: Number(item.tariff.max_value) || item.tariff.max_value,
                     min_billable_unit:  item.tariff.min_billable_unit,
                     from_geo_type:      invoice.tariff.from_geo_type,
                     ship_from:          item.stc_from,
@@ -574,11 +578,11 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                 const details = item.details;
                 const planned_qty       = getSum(details,item.tariff.min_billable_unit,'planned_qty') 
                 const actual_qty        = getSum(details,item.tariff.min_billable_unit,'actual_qty')     
-                const planned_weight    = _.sumBy(details,'planned_weight')
-                const planned_cbm       = _.sumBy(details,'planned_cbm')
-                const actual_weight     = _.sumBy(details,'actual_weight')
-                const actual_cbm        = _.sumBy(details,'actual_cbm')
-                const return_qty        = _.sumBy(details,'return_qty')
+                const planned_weight    = _.sumBy(details,item => Number(item.planned_weight) || 0)
+                const planned_cbm       = _.sumBy(details,item => Number(item.planned_cbm) || 0)
+                const actual_weight     = _.sumBy(details,item => Number(item.actual_weight) || 0)
+                const actual_cbm        = _.sumBy(details,item => Number(item.actual_cbm) || 0)
+                const return_qty        = _.sumBy(details,item => Number(item.return_qty) || 0)
 
                 draft_bill_details.push({
                     draft_bill_no:      '',
@@ -597,8 +601,8 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                     contract_id:        item.contract_id,
                     service_type:       item.service_type,
                     sub_service_type:   item.sub_service_type,
-                    min_billable_value: item.tariff.min_value,
-                    max_billable_value: item.tariff.max_value,
+                    min_billable_value: Number(item.tariff.min_value) || item.tariff.min_value,
+                    max_billable_value: Number(item.tariff.max_value) || item.tariff.max_value,
                     min_billable_unit:  item.tariff.min_billable_unit,
                     from_geo_type:      invoice.tariff.from_geo_type,
                     ship_from:          item.stc_from,
@@ -745,6 +749,7 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
 
             //revenue_leaks
             if(!aggCondition.formula) {
+                
                 revenue_leak = revenue_leak.concat(getRevenueLeakNoFormula({
                     invoices:invoices,
                     draft_bill_details: header.draft_bill_details
@@ -841,8 +846,8 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
                 delivery_date:      invoice.rdd,
                 rate:               invoice.tariff.tariff_rate,
                 vehicle_type:       invoice.vehicle_type,
-                min_billable_value: invoice.tariff.min_value,
-                max_billable_value: invoice.tariff.max_value,
+                min_billable_value: Number(invoice.tariff.min_value) || null,
+                max_billable_value: Number(invoice.tariff.max_value) || null,
                 min_billable_unit:  invoice.tariff.min_billable_unit,
                 ...aggCondition,
                 ...total_data,
@@ -938,7 +943,7 @@ const assignDraftBillNo = async({rdd,draft_bill}) => {
 
         return draft_bill.map(item => {
             
-            const {draft_bill_details,...header} = item
+            const {draft_bill_details,ship_from,ship_point,...header} = item
             
             count = count+=1
             
@@ -955,6 +960,8 @@ const assignDraftBillNo = async({rdd,draft_bill}) => {
                 draft_bill_no,
                 draft_bill_date:moment().format('YYYY-MM-DD'),
                 status:'DRAFT_BILL',
+                stc_from: ship_from,
+                stc_to: ship_point,
                 details: draft_bill_invoice_tbl
             }
         })      
@@ -964,10 +971,10 @@ const assignDraftBillNo = async({rdd,draft_bill}) => {
     }
 }
 
-const createDraftBill = async({draft_bill, invoices, contract_type}) => {
+const createDraftBill = async({draft_bill, revenue_leak,invoices, contract_type}) => {
     try{
-
         return await sequelize.transaction (async t => {
+            let revenue_leak_details = [];
             await models.draft_bill_hdr_tbl.bulkCreateData({
                 data:draft_bill,
                 options:{
@@ -999,9 +1006,83 @@ const createDraftBill = async({draft_bill, invoices, contract_type}) => {
                     transaction: t
                 },
             })
+
+            await models.transport_rev_leak_hdr_tbl.bulkCreateData({
+                data: revenue_leak.map(item => {
+                    revenue_leak_details = revenue_leak_details.concat(item.details)
+                    return {
+                        tms_reference_no: item.tms_reference_no,
+                        fk_tms_reference_no: item.fk_tms_reference_no,
+                        class_of_store: item.class_of_store,
+                        draft_bill_type: contract_type,
+                        is_draft_bill: 0,
+                        rdd: item.rdd,
+                        revenue_leak_reason: item.revenue_leak_reason
+                    }
+                }),
+                options:{
+                    transaction: t,
+                    ignoreDuplicates: true
+                }
+            })
+
+            await models.tranport_rev_leak_dtl_tbl.bulkCreateData({
+                data: revenue_leak_details.map(item => {
+                    return {
+                        ...item,
+                        draft_bill_type: contract_type
+                    }
+                }),
+                options:{
+                    transaction: t,
+                    ignoreDuplicates: true
+                }
+            })
         })
        
 
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const createRevenueLeak = async({draft_bill, revenue_leak, invoices}) => {
+    try{
+        return await sequelize.transaction(async t => {
+            await models.draft_bill_hdr_tbl.bulkCreateData({
+                data:draft_bill,
+                options:{
+                    transaction: t,
+                    include:[
+                        {
+                            model:models.draft_bill_details_tbl,
+                            as:'details'
+                        }
+                    ]
+                }
+            })
+
+            await models.transport_rev_leak_hdr_tbl.updateData({
+                data:{
+                    is_draft_bill: 1
+                },
+                where:{
+                    tms_reference_no: invoices.map(item => item.tms_reference_no)
+                },
+                options:{
+                    transaction: t
+                }
+            })
+
+            await models.transport_rev_leak_hdr_tbl.bulkCreateData({
+                data: revenue_leak,
+                options:{
+                    transaction: t,
+                    updateOnDuplicate: ['revenue_leak_reason','updatedAt']
+                }
+            })
+        })
     }
     catch(e){
         throw e
@@ -1055,6 +1136,7 @@ const buy = async ({
         //insert to db
         await createDraftBill({
             draft_bill:draft_bill,
+            revenue_leak: revenue_leak,
             invoices,
             contract_type: 'BUY'
         })
@@ -1120,6 +1202,7 @@ const sell = async ({
         //insert to db
         await createDraftBill({
             draft_bill:draft_bill,
+            revenue_leak: revenue_leak,
             invoices,
             contract_type: 'SELL'
         })
@@ -1136,7 +1219,142 @@ const sell = async ({
     }
 }
 
+const replanBuy = async({invoices,rdd}) => {
+    try{
+        let data;
+        let revenue_leak = [];
+        let draft_bill = [];
+
+        const contracts = await getContracts({
+            rdd,
+            where:{
+                contract_type:'BUY',
+                vendor_group: _.uniq(invoices.map(item => item.vg_code))
+            }
+        })
+
+        data = await getBillableInvoices({invoices});
+        revenue_leak = revenue_leak.concat(data.revenue_leak);
+
+        data = await assignContract({
+            invoices: data.data,
+            contracts
+        })
+
+        revenue_leak = revenue_leak.concat(data.revenue_leak);
+
+        data = await assignTariff({
+            invoices:data.data,
+            contracts
+        })
+
+        revenue_leak = revenue_leak.concat(data.revenue_leak);
+
+        const ic =          await draftBillIC({invoices: data.data})
+        const withAgg =     await draftBillWithAgg({invoices: data.data, contract_type:'BUY'})
+        const withoutAgg =  await draftBillWithoutAgg({invoices: data.data, contract_type:'BUY'})
+
+        draft_bill = draft_bill.concat(ic.data,withAgg.data,withoutAgg.data)
+        draft_bill = await assignDraftBillNo({rdd,draft_bill})
+
+        revenue_leak = revenue_leak.concat(withAgg.revenue_leak,withoutAgg.revenue_leak)
+
+        //get invoices with draft bill
+        data = invoices.filter(item => {
+            return !revenue_leak.map(leak => leak.tms_reference_no).includes(item.tms_reference_no)
+        })
+        .map(item => {
+            return {
+                tms_reference_no: item.tms_reference_no,
+                is_draft_bill: 1
+            }
+        })
+
+        await createRevenueLeak({
+            draft_bill,
+            revenue_leak,
+            invoices:data
+        })
+
+        return {
+            data: data,
+            revenue_leak: revenue_leak,
+            draft_bill: draft_bill            
+        }
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const replanSell = async({invoices,rdd}) => {
+    try{
+        let data;
+        let revenue_leak = [];
+        let draft_bill = []
+
+        const contracts = await getContracts({
+            rdd,
+            where:{
+                principal_code:_.uniq(invoices.map(item => item.principal_code)),
+                contract_type:'SELL'
+            }        
+        })
+
+        data = await getBillableInvoices({invoices});
+        revenue_leak = revenue_leak.concat(data.revenue_leak);
+
+        //3. Assign Contract
+        data = await assignContract({invoices:data.data,contracts})
+        revenue_leak = revenue_leak.concat(data.revenue_leak)
+
+         //4. Assign Tariff
+        data = await assignTariff({invoices:data.data,contracts})
+        revenue_leak = revenue_leak.concat(data.revenue_leak)
+        
+        //6. compute normal draft bill with agg
+        const withAgg = await draftBillWithAgg({invoices:data.data,contract_type:'SELL'})
+
+        //7. compute normal draft bill without agg
+        const withoutAgg = await draftBillWithoutAgg({invoices: data.data,contract_type:'SELL'})
+
+        draft_bill = draft_bill.concat(withAgg.data,withoutAgg.data)
+        draft_bill = await assignDraftBillNo({draft_bill,rdd})
+
+        //concatenate revenue_leaks
+        revenue_leak = revenue_leak.concat(withAgg.revenue_leak,withoutAgg.revenue_leak)
+
+        //get invoices with draft bill
+        data = invoices.filter(item => {
+            return !revenue_leak.map(leak => leak.tms_reference_no).includes(item.tms_reference_no)
+        })
+        .map(item => {
+            return {
+                tms_reference_no: item.tms_reference_no,
+                is_draft_bill: 1
+            }
+        })
+
+        await createRevenueLeak({
+            draft_bill,
+            revenue_leak,
+            invoices:data
+        })
+
+        return {
+            draft_bill,
+            revenue_leak,
+            data
+        }
+    }
+    catch(e){
+        throw e
+    }
+}
+
 module.exports = {
     buy,
-    sell
+    sell,
+    replanBuy,
+    replanSell
 }

@@ -92,6 +92,9 @@ class helios_invoices_hdr_tbl extends Model {
             cleared_date:           {
                 type: DataTypes.DATE
             },  
+            job_id:{
+                type:DataTypes.STRING
+            },
             createdAt:Sequelize.DATE,
             updatedAt:Sequelize.DATE,
         },
@@ -131,7 +134,7 @@ class helios_invoices_hdr_tbl extends Model {
     static associate(models) {
         this.details = this.hasMany(models.helios_invoices_dtl_tbl,{
             foreignKey:'br_no',
-            sourceKey:'tms_reference_no'  
+            sourceKey:'tms_reference_no',  
         }) 
 
         this.ship_point_from = this.hasOne(models.ship_point_tbl,{

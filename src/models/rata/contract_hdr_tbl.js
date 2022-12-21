@@ -63,6 +63,27 @@ class contract_hdr_tbl extends Model {
         .then(result => JSON.parse(JSON.stringify(result)))
     }
 
+    static async paginated({
+        filters,
+        options,
+        order,
+        page,
+        totalPage
+    }) {
+        const {search,...newFilters} = filters
+
+        return await this.findAndCountAll({
+            where:{
+                ...newFilters
+            },
+            ...options,
+            offset: parseInt(page) * parseInt(totalPage),
+            limit:parseInt(totalPage),
+            order
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
+
     static associate (models) {
         this.tariffs = this.hasMany(models.contract_tariff_dtl,{
             foreignKey:'contract_id',

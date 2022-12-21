@@ -7,6 +7,9 @@ router.route('/sell')
 router.route('/buy')
 .post(controller.createDraftBillBuy)
 
+router.route('/')
+.get(controller.getDraftBill)
+
 
 
 

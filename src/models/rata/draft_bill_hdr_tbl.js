@@ -52,10 +52,14 @@ class draft_bill_hdr_tbl extends Model {
                 allowNull:true,
                 type: DataTypes.STRING(50)
             },
-            stc_from:{allowNull:false,
-                type: DataTypes.STRING(50)},
-            stc_to:{allowNull:false,
-                type: DataTypes.STRING(50)},
+            stc_from:{
+                allowNull:false,
+                type: DataTypes.STRING(50)
+            },
+            stc_to:{
+                allowNull:false,
+                type: DataTypes.STRING(50)
+            },
             min_billable_value:{
                 allowNull:false,
                 type: DataTypes.DECIMAL(18,9)
@@ -97,6 +101,26 @@ class draft_bill_hdr_tbl extends Model {
             freezeTableName:true,
             sequelize
         })
+    }
+
+    static async paginated ({
+        filters,
+        options,
+        order,
+        page,
+        totalPage}) {
+        const {search,...newFilters} = filters
+
+        return await this.findAndCountAll({
+            where:{
+                ...newFilters
+            },
+            ...options,
+            offset: parseInt(page) * parseInt(totalPage),
+            limit:parseInt(totalPage),
+            order
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
     }
 
     static async getData ({where,options}) {

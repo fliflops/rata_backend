@@ -65,6 +65,33 @@ class vendor_tbl extends Model {
             tableName:'vendor_tbl'
         })
     }
+
+    static async paginated({
+        filters,
+        order,
+        page,
+        totalPage
+    }) {
+        
+        return await this.findAndCountAll({
+            where:{
+                ...filters
+            },
+            offset: parseInt(page) * parseInt(totalPage),
+            limit:parseInt(totalPage),
+            order
+        })
+    }
+
+    static async updateData ({data,options,where}) {
+        return await this.update(data,{
+            where:{
+                ...where
+            },
+            ...options
+        })
+    }
+
 }
 
 module.exports = vendor_tbl;

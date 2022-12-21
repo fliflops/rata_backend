@@ -9,6 +9,7 @@ class draft_bill_details_tbl extends Model {
                 type: DataTypes.STRING(50)
             },
             tms_reference_no: {
+                primaryKey:true,
                 allowNull:false,
                 type: DataTypes.STRING(50)
             },
@@ -22,6 +23,7 @@ class draft_bill_details_tbl extends Model {
                 type: DataTypes.STRING(50)
             },
             trip_plan: {
+                primaryKey:true,
                 type: DataTypes.STRING(50)
             },
             shipment_manifest: {

@@ -70,10 +70,16 @@ const scmdbConfig = {
     }
 }
 
+const redisConfig = {
+    host: process.env.REDIS_URL,
+    port: process.env.REDIS_PORT
+}
+
 module.exports = {
     dbConfig,
     podConfig,
     scmdbConfig,
+    redisConfig,
     redis,
     ioredis
 }

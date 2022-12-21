@@ -1,6 +1,8 @@
 const { Sequelize, sequelize } = require('../models/rata');
 const models = require('../models/rata');
 const draftBillService = require('../services/draftbillService');
+const useGlobalFilter = require('../helpers/filters');
+
 
 exports.createDraftBillBuy = async(req,res,next) => {
     try{
@@ -45,8 +47,6 @@ exports.createDraftBillBuy = async(req,res,next) => {
             invoices,
             rdd
         })
-
-        //
 
         res.status(200).json({
             data,
@@ -93,3 +93,67 @@ exports.createDraftBillSell = async(req,res,next) => {
     }
 }
 
+exports.getDraftBill = async(req,res,next) => {
+    try{
+
+        const {
+            page,
+            totalPage,
+            search,
+            ...filters
+        } = req.query;
+
+        const where = {};
+
+        Object.keys(filters).map(key =>  {
+            if(key === 'draft_bill_type'){
+                return where[key] = filters[key]
+                
+            }
+            if(key === 'delivery_date'){
+                return where.delivery_date = {
+                    [Sequelize.Op.between]: filters.delivery_date.split(',')
+                }
+            }
+            else{
+                return where[key] = filters[key]
+            }
+        })
+
+        const globalFilter = useGlobalFilter.defaultFilter({
+            model:models.draft_bill_hdr_tbl.rawAttributes,
+            filters:{
+                search
+            }
+        })
+
+        const {count,rows} = await models.draft_bill_hdr_tbl.paginated({
+            filters:{
+                ...where,
+                ...globalFilter
+            },
+            order:[['createdAt','DESC']],
+            page,
+            totalPage,
+            options:{
+                include:[
+                    {
+                        model:models.draft_bill_details_tbl,
+                        as:'details'
+                    }
+                ]
+            }
+        })
+
+        res.status(200).json({
+            data:rows,
+            rows:count,
+            pageCount: Math.ceil(count/totalPage)
+        })
+
+
+    }
+    catch(e){
+        next(e)
+    }
+}

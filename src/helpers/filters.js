@@ -18,7 +18,9 @@ exports.defaultFilter = ({
             }
             if(field==='search'){
                 let fields = {}
-                attributes.map(item => (fields[item] = filters.search))
+                attributes.map(item => (fields[item] = {
+                    [Sequelize.Op.like]:`%${filters.search}%`
+                }))
                 formattedFilters={
                     ...formattedFilters,
                     [Sequelize.Op.or]:fields

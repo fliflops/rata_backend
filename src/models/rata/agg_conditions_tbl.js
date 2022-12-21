@@ -8,6 +8,7 @@ class agg_conditions_tbl extends Model {
                 type:DataTypes.STRING(50)
             },
             line_no:{
+                primaryKey:true,
                 type:DataTypes.INTEGER
             },
             raw_formula:{
@@ -22,6 +23,12 @@ class agg_conditions_tbl extends Model {
             freezeTableName:true,
             timestamps:false,
             tableName:'agg_conditions_tbl'
+        })
+    }
+
+    static associate(models) {
+        this.agg = this.belongsTo(models.agg_tbl,{
+            foreignKey:'agg_id'
         })
     }
 }

@@ -48,10 +48,20 @@ class agg_tbl extends Model {
         })
     }
 
+    static async getData ({where,options}) {
+        return await this.findAll({
+            ...options,
+            where:{
+                ...where
+            }
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
+
+
     static associate(models) {  
         this.conditions = this.hasMany(models.agg_conditions_tbl,{
-            foreignKey:'agg_id',
-	        sourceKey:'id'
+            foreignKey:'agg_id'
         })
     }
 }
