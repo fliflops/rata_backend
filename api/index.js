@@ -1,6 +1,11 @@
 const router = require('express').Router();
 const {sessionAuthentication} = require('../loaders/middleware');
 
+
+router.get('/', (req,res) => {
+    res.status(200).json('RATA System Index')
+})
+
 router.use('/auth',             sessionAuthentication,  require('./authentication'));
 router.use('/users',            sessionAuthentication,  require('./users'));
 router.use('/data-management',  sessionAuthentication,  require('./data-management'));

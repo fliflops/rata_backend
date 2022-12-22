@@ -1,6 +1,5 @@
 const router = require('express').Router();
 
-
 router.use('/auth',         require('./auth'))
 router.use('/draft-bill',   require('./draftbill'))
 router.use('/tariff',       require('./tariff'))
