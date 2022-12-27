@@ -13,9 +13,6 @@ class tariff_sell_hdr_tbl extends Model {
             vehicle_type:{
                 type:DataTypes.STRING(50)
             },
-            // tariff_type:{
-            //     type:DataTypes.STRING(50)
-            // },
             tariff_status:{
                 type:DataTypes.STRING(50)
             },
@@ -82,6 +79,25 @@ class tariff_sell_hdr_tbl extends Model {
             tableName:'tariff_sell_hdr_tbl'
         })
     }
+
+    static async getData ({options,where}) {
+        return await this.findAll({
+            where:{
+                ...where
+            },
+            ...options
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
+
+    static async bulkCreateData ({data,options}) {
+        return await this.bulkCreate(data,{
+            ...options,
+            ignoreDuplicates: true
+        })
+    }
+
+
 }
 
 module.exports = tariff_sell_hdr_tbl;

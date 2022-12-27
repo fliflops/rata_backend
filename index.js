@@ -38,7 +38,9 @@ app.use(compress());
 app.use(methodOverride());
 
 app.use(helmet());
-app.use(cors())
+app.use(cors({
+    exposedHeaders:['Content-disposition']
+}))
 // app.use(cors(
 //     {
 //         credentials:true,

@@ -84,14 +84,6 @@ class tariff_ic_algo_tbl extends Model {
         page,
         totalPage
     }) {
-
-        // let newFilter = defaultFilter({
-        //     model:this.rawAttributes,
-        //     filters:{
-        //         ...filters
-        //     }
-        // })
-
         const {search,...newFilters} = filters
 
         return await this.findAndCountAll({   

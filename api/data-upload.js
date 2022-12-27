@@ -108,7 +108,7 @@ router.post('/tariff',async(req,res)=>{
             filters:{is_active:true}
         })
 
-        if(typeof data.tariff === 'undefined'){
+        if(typeof data.tariff === 'undefined' ){
             return res.status(400).json({
                 message:'Invalid File!'
             })
