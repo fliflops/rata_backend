@@ -82,6 +82,20 @@ class scheduler_setup_tbl extends Model {
             order
         })
     }
+
+    static async updateData({
+        where,
+        data
+    }) {
+        return await this.update({
+            ...data
+        },
+        {
+            where:{
+                ...where
+            }
+        })
+    }
 }
 
 module.exports = scheduler_setup_tbl

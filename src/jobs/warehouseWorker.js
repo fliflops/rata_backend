@@ -4,24 +4,29 @@ const wmsDraftBill = require('../../services/wms-draftbill');
 const models = require('../models/rata');
 const {sequelize} = models;
 const {generateDraftBill} = wmsDraftBill;
+const moment = require('moment');
 
 exports.wmsautosync = () => {
-    const scheduler_id = 'WMS_DATA_SYNC'
+    const scheduler_id = 'WMS_DATA_SYNC';
+
+
     WMS_DATA_SYNC.process(async(job,done) => {
         try{
+            const date = job.data.isRepeatable ? moment().format('YYYY-MM-DD') : job.data.date
+
             job.progress(1);
             
             await models.scheduler_auto_sync_trckr_tbl.createData({
                 data:{
-                    job_id:         job.id,
-                    scheduler_id:   'WMS_DATA_SYNC',
-                    transaction_date: job.data.date,
-                    job_status: 'INPROGRESS'
+                    job_id:             job.id,
+                    scheduler_id:       'WMS_DATA_SYNC',
+                    transaction_date:   date,
+                    job_status:         'INPROGRESS'
                 }
             })
 
             const {header,details} = await getWMSData({
-                date:job.data.date,
+                date:date,
                 jobId:job.id
             })
 
@@ -61,7 +66,7 @@ exports.wmsautosync = () => {
             return header
         }
         catch(e){
-            throw new Error(e)
+            done(e)
         }
     })
 
@@ -104,14 +109,16 @@ exports.wmsdraftbill = () => {
 
     RATA_DRAFT_BILL_WMS.process(async(job,done) => {
         try{
+            const date = job.data.isRepeatable ? moment().format('YYYY-MM-DD') : job.data.date
+
             job.progress(1);
 
             await models.scheduler_auto_sync_trckr_tbl.createData({
                 data:{
-                    job_id:         job.id,
-                    scheduler_id:   scheduler_id,
-                    transaction_date: job.data.date,
-                    job_status: 'INPROGRESS'
+                    job_id:             job.id,
+                    scheduler_id:       scheduler_id,
+                    transaction_date:   date,
+                    job_status:         'INPROGRESS'
                 }
             })
 
@@ -135,7 +142,7 @@ exports.wmsdraftbill = () => {
             
             const draftBill = await generateDraftBill({
                 wms_data:data,
-                transaction_date:job.data.date,
+                transaction_date:date,
                 job_id:job.id
             })
 
@@ -147,7 +154,6 @@ exports.wmsdraftbill = () => {
         }
         catch(e){
             done(e)
-            throw e
         }
     })
 

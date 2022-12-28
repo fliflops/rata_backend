@@ -1,9 +1,9 @@
 const models = require('../models/rata');
 const moment = require('moment');
-// const {Queue} = require('bullmq');
 const {v4:uuidv4} = require('uuid');
-// const {ioredis} = require('../../config');
 const Queue = require('../jobs/queues/queues');
+
+const redis = require('../../config').redis
 
 exports.getScheduler = async(req,res,next) => {
     try{
@@ -60,6 +60,49 @@ exports.getSchedulerDetails = async(req,res,next) => {
     }
 }
 
+
+exports.updateScheduler = async(req,res,next) => {
+    try{
+
+        const {data} = req.body;
+        const {id} = req.query;
+        
+        await models.scheduler_setup_tbl.updateData({
+            where:{
+                id
+            },
+            data:{
+                ...data
+            }
+        })
+
+
+        //update redis 
+
+        await redis.json.set(id,'.',data)
+
+        if(data.is_active === 0){
+            await Queue[id].obliterate({force: true})
+        }
+        else {
+            await Queue[id].obliterate({force: true})
+            await Queue[id].add({
+                isRepeatable: true
+            },
+            {
+                repeat:{
+                    cron: data.start_time_cron
+                }
+            })
+        }
+
+        res.status(200).end()
+    }   
+    catch(e){
+        next(e)
+    }
+}
+
 exports.postManualTrigger = async(req,res,next) => {
     try{
         const {id,date} = req.body;
@@ -77,6 +120,7 @@ exports.postManualTrigger = async(req,res,next) => {
         }   
         
         await Queue[id].add({
+            isRepeatable: false,
             date: moment(date).format('YYYY-MM-DD') 
         },
         {
@@ -85,35 +129,6 @@ exports.postManualTrigger = async(req,res,next) => {
             removeOnComplete:true
         })
 
-        
-        // const getScheduler = await models.scheduler_setup_tbl.getID(id)
-
-        // if(!getScheduler){
-        //     return res.status(400).json({
-        //         message:'Invalid Scheduler ID'
-        //     })
-        // }
-
-        // const scheduler_key = getScheduler.redis_scheduler_key.split(':')
-        // const queue_key = scheduler_key[1];
-        // const connection = ioredis
-  
-        // //instantiate queue
-        // const myQueue = new Queue(getScheduler.redis_scheduler_key,{connection})
-
-        // //clear the existing jobs to prevent duplication
-        // // await myQueue.obliterate()
-
-        // //activate worker
-        // await myQueue.add(queue_key,
-        //     {date: moment(date).format('YYYY-MM-DD')},
-        //     {
-        //         jobId:uuidv4(),
-        //         //removeOnComplete:true,
-        //         removeOnFail:true,
-        //     })
-
-        
         res.status(200).json(id)
 
     }

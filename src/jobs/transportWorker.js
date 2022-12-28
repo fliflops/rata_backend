@@ -4,23 +4,26 @@ const draftBillService = require('../services/draftbillService');
 
 const models = require('../models/rata');
 const { sequelize,Sequelize } = require('../models/rata');
+const moment = require('moment')
 
 exports.tmsautosync = () => {
     const scheduler_id = 'TMS_DATA_SYNC';
     TMS_DATA_SYNC.process(async(job,done) => {
         try{
+            const date = job.data.isRepeatable ? moment().format('YYYY-MM-DD') : job.data.date
+
             await models.scheduler_auto_sync_trckr_tbl.createData({
                 data:{
                     job_id:             job.id,
                     scheduler_id:       scheduler_id,
-                    transaction_date:   job.data.date,
+                    transaction_date:   date,
                     job_status: 'INPROGRESS'
                 }
             })
 
 
             const invoice = await heliosService.bookings.getBookingRequest({
-                rdd: job.data.date
+                rdd: date
             })
 
             await sequelize.transaction( async t => {
@@ -91,19 +94,20 @@ exports.transportSell = () => {
     const scheduler_id = 'RATA_DRAFT_BILL_SELL';
     RATA_DRAFT_BILL_SELL.process(async (job,done) => {
         try{
-
+            
+            const date = job.data.isRepeatable ? moment().format('YYYY-MM-DD') : job.data.date
             await models.scheduler_auto_sync_trckr_tbl.createData({
                 data:{
                     job_id:             job.id,
                     scheduler_id:       scheduler_id,
-                    transaction_date:   job.data.date,
+                    transaction_date:   date,
                     job_status: 'INPROGRESS'
                 }
             })
 
             const invoices = await models.helios_invoices_hdr_tbl.getData({
                 where:{
-                    rdd: job.data.date,
+                    rdd: date,
                     is_processed_sell: 0
                 },
                 options:{
@@ -118,7 +122,7 @@ exports.transportSell = () => {
           
             const {data,revenue_leak} = await draftBillService.sell({
                 invoices,
-                rdd: job.data.date
+                rdd: date
             })
 
 
@@ -165,19 +169,20 @@ exports.transportBuy = () => {
     const scheduler_id = 'RATA_DRAFT_BILL_BUY';
     RATA_DRAFT_BILL_BUY.process(async (job,done) => {
         try{
-
+            
+            const date = job.data.isRepeatable ? moment().format('YYYY-MM-DD') : job.data.date
             await models.scheduler_auto_sync_trckr_tbl.createData({
                 data:{
                     job_id:             job.id,
                     scheduler_id:       scheduler_id,
-                    transaction_date:   job.data.date,
+                    transaction_date:   date,
                     job_status: 'INPROGRESS'
                 }
             })
 
             const invoices = await (models.helios_invoices_hdr_tbl.getData({
                 where:{
-                    rdd: job.data.date,
+                    rdd: date,
                     is_processed_buy: 0
                 },
                 options:{
@@ -212,7 +217,7 @@ exports.transportBuy = () => {
     
             const {data,revenue_leak} = await draftBillService.buy({
                 invoices,
-                rdd: job.data.date
+                rdd: date
             })
     
             done()
