@@ -2,6 +2,7 @@ const axios = require('axios').default;
 const draftBill = require('../draftBill')
 const dataMaster = require('../dataMaster')
 const _ = require('lodash')
+
 const api = axios.create({
     baseURL:process.env.ASCII_API,
     // timeout:1000,
@@ -26,10 +27,10 @@ exports.loginService = async() => {
         })
 
         return token
-   } 
-   catch(e){
+    } 
+    catch(e){
        throw e
-   }
+    }
 }
 
 exports.getDraftBillBuy = async({
@@ -269,7 +270,6 @@ exports.createAsciiSalesOrder = async({
             return {
                 errors:result.data.ERROR,
                 success:result.data.SUMMARY
-                //success
             }
         })
     }

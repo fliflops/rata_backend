@@ -18,6 +18,7 @@ module.exports = async() => {
         await models.sequelize.authenticate().then(() => {
             console.log('Connected to RB DB')
         });
+        
         await podDB.sequelize.authenticate().then(()=> {
             console.log('Connected to POD DB')
         });

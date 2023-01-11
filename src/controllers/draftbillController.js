@@ -3,7 +3,6 @@ const models = require('../models/rata');
 const draftBillService = require('../services/draftbillService');
 const useGlobalFilter = require('../helpers/filters');
 
-
 exports.createDraftBillBuy = async(req,res,next) => {
     try{
 
@@ -152,6 +151,66 @@ exports.getDraftBill = async(req,res,next) => {
         })
 
 
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.getWMSDraftBill = async(req,res,next) => {
+    try{
+        const {
+            page,
+            totalPage,
+            search,
+            ...filters
+        } = req.query;
+      
+        const where = {};
+        Object.keys(filters).map(key =>  {
+            if(key === 'draft_bill_date'){
+                return where.draft_bill_date = {
+                    [Sequelize.Op.between]: filters.draft_bill_date.split(',')
+                }
+            }
+            else{
+                return where[key] = filters[key]
+            }
+        })
+
+        
+        const globalFilter = useGlobalFilter.defaultFilter({
+            model:models.wms_draft_bill_hdr_tbl.rawAttributes,
+            filters:{
+                search
+            }
+        })
+
+        const {count,rows} = await models.wms_draft_bill_hdr_tbl.paginated({
+            filters:{
+                ...where,
+                ...globalFilter
+            },
+            order:[['createdAt','DESC']],
+            page,
+            totalPage,
+            options:{
+                include:[
+                    {
+                        model:models.wms_draft_bill_dtl_tbl,
+                        required: false,
+                        as:'details'
+                    }
+                ]
+            }
+        })
+
+        res.status(200).json({
+            data:rows,
+            rows:count,
+            pageCount: Math.ceil(count/totalPage)
+        })
+        
     }
     catch(e){
         next(e)

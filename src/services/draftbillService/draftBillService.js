@@ -36,7 +36,7 @@ const moment = require('moment')
 const {Op} = Sequelize;
 
 const getSum = (details,uom,field) => {
-    return parseFloat(_.sumBy(details.filter(item => item.uom === uom),item =>parseFloat(item[field]))).toFixed(2)
+    return _.sumBy(details.filter(item => item.uom === uom), item => isNaN(item[field] ? 0 : parseFloat(item[field])))
 }
 
 const getContracts = async ({rdd,where}) => {
@@ -424,27 +424,24 @@ const draftBillIC = async({invoices}) => {
             const tariffIC = invoice.tariff.tariff_ic;
             let rates = [];
             let total_charges = null;
-            
              
             //compute the sum of items per invoice
             groupedInvoice.map(item => {
                 const details = item.details;
                 
-
                 const planned_qty       = getSum(details,item.tariff.min_billable_unit,'planned_qty') 
                 const actual_qty        = getSum(details,item.tariff.min_billable_unit,'actual_qty')     
                 const ic_qty            = _.sumBy(details,item => {
                     if(item.uom === 'PIECE') {
                         return 1
                     } 
-
                     return parseFloat(item.actual_qty)
                 })
-                const planned_weight    = _.sumBy(details,'planned_weight')
-                const planned_cbm       = _.sumBy(details,'planned_cbm')
-                const actual_weight     = _.sumBy(details,'actual_weight')
-                const actual_cbm        = _.sumBy(details,'actual_cbm')
-                const return_qty        = _.sumBy(details,'return_qty')
+                const planned_weight    = _.sumBy(details, item => isNaN(Number(item.planned_weight)) ? 0 : parseFloat(item.planned_weight))
+                const planned_cbm       = _.sumBy(details, item => isNaN(Number(item.planned_cbm)) ? 0 : parseFloat(item.planned_cbm))
+                const actual_weight     = _.sumBy(details, item => isNaN(Number(item.actual_weight)) ? 0 : parseFloat(item.actual_weight))
+                const actual_cbm        = _.sumBy(details, item => isNaN(Number(item.actual_cbm)) ? 0 : parseFloat(item.actual_cbm))
+                const return_qty        = _.sumBy(details, item => isNaN(Number(item.return_qty)) ? 0 : parseFloat(item.return_qty))
 
                 draft_bill_details.push({
                     draft_bill_no:      '',
@@ -499,46 +496,67 @@ const draftBillIC = async({invoices}) => {
             })
 
             //compute total charges
+            
+            
             if(['L300','L300CV'].includes(invoice.vehicle_type)) {
-                total_charges = invoice.tariff.tariff_rate + _.sum(rates)
+                /** 
+                 * L300 Total Charges Computation
+                 * 1. Sort the rates in descending order
+                 * 2. Remove the first element from array
+                 * 3. Add the base rate
+                */
+                const sorted = rates.sort().reverse()
+                sorted.shift();
+                total_charges = Number(invoice.tariff.tariff_rate) + _.sum(sorted)
             }
             else {
                 total_charges = _.sum(rates)
             }
 
-            let total_weight = _.sumBy(draft_bill_details,item => parseFloat(item.actual_weight));
-            let total_cbm   = _.sumBy(draft_bill_details, item => parseFloat(item.actual_cbm));
-            let total_qty   = _.sumBy(draft_bill_details, item => parseFloat(item.actual_qty));
+            let total_weight  = _.sumBy(draft_bill_details, item => parseFloat(item.actual_weight));
+            let total_cbm     = _.sumBy(draft_bill_details, item => parseFloat(item.actual_cbm));
+            let total_qty     = _.sumBy(draft_bill_details, item => parseFloat(item.actual_qty));
 
-            data.push({
-                draft_bill_no:      null,
-                draft_bill_date:    null,
-                contract_type:      'BUY',
-                service_type:       invoice.service_type,
-                trip_no:            invoice.trip_no,
-                contract_id:        invoice.contract_id,
-                tariff_id:          invoice.tariff.tariff_id,
-                customer:           invoice.principal_code,
-                vendor:             invoice.trucker_id,
-                location:           invoice.location,
-                ship_from:          invoice.stc_from,
-                ship_point:         invoice.stc_to,
-                delivery_date:      invoice.rdd,
-                rate:               invoice.tariff.tariff_rate,
-                total_charges,
-                vehicle_type:       invoice.vehicle_type,
-                min_billable_value: invoice.tariff.min_value,
-                max_billable_value: invoice.tariff.max_value,
-                min_billable_unit:  invoice.tariff.min_billable_unit,
-                total_cbm: isNaN(total_cbm) ? null : total_cbm,
-                total_qty: isNaN(total_qty) ? null : total_qty,
-                total_weight: isNaN(total_weight) ? null :total_weight,       
-                draft_bill_details,
-            })
+            if(!total_charges || Number(total_charges) <= 0 || isNaN(parseFloat(total_charges)))  {
+                
+                revenue_leak = revenue_leak.concat(getInvalidTotalCharges({
+                    invoices:invoices,
+                    draft_bill_details,
+                    total_charges
+                }))
+            }
+            else {
+                data.push({
+                    draft_bill_no:      null,
+                    draft_bill_date:    null,
+                    contract_type:      'BUY',
+                    service_type:       invoice.service_type,
+                    trip_no:            invoice.trip_no,
+                    contract_id:        invoice.contract_id,
+                    tariff_id:          invoice.tariff.tariff_id,
+                    customer:           invoice.principal_code,
+                    vendor:             invoice.trucker_id,
+                    location:           invoice.location,
+                    ship_from:          invoice.stc_from,
+                    ship_point:         invoice.stc_to,
+                    delivery_date:      invoice.rdd,
+                    rate:               invoice.tariff.tariff_rate,
+                    total_charges,
+                    vehicle_type:       invoice.vehicle_type,
+                    min_billable_value: invoice.tariff.min_value,
+                    max_billable_value: invoice.tariff.max_value,
+                    min_billable_unit:  invoice.tariff.min_billable_unit,
+                    total_cbm: isNaN(total_cbm) ? null : total_cbm,
+                    total_qty: isNaN(total_qty) ? null : total_qty,
+                    total_weight: isNaN(total_weight) ? null :total_weight,       
+                    draft_bill_details,
+                })
+            }
         })
 
         return {
-            data
+            data,
+            revenue_leak
         }
 
     }
@@ -655,19 +673,19 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                 total_weight:null,
                 total_qty:null
             }
+
             let total_charges = null;
 
             if(draft_bill.parameters) {
-            
                 const total_cbm     = _.sumBy(draft_bill.draft_bill_details,item => isNaN(parseFloat(item.actual_cbm)) ? 0 : parseFloat(item.actual_cbm))
                 const total_weight  = _.sumBy(draft_bill.draft_bill_details,item => isNaN(parseFloat(item.actual_weight))? 0 : parseFloat(item.actual_weight))
                 const total_qty     = _.sumBy(draft_bill.draft_bill_details,item => isNaN(parseFloat(item.actual_qty)) ? 0 : parseFloat(item.actual_qty))
                     
                 aggregatedValues = {
                     ...aggregatedValues,
-                    total_cbm:      isNaN(total_cbm)    ? 0 : total_cbm,
-                    total_weight:   isNaN(total_weight) ? 0 : total_weight,
-                    total_qty:      isNaN(total_qty)    ? 0 : total_qty
+                    total_cbm:      isNaN(Number(total_cbm))    ? 0 : total_cbm,
+                    total_weight:   isNaN(Number(total_weight)) ? 0 : total_weight,
+                    total_qty:      isNaN(Number(total_qty))    ? 0 : total_qty
                 }
             }
             else{
@@ -676,12 +694,11 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                     
                 aggregatedValues = {
                     ...aggregatedValues,
-                    total_cbm:      isNaN(total_cbm)    ? 0 : total_cbm,
-                    total_weight:   isNaN(total_weight) ? 0 : total_weight,
+                    total_cbm:      isNaN(Number(total_cbm))    ? 0 : total_cbm,
+                    total_weight:   isNaN(Number(total_weight)) ? 0 : total_weight,
                 }
 
             }
-
             //compute total charges
             const invoice = aggregatedValues;
             let aggCondition = {
@@ -742,20 +759,17 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                         ...item,
                         billing: isNaN(billing.toFixed(2)) ? null : billing.toFixed(2)
                     }
-
                 })
-               
             }
 
             //revenue_leaks
             if(!aggCondition.formula) {
-                
                 revenue_leak = revenue_leak.concat(getRevenueLeakNoFormula({
                     invoices:invoices,
                     draft_bill_details: header.draft_bill_details
                 }))
             }
-            else if(!total_charges || parseFloat(total_charges) <= 0 || isNaN(parseFloat(total_charges)))  {
+            else if(!total_charges || Number(total_charges) <= 0 || isNaN(parseFloat(total_charges)))  {
                 revenue_leak = revenue_leak.concat(getInvalidTotalCharges({
                     invoices:invoices,
                     draft_bill_details: header.draft_bill_details,
@@ -767,7 +781,6 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                 draft_bills.push(df)
             }
         })
-
 
         return {
             data: draft_bills,
@@ -797,11 +810,13 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
             const details = invoice.details;
             const planned_qty       = getSum(details,invoice.tariff.min_billable_unit,'planned_qty') 
             const actual_qty        = getSum(details,invoice.tariff.min_billable_unit,'actual_qty')     
-            const planned_weight    = _.sumBy(details,'planned_weight')
-            const planned_cbm       = _.sumBy(details,'planned_cbm')
-            const actual_weight     = _.sumBy(details,'actual_weight')
-            const actual_cbm        = _.sumBy(details,'actual_cbm')
-            const return_qty        = _.sumBy(details,'return_qty')
+         
+            const planned_weight    = _.sumBy(details, item => isNaN(item.planned_weight) ? 0 : parseFloat(item.planned_weight))
+            const planned_cbm       = _.sumBy(details, item => isNaN(item.planned_cbm) ? 0 : parseFloat(item.planned_cbm))
+            const actual_weight     = _.sumBy(details, item => isNaN(item.actual_weight) ? 0 : parseFloat(item.actual_weight))
+            const actual_cbm        = _.sumBy(details, item => isNaN(item.actual_cbm) ? 0 : parseFloat(item.actual_cbm))
+            const return_qty        = _.sumBy(details, item => isNaN(item.return_qty) ? 0 : parseFloat(item.return_qty))
+
             
             let aggCondition = {
                 condition:null,
@@ -893,6 +908,7 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
             }
 
 
+
             //revenue_leak
             if(!aggCondition.formula){
                 revenue_leak = revenue_leak.concat(getRevenueLeakNoFormula({invoices,draft_bill_details:draft_bill.draft_bill_details}))
@@ -905,7 +921,6 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
             }
             
         })
-
 
         return {
             data: data,
@@ -1131,7 +1146,7 @@ const buy = async ({
         draft_bill = draft_bill.concat(ic.data,withAgg.data,withoutAgg.data)
         draft_bill = await assignDraftBillNo({rdd,draft_bill})
 
-        revenue_leak = revenue_leak.concat(withAgg.revenue_leak,withoutAgg.revenue_leak)
+        revenue_leak = revenue_leak.concat(withAgg.revenue_leak,withoutAgg.revenue_leak, ic.revenue_leak)
 
         //insert to db
         await createDraftBill({

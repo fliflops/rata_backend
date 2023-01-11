@@ -42,7 +42,7 @@ exports.getWMSData = async({date,jobId}) => {
 
         })
 
-
+        
 
         return {
             wms,

@@ -18,8 +18,7 @@ exports.bulkCreateDraftbill = async({data,options}) => {
 
 const generateDraftBillNo = async(count) => {
     try{
-        return `WMS-${moment().format('MMDDYY')}-${String(count).padStart(5,"00000")}`
-
+        return `W${moment().format('MMDDYY')}${String(count).padStart(5,"00000")}`
     }
     catch(e){
         throw e

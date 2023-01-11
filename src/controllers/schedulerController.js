@@ -90,6 +90,9 @@ exports.updateScheduler = async(req,res,next) => {
                 isRepeatable: true
             },
             {
+                
+                removeOnFail:true,
+                removeOnComplete:true,
                 repeat:{
                     cron: data.start_time_cron
                 }

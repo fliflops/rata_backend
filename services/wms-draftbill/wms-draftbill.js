@@ -278,10 +278,18 @@ const generateWithAggDraftBill = async({
             
             const wms_details = raw_group[item].map(item => {
                 const details = item.details
+                const actual_qty =  _.sumBy(details,item => isNaN(item.actual_qty) ? 0 : parseFloat(item.actual_qty)).toFixed(2)
+                const actual_cbm =  _.sumBy(details,item => isNaN(item.actual_cbm ) ? 0 : parseFloat(item.actual_cbm)).toFixed(2)
+                const billing_qty = _.sumBy(details,item => {
+                    if(item[header.tariff.parameter] && !isNaN(item[header.tariff.parameter])) {
+                        return parseFloat(item[header.tariff.parameter])
+                    }
+
+                    return 0
+                }).toFixed(2)
                 
-                const actual_qty = _.sumBy(details,item => item.actual_qty ? item.actual_qty : 0).toFixed(2)
-                const actual_cbm = _.sumBy(details,item => item.actual_cbm ? item.actual_cbm : 0).toFixed(2)
-                const billing_qty = _.sumBy(details, item => item[header.tariff.parameter] ? item[header.tariff.parameter] : 0).toFixed(2)
+                
+                //_.sumBy(details,item => item[header.tariff.parameter] ? parseFloat(item[header.tariff.parameter]) : 0)
                 
                 return {
                     draft_bill_no:      null,
@@ -307,9 +315,9 @@ const generateWithAggDraftBill = async({
             //computation 
             //1 Aggregate the quantities
             const aggregatedValues = {
-                total_cbm:_.sumBy(wms_details, item => parseFloat(item.actual_cbm)),
-                total_qty:_.sumBy(wms_details, item => parseFloat(item.actual_qty)),
-                total_billing_qty: _.sumBy(wms_details, item =>parseFloat(item.billing_qty))
+                total_cbm:          _.sumBy(wms_details, item => parseFloat(item.actual_cbm)).toFixed(2),
+                total_qty:          _.sumBy(wms_details, item => parseFloat(item.actual_qty)).toFixed(2),
+                total_billing_qty:  _.sumBy(wms_details, item => parseFloat(item.billing_qty)).toFixed(2)
             }
 
             let aggCondition = {
@@ -478,17 +486,14 @@ module.exports = async ({
             job_id
         })
 
-
         revenue_leak = await formatRevenueLeak({data:revenue_leak})
 
         //6. Update wms header table and insert draftbill to database
-        
         await draftBillService.createDraftBillTransaction({
             draftBill:data,
             wmsData:wms_data,
             revLeak:revenue_leak
         })
-
 
         return {
             data,

@@ -756,7 +756,7 @@ const bulkCreateWMSContractDetailsTransaction = async({contract,details})=>{
                 options:{
                     transaction: t,
                     logging:false,
-                    updateOnDuplicate:['updatedAt']
+                    ignoreUplicates:true
                     
                 }
             })
@@ -766,7 +766,7 @@ const bulkCreateWMSContractDetailsTransaction = async({contract,details})=>{
                 options:{
                     transaction: t,
                     logging:false,
-                    updateOnDuplicate:['updatedAt'],
+                    ignoreUplicates:true
                     
                 }
             })

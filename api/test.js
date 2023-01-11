@@ -12,30 +12,24 @@ const moment = require('moment');
 const {Op}                  = Sequelize;
 const {dataLayer,service}   = wmsDraftBill;
 
+
+
 router.get('/wms',async(req,res) => {
-    const {date} = req.query;
-    
-    const data = await models.wms_data_header_tbl.getData({
-        options:{
-            include:[{
-                model:models.wms_data_details_tbl,
-                as:'details'
-            }]
-        },
-        where:{
-            transaction_date: date,
-            is_processed: 0
-        }
-    })
+    try{
+        const {date} = req.query;
 
-    const draftBill = await wmsDraftBill.generateDraftBill({
-        wms_data:data,
-        transaction_date:date,
-        job_id:null
-    })
+        const data = await wmsService.getWMSData({
+            date
+        })
+        
+        res.status(200).json(data)
+    }
+    catch(e){
+        next(e)
+    }
+   
 
-
-    res.status(200).json({draftBill})
+    // res.status(200).json({draftBill})
 })
 
 router.post('/wms',async(req,res)=>{
@@ -64,13 +58,70 @@ router.post('/wms',async(req,res)=>{
 
     })
 
-
     res.status(200).json({
         header,
         details,
         details_count: details.length,
         header_count: header.length 
     })
+})
+
+router.post('/wms/draft-bill', async(req,res,next) => {
+    try{
+
+        const {date} = req.query;
+
+        const wms_data = await models.wms_data_header_tbl.getData({
+            where:{
+                is_processed: 0,
+                transaction_date: date
+            },
+            options:{
+                include:[
+                    {
+                        model:models.wms_data_details_tbl,
+                        as:'details'
+                    }
+                ]
+            }
+        })
+
+        const draft_bill = await wmsDraftBill.generateDraftBill({
+            wms_data,
+            transaction_date: date,
+            job_id:null
+        })
+
+
+        res.send(draft_bill)
+    }
+    catch(e){
+        next(e)
+    }
+})
+
+router.get('/tms', async(req,res) => {
+    const {rdd} = req.query;
+    const data = await models.helios_invoices_hdr_tbl.getData({
+        options:{
+            include:[
+                {
+                    model: models.ship_point_tbl,
+                    attributes:['city','region'],
+                    as:'ship_point_to'
+                }
+            ]
+        },
+        where:{
+            rdd,
+            location:'Zeus',
+            vehicle_type:'L300CV',
+            trucker_id:'02220',
+            is_processed_buy: 0
+        }
+    })  
+
+    res.json(data)
 })
 
 router.post('/pod',async(req,res)=>{
