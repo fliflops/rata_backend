@@ -36,7 +36,7 @@ const moment = require('moment')
 const {Op} = Sequelize;
 
 const getSum = (details,uom,field) => {
-    return _.sumBy(details.filter(item => item.uom === uom), item => isNaN(item[field] ? 0 : parseFloat(item[field])))
+    return _.sumBy(details.filter(item => item.uom === uom), item => isNaN(Number(item[field])) ? 0 : parseFloat(item[field]))
 }
 
 const getContracts = async ({rdd,where}) => {
@@ -442,6 +442,8 @@ const draftBillIC = async({invoices}) => {
                 const actual_weight     = _.sumBy(details, item => isNaN(Number(item.actual_weight)) ? 0 : parseFloat(item.actual_weight))
                 const actual_cbm        = _.sumBy(details, item => isNaN(Number(item.actual_cbm)) ? 0 : parseFloat(item.actual_cbm))
                 const return_qty        = _.sumBy(details, item => isNaN(Number(item.return_qty)) ? 0 : parseFloat(item.return_qty))
+
+               
 
                 draft_bill_details.push({
                     draft_bill_no:      '',
@@ -1148,7 +1150,7 @@ const buy = async ({
 
         revenue_leak = revenue_leak.concat(withAgg.revenue_leak,withoutAgg.revenue_leak, ic.revenue_leak)
 
-        //insert to db
+        /*insert to db*/
         await createDraftBill({
             draft_bill:draft_bill,
             revenue_leak: revenue_leak,
@@ -1159,7 +1161,6 @@ const buy = async ({
         return {
             data: draft_bill,
             revenue_leak,
-            
         }
     }
     catch(e){
