@@ -301,13 +301,13 @@ router.post('/ascii/sell',async(req,res)=>{
 
         // console.log(result)
 
-        // const xlsx = await dataDownload.generateTransmittalResult({
-        //     success:result.success,
-        //     errors:result.errors,
-        //     data
-        // })
+        const xlsx = await dataDownload.generateTransmittalResult({
+            success:result.success,
+            errors:result.errors,
+            data
+        })
 
-        res.status(200).json(result)
+        // res.status(200).json(result)
     }
     catch(e){
         console.log(e)
