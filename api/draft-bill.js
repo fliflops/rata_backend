@@ -307,7 +307,7 @@ router.post('/ascii/sell',async(req,res)=>{
             data
         })
 
-        // res.status(200).json(result)
+        res.status(200).json(xlsx)
     }
     catch(e){
         console.log(e)
