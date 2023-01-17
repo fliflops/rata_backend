@@ -204,7 +204,6 @@ exports.transportController = async(req,res,next) => {
 
         })
 
-        console.log(draftBill)
 
         if(type === 'SELL'){
             data = await asciiService.asciiSalesOrder(draftBill)

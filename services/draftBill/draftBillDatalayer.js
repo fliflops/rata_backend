@@ -196,7 +196,7 @@ const getAllDraftBills = async({filters})=>{
                 },
                 {
                     model:models.principal_tbl,
-                    attributes:['ascii_principal_code','ascii_customer_code'],
+                    attributes:['ascii_principal_code'],
                     required:false,
                     as:'principal_tbl'
                 }

@@ -16,7 +16,7 @@ exports.asciiSalesOrder = async (data) => {
                     ITEM_CODE:      header.ascii_item_code,
                     LINE_NO:        1,
                     LOCATION_CODE:  header.ascii_loc_code,
-                    UM_CODE:        details[0].service_type === '2003'? details[0].vehicle_type :details[0].min_billable_unit,
+                    UM_CODE:        ['2002','2003'].includes(details[0].service_type) ? details[0].vehicle_type :details[0].min_billable_unit,
                     QUANTITY:       1,
                     UNIT_PRICE:     SO_AMT,//parseFloat(item.total_charges).toFixed(2),   
                     EXTENDED_AMT:   SO_AMT//parseFloat(item.total_charges).toFixed(2)                    
@@ -30,8 +30,8 @@ exports.asciiSalesOrder = async (data) => {
                     ITEM_CODE:      header.ascii_item_code,
                     LINE_NO:        1,
                     LOCATION_CODE:  header.ascii_loc_code,
-                    UM_CODE:        details[0].service_type === '2003'? details[0].vehicle_type :details[0].min_billable_unit,
-                    QUANTITY:       details[0].service_type === '2003' ? 1 :     
+                    UM_CODE:        ['2002','2003'].includes(details[0].service_type)? details[0].vehicle_type : details[0].min_billable_unit,
+                    QUANTITY:       ['2002','2003'].includes(details[0].service_type) ? 1 :     
                     _.round(_.sumBy(details,(i)=>{
                         if(String(details[0].min_billable_unit).toLowerCase() === 'cbm'){
                             return parseFloat(i.actual_cbm)

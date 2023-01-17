@@ -158,8 +158,8 @@ exports.getDraftBill = async({
                     ITEM_CODE:      serviceType?.ascii_item_code,
                     LINE_NO:        1,
                     LOCATION_CODE:  item.ascii_loc_code,
-                    UM_CODE:        invoices[0].service_type === '2003'? invoices[0].vehicle_type :invoices[0].min_billable_unit,
-                    QUANTITY:       invoices[0].service_type === '2003' ? 1 :     
+                    UM_CODE:        ['2003','2002'].includes(invoices[0].service_type) ? invoices[0].vehicle_type :invoices[0].min_billable_unit,
+                    QUANTITY:       ['2003','2002'].includes(invoices[0].service_type) ? 1 :     
                     _.round(_.sumBy(invoices,(i)=>{
                         if(String(invoices[0].min_billable_unit).toLowerCase() === 'cbm'){
                             return parseFloat(i.actual_cbm)

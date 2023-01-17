@@ -1,4 +1,4 @@
-const {tariff,geography,shipPoint,principal,contract} = require('../../services');
+const {tariff,geography,shipPoint,principal,contract,vendor} = require('../../services');
 const locationService = require('../../services/location')
 
 const models = require('../models/rata');
@@ -7,6 +7,7 @@ const path = require('path');
 const mime = require('mime');
 const fs = require('fs');
 const _ =require('lodash');
+const moment = require('moment');
 
 const {sequelize} = models
 
@@ -449,6 +450,274 @@ exports.uploadTariff = async (req,res,next) => {
         next(e)
     }
 }
+
+exports.uploadContract=async(req,res,next)=>{
+    try{
+        const {data}    = req.body;
+        let contracts   = data.contracts;
+        let details     = data.contract_details;
+        const today     = moment().format('YYYY-MM-DD')
+        
+        let contract_header = []
+        let contract_details = []
+
+        if(typeof data.contracts === 'undefined' || typeof data.contract_details === 'undefined'){
+            return res.status(400).json({
+                message:'Invalid File!'
+            })
+        }
+
+        //Contract Header validation
+        const getContracts = await contract.getAllWMSContracts({
+            filters:{
+                contract_id: contracts.map(item => item.contract_id)
+            }
+        })
+
+        const getCustomers = await contract.getAllWMSContracts({
+            filters:{
+                principal_code: contracts.map(item => item.principal_code)
+            }
+        })
+
+        for(let i in contracts){
+            const contract = contracts[i];
+
+            const dbContract = _.find(getContracts,(value)=>{
+                return value.contract_id === contract.contract_id
+            })
+
+            const valid_from =  moment(contract?.valid_from).format('YYYY-MM-DD');
+            const valid_to   =  moment(contract?.valid_to).format('YYYY-MM-DD');
+            
+            if(!moment(today).isBetween(valid_from,valid_to)){
+
+                contract_header.push({
+                    contract_id:contract.contract_id,
+                    reason:'Invalid contract validity'
+                })
+            }
+
+            if(!dbContract){
+                continue;
+            }
+
+            if(dbContract?.contract_status === 'CANCELLED'){
+                contract_header.push({
+                    contract_id:contract.contract_id,
+                    reason:'Cancelled Contract'
+                })
+            }
+
+            const isCustomerExists = _.find(getCustomers,(value)=>{
+                return value.principal_code == contract.principal_code
+            }) 
+
+            if(isCustomerExists && isCustomerExists?.contract_status === 'APPROVED'){
+                contract_header.push({
+                    contract_id:contract.contract_id,
+                    reason:'Principal already mapped to a contract'
+                })
+            }
+        }
+
+        //Contract Tariff Validation
+        const getTariffs = await tariff.getAllTariff({
+            filters:{
+                tariff_id:_.uniq(details.map(item => item.tariff_id))
+            }
+        })
+        
+        for(let i in details){
+            const contract_tariff = details[i]
+
+            const valid_from=moment(contract_tariff?.valid_from).format('YYYY-MM-DD')
+            const valid_to=moment(contract_tariff?.valid_to).format('YYYY-MM-DD')
+
+            const tariff = _.find(getTariffs,(value)=>{
+                return String(value.tariff_id).toLowerCase() === String(contract_tariff.tariff_id).toLowerCase()
+            })
+
+            if(!tariff){
+                contract_details.push({
+                    contract_id:contract_tariff.contract_id,
+                    tariff_id:contract_tariff.tariff_id,
+                    reason:'Tariff does not exists!'
+                })
+
+                continue;
+            }
+
+            if(!moment(today).isBetween(valid_from,valid_to)){
+                contract_details.push({
+                    contract_id:contract_tariff.contract_id,
+                    tariff_id:contract_tariff.tariff_id,
+                    reason:'Invalid Tariff Validity'
+                })
+            }
+        }
+
+        await contract.bulkCreateContractDetails({
+            contract:contracts.filter(item => !contract_header.map(x => x.contract_id).includes(item.contract_id)).map(item => {
+                return {
+                    ...item,
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
+            }),
+            details: details.filter(item => {
+                const isInvalid = _.some(contract_details,{
+                    contract_id:item.contract_id,
+                    tariff_id:item.tariff_id
+                })
+    
+                return !isInvalid
+            })
+            .map(item => {
+                return{
+                    ...item,
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
+            })
+        })
+
+        res.status(200).json({
+            contract_header,
+            contract_details
+        })
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.uploadVendor=async(req,res,next)=>{
+    try{
+        const {data} = JSON.parse(JSON.stringify(req.body));
+        let vendor_header=[]
+        let vendor_group=[]
+        let vendor_group_details=[]
+
+        if(typeof data.vendor === 'undefined' || typeof data.vendor_group === 'undefined' || typeof data.vendor_group_details === 'undefined'){
+            return res.status(400).json({
+                message:'Invalid File!'
+            })
+        }
+
+        const getVendor = await vendor.getAllVendor({
+            filters:{
+                vendor_id: data.vendor.map(item => item.vendor_id)
+            }
+        })
+
+        const getVendorGroup = await vendor.getAllVendorGroup({
+            filters:{
+                vg_code :data.vendor_group.map(item =>item.vg_code)
+            }
+        })
+
+        const getVendorGroupDetails = await vendor.getAllVendorGroupDtl({
+            filters:{
+                vg_code: _.uniq(data.vendor_group_details.map(item => item.vg_code))
+            }
+        })
+
+        for(let i in data.vendor){
+            const vendor = data.vendor[i]
+
+            const isExist = _.find(getVendor,(value)=>{
+                return value.vendor_id === vendor.vendor_id
+            })
+
+            if(isExist){
+                vendor_header.push({
+                    vendor_id: vendor.vendor_id,
+                    reason:'Vendor already exists!'
+                })
+
+                continue;
+            }
+        }
+
+        for(let i in data.vendor_group){
+            const vendorGroup = data.vendor_group[i];
+
+            const isExist = _.find(getVendorGroup,(value)=>{
+                return value.vg_code === vendorGroup.vg_code
+            })
+
+            if(isExist){
+                vendor_group.push({
+                    vg_code: vendorGroup.vg_code,
+                    reason:'Vendor Code already exists!'
+                })
+
+                continue;
+            }
+
+        }
+
+        for(let i in data.vendor_group_details){
+            const vendorGroupDetails = data.vendor_group_details[i];
+
+            const isExist = _.find(getVendorGroupDetails,(value)=>{
+                return value.vg_code === vendorGroupDetails.vg_code && value.vg_vendor_id === vendorGroupDetails.vg_vendor_id
+            })
+
+            if(isExist){
+                vendor_group_details.push({
+                    vg_code: vendorGroupDetails.vg_code,
+                    vg_vendor_id: vendorGroupDetails.vg_vendor_id,
+                    reason:'Vendor mapping exists!'
+                })
+            }
+        }
+        
+        await vendor.bulkCreateTransaction({
+            vendor:             data.vendor.filter(item => !vendor_header.map(x=>x.vendor_id).includes(item.vendor_id)).map(item => {
+                return {
+                    ...item,
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
+            }),
+            vendorGroup:        data.vendor_group.filter(item => !vendor_group.map(x=>x.vg_code).includes(item.vg_code)).map(item => {
+                return {
+                    ...item,
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
+            }),
+            vendorGroupDetails: data.vendor_group_details.filter(item => {
+                const isInvalid = _.some(vendor_group_details,{
+                    vg_code:item.vg_code,
+                    vg_vendor_id:item.vg_vendor_id
+                })
+
+                return !isInvalid
+            }).
+            map(item => {
+                return {
+                    ...item,
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
+            })
+        })
+
+        res.status(200).json({
+            vendor_header,
+            vendor_group,
+            vendor_group_details
+        })
+
+    }   
+    catch(e){
+        next(e)
+    }
+}
+
 
 exports.getTemplate = (req,res,next) => {
     try{

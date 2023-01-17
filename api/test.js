@@ -5,6 +5,8 @@ const wmsDraftBill = require('../services/wms-draftbill');
 const transportDraftBill = require('../src/services/draftbillService')
 const models = require('../src/models/rata');
 
+
+
 const {sequelize,Sequelize} = models;
 
 const moment = require('moment');
@@ -12,6 +14,105 @@ const moment = require('moment');
 const {Op}                  = Sequelize;
 const {dataLayer,service}   = wmsDraftBill;
 
+const asciiService = require('../services/ascii');
+const draftBill = require('../services/draftBill');
+const dataMaster = require('../services/dataMaster');
+
+const _ = require('lodash')
+
+
+
+router.get('/ascii', async(req,res,next) => {
+    try{
+        const {rdd,location} = req.query
+
+        //const token = await login();
+        const serviceTypes = await dataMaster.getServiceTypes();
+        const header = await draftBill.getAllDraftBills({
+            filters:{
+                delivery_date:rdd,
+                location,
+                contract_type:'SELL'
+            }
+        })
+
+        const details = await draftBill.getAllInvoices({
+            filters:{
+                delivery_date:rdd
+            }
+        })
+
+        const draftBills        = header.map(item => {
+            const invoices      = details.filter(inv => inv.draft_bill_no === item.draft_bill_no)
+            const serviceType   = _.find(serviceTypes,['service_type_code',item.service_type])
+            const SO_AMT        =  _.round(item.total_charges,2)
+            
+            let SALES_ORDER_DETAIL
+
+            if(item.customer === '10005' && invoices[0].class_of_store === 'COLD'){
+                SALES_ORDER_DETAIL=[{
+                    COMPANY_CODE:   '00001',
+                    SO_CODE:        item.draft_bill_no,
+                    ITEM_CODE:      serviceType?.ascii_item_code,
+                    LINE_NO:        1,
+                    LOCATION_CODE:  item.ascii_loc_code,
+                    UM_CODE:        invoices[0].service_type === '2003'? item.vehicle_type :invoices[0].min_billable_unit,
+                    QUANTITY:       1,
+                    UNIT_PRICE:     SO_AMT,//parseFloat(item.total_charges).toFixed(2),   
+                    EXTENDED_AMT:   SO_AMT//parseFloat(item.total_charges).toFixed(2)                    
+                }]
+            }
+            else{
+            
+                SALES_ORDER_DETAIL=[{
+                    COMPANY_CODE:   '00001',
+                    SO_CODE:        item.draft_bill_no,
+                    ITEM_CODE:      serviceType?.ascii_item_code,
+                    LINE_NO:        1,
+                    LOCATION_CODE:  item.ascii_loc_code,
+                    UM_CODE:        ['2002','2003'].includes(invoices[0].service_type)? invoices[0].vehicle_type :invoices[0].min_billable_unit,
+                    QUANTITY:       ['2002','2003'].includes(invoices[0].service_type)? 1 :     
+                    _.round(_.sumBy(invoices,(i)=>{
+                        if(String(invoices[0].min_billable_unit).toLowerCase() === 'cbm'){
+                            return parseFloat(i.actual_cbm)
+                        }
+                        if(String(invoices[0].min_billable_unit).toLowerCase() === 'weight'){
+                            return parseFloat(i.actual_weight)
+                        }
+                        if(['CASE','PIECE'].includes( String(invoices[0].min_billable_unit).toUpperCase())){
+                            return parseFloat(i.actual_qty)
+                        }
+                    }),2),
+                    UNIT_PRICE:     _.round(item.rate,2),   
+                    EXTENDED_AMT:   SO_AMT                    
+                }] 
+            }
+
+            return {
+                COMPANY_CODE:   '00001',
+                SO_CODE:        item.draft_bill_no,
+                ITEM_TYPE:      'S',
+                SO_DATE:        item.draft_bill_date,
+                CUSTOMER_CODE:  item.ascii_customer_code,
+                PARTICULAR:     invoices.map(i => i.invoice_no).join(','),
+                REF_EUPO:       invoices[0].trip_plan,
+                REF_CROSS:      item.contract_id,
+                SO_AMT,
+                SALES_ORDER_DETAIL
+            }
+
+        })
+
+        res.json({
+            draftBills,
+            header
+        })
+
+    }
+    catch(e){
+        next(e)
+    }
+})
 
 
 router.get('/wms',async(req,res) => {

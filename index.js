@@ -1,19 +1,19 @@
-const express       = require('express');
-const helmet        = require('helmet');
-const morgan        = require('morgan');
-const cors          = require('cors');
-const path          = require('path');
+const express = require('express');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const cors = require('cors');
+const path = require('path');
 const methodOverride = require('method-override');
 const compress = require('compression')
 
-const api           = require('./api');
-const v2            = require('./src/api');
-const error         = require('./src/middleware/error');
-const bullBoard     = require('./src/middleware/bull-board');
+const api = require('./api');
+const v2 = require('./src/api');
+const error = require('./src/middleware/error');
+const bullBoard = require('./src/middleware/bull-board');
 
-const app           = express();
+const app = express();
 
-const {dbLoader}       = require('./loaders');
+const { dbLoader } = require('./loaders');
 
 const allowedOrigins = [
     'http://localhost:3003',
@@ -27,8 +27,8 @@ const allowedOrigins = [
 global.appRoot = path.resolve(__dirname);
 
 app.use(morgan('dev'))
-app.use(express.json({limit: '50mb'}));
-app.use(express.urlencoded({limit: '50mb',extended:'50mb'}));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: '50mb' }));
 
 // gzip compression
 app.use(compress());
@@ -39,29 +39,15 @@ app.use(methodOverride());
 
 app.use(helmet());
 app.use(cors({
-    exposedHeaders:['Content-disposition']
+    exposedHeaders: ['Content-disposition']
 }))
-// app.use(cors(
-//     {
-//         credentials:true,
-//         origin: (origin,callback) => {
-//             if(allowedOrigins.indexOf(origin) !== -1){
-//                 callback(null,true)
-//             }
-//             else{
-//                 callback(new Error('Not allowed by CORS'))
-//             }
-//         }
-//     }
-// ));
 
-app.set('trust proxy',1)
-
+app.set('trust proxy', 1)
 // app.use('/bull',bullBoard.getRouter())
 
 app.use(api);
 
-app.use('/v2',v2)
+app.use('/v2', v2)
 
 // if error is not an instanceOf APIError, convert it.
 app.use(error.converter);
@@ -76,8 +62,6 @@ app.listen(process.env.PORT, () => {
     console.log(`${process.env.NODE_ENV} instance!`)
     console.log(`Server running on port ${process.env.PORT}`)
 });
-
-
 
 dbLoader();
 

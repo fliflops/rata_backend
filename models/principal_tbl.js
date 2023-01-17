@@ -22,9 +22,9 @@ module.exports = (sequelize, DataTypes) => {
         ascii_principal_code:{
             type: DataTypes.STRING
         },
-        ascii_customer_code:{
-            type: DataTypes.STRING
-        },
+        // ascii_customer_code:{
+        //     type: DataTypes.STRING
+        // },
         created_date:{
             allowNull:false,
             type: Sequelize.DATE

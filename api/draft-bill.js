@@ -312,25 +312,25 @@ router.post('/ascii/sell',async(req,res)=>{
             data: JSON.parse(JSON.stringify(data))
         })
         //update draft bills
-        await draftBill.updateDraftBill({
-            data:{
-                status:'DRAFT_BILL_POSTED',
-                // updated_by:req.session.userId
-            },
-            filters:{
-                draft_bill_no: result.success.map(item => item.SO_CODE),   
-            }
-        })
+        // await draftBill.updateDraftBill({
+        //     data:{
+        //         status:'DRAFT_BILL_POSTED',
+        //         // updated_by:req.session.userId
+        //     },
+        //     filters:{
+        //         draft_bill_no: result.success.map(item => item.SO_CODE),   
+        //     }
+        // })
 
         // console.log(result)
 
-        const xlsx = await dataDownload.generateTransmittalResult({
-            success:result.success,
-            errors:result.errors,
-            data
-        })
+        // const xlsx = await dataDownload.generateTransmittalResult({
+        //     success:result.success,
+        //     errors:result.errors,
+        //     data
+        // })
 
-        res.status(200).json(xlsx)
+        res.status(200).json(result)
     }
     catch(e){
         console.log(e)
