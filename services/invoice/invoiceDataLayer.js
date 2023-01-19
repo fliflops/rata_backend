@@ -48,7 +48,7 @@ const createInvoiceTransaction = async({
                 data:invoices,
                 options:{
                     transaction: t,
-                    updateOnDuplicate:['updatedAt','cleared_date','remarks'],
+                    ignoreDuplicates:true,
                     logging:false
                 }
             })
@@ -57,7 +57,7 @@ const createInvoiceTransaction = async({
                 data:details,
                 options:{
                     transaction: t,
-                    updateOnDuplicate:['updatedAt'],
+                    ignoreDuplicates:true,
                     logging:false
                 }
             })

@@ -5,8 +5,6 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
             primaryKey: true,
             type:DataTypes.STRING(50)
-            // type: DataTypes.UUID,
-            // defaultValue: DataTypes.UUIDV4
         },
         trip_no:{
             type:DataTypes.STRING(50)

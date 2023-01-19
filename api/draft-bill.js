@@ -247,17 +247,18 @@ router.post('/helios',async(req,res)=>{
         const getInvoices   = await bookings.getInvoices({rdd,location})
         const getDetails    = await bookings.getInvoicesDtl({rdd,location})
         const invoices      = getInvoices.filter(item => !['SHORT_CLOSED'].includes(item.trip_status))
+        const details       = getDetails.filter(item => invoices.map(x => x.br_no).includes(item.br_no))
 
-       const {inv_details} = await invoice.createInvoiceTransaction({
+       const {newDetails} = await invoice.createInvoiceTransaction({
             invoices,
-            details:getDetails
+            details
         })
 
         // console.log(invoices)
 
         res.status(200).json({
             data:invoices,
-            details:inv_details
+            details:newDetails
         })
     }
     catch(e){
