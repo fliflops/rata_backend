@@ -27,12 +27,14 @@ exports.tariffICUpload = async (data) => {
             }
         })
 
+
         Object.keys(grouped_data).map(tariff_id => {
             const ic = _.sortBy(grouped_data[tariff_id],item => Number(item.min_value))
             const tariff = tariffData.find(item => item.tariff_id === tariff_id)
-            const vendorGroup = vendorGroupData.filter(item => String(tariff.location).toLowerCase() === String(item.location).toLowerCase())
+            const vendorGroup = vendorGroupData.filter(item => String(tariff?.location || '').toLowerCase() === String(item.location).toLowerCase())
 
-            if(tariff.ic_data.length > 0){
+    
+            if(tariff && tariff.ic_data.length > 0){
                 return ic_data.push({
                     tariff_id,
                     min_value:null,
@@ -41,7 +43,7 @@ exports.tariffICUpload = async (data) => {
                     uom:null,
                     vehicle_type:null,
                     vendor_group:null,
-                    reason:'Tariff already has an ic matrix'
+                    reason:'Tariff already has an IC setup'
                 })
             }
 
@@ -52,7 +54,7 @@ exports.tariffICUpload = async (data) => {
                         ic_data.push({
                             tariff_id:tariff_id,
                             ...cur,
-                            reason:'Invalid matrix sequence'
+                            reason:'Invalid matrix sequence. Please check for gaps in the min and max values.'
                         })
                         arr.splice(1)
                     }
@@ -72,7 +74,7 @@ exports.tariffICUpload = async (data) => {
                         uom:null,
                         vehicle_type:null,
                         vendor_group:null,
-                        reason:'Tariff status must be draft!'
+                        reason:'Tariff is already approved and can no longer be updated!'
                     })
                 }
 

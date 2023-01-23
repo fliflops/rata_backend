@@ -7,6 +7,10 @@ require('dotenv').config({
 module.exports = {
     env: process.env.NODE_ENV,
     port: process.env.PORT,
-    jwtSecret: process.env.TOKEN_SECRET
+    jwtSecret: process.env.TOKEN_SECRET,
+    nodeMailer: {
+        email:process.env.NODEMAILER_EMAIL,
+        password:process.env.NODEMAILER_PASSWORD
+    }
 }
   

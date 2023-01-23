@@ -1,6 +1,7 @@
 
 const redis = require('./redis');
 const ioredis = require('./ioredis');
+const vars = require('./vars');
 
 const podConfig = {
     username:       process.env.POD_DB_USER_NAME,
@@ -81,5 +82,6 @@ module.exports = {
     scmdbConfig,
     redisConfig,
     redis,
-    ioredis
+    ioredis,
+    ...vars
 }
