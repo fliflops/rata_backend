@@ -70,6 +70,9 @@ const getContracts = async ({rdd,where}) => {
                             },
                             {
                                 model: models.tariff_ic_algo_tbl,
+                                where: {
+                                    algo_status:'ACTIVE'
+                                },
                                 required:false,
                             }
                         ],
@@ -437,13 +440,12 @@ const draftBillIC = async({invoices}) => {
                     } 
                     return parseFloat(item.actual_qty)
                 })
+
                 const planned_weight    = _.sumBy(details, item => isNaN(Number(item.planned_weight)) ? 0 : parseFloat(item.planned_weight))
                 const planned_cbm       = _.sumBy(details, item => isNaN(Number(item.planned_cbm)) ? 0 : parseFloat(item.planned_cbm))
                 const actual_weight     = _.sumBy(details, item => isNaN(Number(item.actual_weight)) ? 0 : parseFloat(item.actual_weight))
                 const actual_cbm        = _.sumBy(details, item => isNaN(Number(item.actual_cbm)) ? 0 : parseFloat(item.actual_cbm))
                 const return_qty        = _.sumBy(details, item => isNaN(Number(item.return_qty)) ? 0 : parseFloat(item.return_qty))
-
-               
 
                 draft_bill_details.push({
                     draft_bill_no:      '',
@@ -498,8 +500,6 @@ const draftBillIC = async({invoices}) => {
             })
 
             //compute total charges
-            
-            
             if(['L300','L300CV'].includes(invoice.vehicle_type)) {
                 /** 
                  * L300 Total Charges Computation

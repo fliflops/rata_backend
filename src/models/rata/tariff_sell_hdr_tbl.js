@@ -90,6 +90,16 @@ class tariff_sell_hdr_tbl extends Model {
         .then(result => JSON.parse(JSON.stringify(result)))
     }
 
+    static async getOneData ({options,where}) {
+        return await this.findOne({
+            where:{
+                ...where
+            },
+            ...options
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
+
     static async bulkCreateData ({data,options}) {
         return await this.bulkCreate(data,{
             ...options,
@@ -97,6 +107,25 @@ class tariff_sell_hdr_tbl extends Model {
         })
     }
 
+    static async updateData ({data,where,options}) {
+        return await this.update({
+            ...data   
+        },
+        {
+            where:{
+                ...where
+            },
+            ...options
+        })
+    }
+
+    static associate(models) {
+        this.ic = this.hasMany(models.tariff_ic_algo_tbl,{
+            foreignKey:'tariff_id',
+            sourceKey:'tariff_id',
+            as:'ic_data'
+        })
+    }
 
 }
 

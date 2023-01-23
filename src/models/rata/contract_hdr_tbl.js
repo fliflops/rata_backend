@@ -63,6 +63,27 @@ class contract_hdr_tbl extends Model {
         .then(result => JSON.parse(JSON.stringify(result)))
     }
 
+    static async updateContract ({where,options,data}) {
+        return await this.update({
+            ...data
+            },
+            {
+                where:{
+                    ...where
+                },
+                ...options
+            }
+        )
+    }
+
+    static async getContract ({where}) {
+        return await this.findOne({
+            where:{
+                ...where
+            }
+        })
+    }
+
     static async paginated({
         filters,
         options,

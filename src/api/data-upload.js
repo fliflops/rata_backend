@@ -9,7 +9,7 @@ router.route('/tariff')
 .post(authorize,controllers.uploadTariff)
 
 router.route('/contract')
-.post(authorize, controllers.uploadContract)
+.post(authorize,controllers.uploadContract)
 
 router.route('/wms-tariff')
 .post(authorize,controllers.uploadWMSTariff)

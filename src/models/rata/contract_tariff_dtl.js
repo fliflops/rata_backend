@@ -80,6 +80,18 @@ class contract_tariff_dtl extends Model {
         .then(result => JSON.parse(JSON.stringify(result)))
     }
 
+    static async updateData({data,where,options}) {
+        return await this.update({
+            ...data
+        },
+        {
+            where:{
+                ...where
+            },
+            ...options
+        })
+    }
+
     static associate (models) {
         this.tariff = this.hasOne(models.tariff_sell_hdr_tbl,{
             foreignKey:'tariff_id',

@@ -78,6 +78,16 @@ class tariff_ic_algo_tbl extends Model {
         })
     }
 
+    static async getOneData ({options,where}) {
+        return await this.findOne({
+            where:{
+                ...where
+            },
+            ...options
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
+
     static async paginated ({
         filters,
         order,

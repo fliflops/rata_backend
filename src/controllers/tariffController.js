@@ -1,5 +1,7 @@
 const models = require('../models/rata');
+const useGlobalFilter = require('../helpers/filters');
 
+const {sequelize} = models;
 exports.getTariffIC = async (req,res,next) => {
     try{
 
@@ -12,7 +14,7 @@ exports.getTariffIC = async (req,res,next) => {
 
         const {count,rows} = await models.tariff_ic_algo_tbl.paginated({
             filters,
-            order: [],
+            order: [['min_value','DESC']],
             page,
             totalPage
         })
@@ -29,16 +31,56 @@ exports.getTariffIC = async (req,res,next) => {
     }
 }
 
+exports.getTariff = async(req,res,next) => {
+    try{
+        const {tariff_id} = req.params;
+
+        const tariff = await models.tariff_sell_hdr_tbl.getOneData({
+            options: {
+                include: [
+                    {
+                        model:models.tariff_ic_algo_tbl,
+                        required:false,
+                        as:'ic_data'
+                    }
+                ]
+            },
+            where:{
+                tariff_id
+            }
+        })
+
+        res.status(200).json(tariff)
+    }
+    catch(e){
+        next(e)
+    }
+}
+
 exports.postTariffIC = async(req,res,next) => {
     try{
         const data = req.body;
 
-        await models.tariff_ic_algo_tbl.createData({
-            data:{
-                ...data,
-                created_by: req.processor.id
+        const tariff = await models.tariff_sell_hdr_tbl.getOneData({
+            where:{
+                tariff_id: data.tariff_id
             }
         })
+
+        if(tariff.tariff_status !== 'DRAFT') {
+            return res.status(400).json({
+                message:'Tariff is already approved!'
+            })
+        }
+
+        console.log(data)
+
+        // await models.tariff_ic_algo_tbl.createData({
+        //     data:{
+        //         ...data,
+        //         created_by: req.processor.id
+        //     }
+        // })
 
         res.status(200).json({
             message:'Success!'
@@ -75,3 +117,73 @@ exports.putTariffIC = async(req,res,next) => {
         next(e)
     }
 }
+
+exports.updateTariff = async(req,res,next) => {
+    try{
+        const {
+            tariff_header,
+            tariff_ic
+        } = req.body;
+
+        const {
+            tariff_id
+        } = req.params
+
+        const tariff = await models.tariff_sell_hdr_tbl.getOneData({
+            options: {
+                include: [
+                    {
+                        model: models.tariff_ic_algo_tbl,
+                        required:false,
+                        as:'ic_data'
+                    }
+                ]
+            },
+            where:{
+                tariff_id: tariff_id
+            }
+        })
+
+        if(!tariff) {
+            return res.status(400).json({
+                message:'Tariff does not exists!'
+            })
+        }
+
+        if(tariff.tariff_status !== 'DRAFT') {
+            return res.status(400).json({
+                message:'Invalid Tariff Status'
+            })
+        }
+
+        await sequelize.transaction(async t => {
+            await models.tariff_sell_hdr_tbl.updateData({
+                data:{
+                    ...tariff_header
+                },
+                where:{
+                    tariff_id: tariff_id
+                },
+                options:{
+                    transaction: t
+                }
+            })
+
+            if(tariff.ic_data.length === 0) {
+                await models.tariff_ic_algo_tbl.bulkCreateData({
+                    data: tariff_ic,
+                    options:{
+                        transaction: t,
+                        ignoreDuplicates:true
+                    }
+                })
+            }
+        })
+
+        res.end();
+    }
+    catch(e){
+        next(e)
+    }
+}
+

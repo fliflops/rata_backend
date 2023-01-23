@@ -1,5 +1,6 @@
 const {tariff,geography,shipPoint,principal,contract,vendor} = require('../../services');
 const locationService = require('../../services/location')
+const dataUploadService = require('../services/dataUploadService')
 
 const models = require('../models/rata');
 
@@ -8,6 +9,8 @@ const mime = require('mime');
 const fs = require('fs');
 const _ =require('lodash');
 const moment = require('moment');
+
+
 
 const {sequelize} = models
 
@@ -242,7 +245,7 @@ exports.uploadTariff = async (req,res,next) => {
             })
         }
 
-        const getRegion =   await geography.getGeoRegion({
+        const getRegion=    await geography.getGeoRegion({
             filters:{is_active:true}
         });
         const getProvince=  await geography.getGeoProvince({
@@ -254,9 +257,9 @@ exports.uploadTariff = async (req,res,next) => {
         const getBrgy =     await geography.getGeoBrgy({
             filters:{is_active:true}
         });
-        const getShipPoint =   await shipPoint.getAllShipPoint({
+        const getShipPoint =await shipPoint.getAllShipPoint({
             filters:{is_active:true}
-        })
+        });
 
         const {results} = await tariff.isTariffExists({
             tariff_ids:data.tariff.map(item => item.tariff_id)
@@ -376,70 +379,34 @@ exports.uploadTariff = async (req,res,next) => {
             }
         }
 
-        
-        await sequelize.transaction(async t => {
-            await models.tariff_sell_hdr_tbl.bulkCreateData({
-                data: data.tariff.filter(item => !_.uniq(tariff_header.map(item => item.tariff_id)).includes(item.tariff_id)).map(item => {
-                    return {
-                        ...item,
-                        tariff_id:String(item.tariff_id).trim(),
-                        from_geo:String(item.from_geo).trim(),
-                        to_geo:String(item.to_geo).trim(),
-                        created_by:req.processor.id,
-                        updated_by:req.processor.id
-                    }
-                }),
-                options: {
-                    transaction: t
-                }
-            })
-
-            const tariffData = await models.tariff_sell_hdr_tbl.getData({
-                options:{
-                    transaction:t
-                },
-                where:{
-                    tariff_id: _.uniq(data.tariff_ic.map(item => item.tariff_id))
-                }
-            })
-
-            let ic_data = []
-
-            tariffData.map(tariff => {
-                const ic = data.tariff_ic.filter( item => item.tariff_id === tariff.tariff_id)
-            
-                //invalid uom
-                const invalid_uom = ic.filter(item => String(item.uom).toLowerCase() !== String(tariff.min_billable_unit).toLowerCase())
-                    
-                tariff_ic = tariff_ic.concat(invalid_uom.map(item => {
-                    return {
-                        ...item,
-                        reason:'Invalid UOM'
-                    }
-                }))
-
-                if(invalid_uom.length === 0){
-                    ic_data = ic_data.concat(ic)
-                }
-            })
-
-            const invalidTariff = data.tariff_ic.filter(ic => !tariffData.map(item => item.tariff_id).includes(ic.tariff_id))
-            tariff_ic = tariff_ic.concat(invalidTariff.map(item => {
+        //insert into database
+        await models.tariff_sell_hdr_tbl.bulkCreateData({
+            data: data.tariff.filter(item => !_.uniq(tariff_header.map(item => item.tariff_id))
+            .includes(item.tariff_id))
+            .map(item => {
                 return {
                     ...item,
-                    reason:'Invalid Tariff ID'
+                    tariff_status:'DRAFT',
+                    tariff_id:String(item.tariff_id).trim(),
+                    from_geo:String(item.from_geo).trim(),
+                    to_geo:String(item.to_geo).trim(),
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
                 }
-            }))
-
-            await models.tariff_ic_algo_tbl.bulkCreateData({
-                data: ic_data,
-                options:{
-                    transaction:t
-                }
-            })
-
+            }),
+            options: {
+                ignoreDuplicates:true
+            }
         })
 
+        //run tariff ic algo validations
+        tariff_ic = await dataUploadService.tariffICUpload(data.tariff_ic)
+
+        //insert into database
+        await models.tariff_ic_algo_tbl.bulkCreateData({
+            data: data.tariff_ic.filter(item => !tariff_ic.map(x => x.tariff_id).includes(item.tariff_id))
+        })
+        
         res.status(200).json({
             tariff_header,
             tariff_ic
@@ -717,7 +684,6 @@ exports.uploadVendor=async(req,res,next)=>{
         next(e)
     }
 }
-
 
 exports.getTemplate = (req,res,next) => {
     try{
