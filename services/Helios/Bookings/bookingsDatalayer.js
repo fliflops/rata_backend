@@ -70,7 +70,7 @@ const getBookingRequest = async ({
             c.rudStatus			    'rud_status',    
             c.reasonCode			'reason_code',    
             d.is_billable			'is_billable',    
-            c.date_cleared		        'cleared_date'    
+            c.date_cleared		    'cleared_date'    
             from trip_br_dtl_tbl a    
             left join trip_plan_hdr_tbl b on a.tripPlan = b.tripPlanNo    
             left join booking_request_hdr_tbl c on a.brNo = c.bookingRequestNo    
@@ -94,7 +94,6 @@ const getBookingRequest = async ({
 const getBookingRequestDetails = async({
     rdd
 })=>{
-
     try{
         return await sequelize.query(`Select distinct    
             a.tripPlan 'trip_no',    
@@ -105,8 +104,8 @@ const getBookingRequestDetails = async({
             b.planned_weight,    
             b.planned_cbm,    
             b.actual_qty,    
-            b.actual_weight,    
-            b.actual_cbm,    
+            CASE WHEN b.actual_qty = b.planned_qty THEN b.planned_weight ELSE b.actual_weight END 'actual_weight',  
+            CASE WHEN b.actual_qty = b.planned_qty THEN b.planned_cbm  ELSE b.actual_cbm  END 'actual_cbm',  
             b.return_qty       
             from (    
             select     

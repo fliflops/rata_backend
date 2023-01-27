@@ -27,7 +27,6 @@ exports.tariffICUpload = async (data) => {
             }
         })
 
-
         Object.keys(grouped_data).map(tariff_id => {
             const ic = _.sortBy(grouped_data[tariff_id],item => Number(item.min_value))
             const tariff = tariffData.find(item => item.tariff_id === tariff_id)

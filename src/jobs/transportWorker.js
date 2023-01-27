@@ -1,6 +1,7 @@
 const {TMS_DATA_SYNC,RATA_DRAFT_BILL_BUY,RATA_DRAFT_BILL_SELL} = require('./queues/queues');
 const heliosService = require('../../services/Helios');
 const draftBillService = require('../services/draftbillService');
+const emailService = require('../services/emailService');
 
 const models = require('../models/rata');
 const { sequelize,Sequelize } = require('../models/rata');
@@ -21,14 +22,18 @@ exports.tmsautosync = () => {
                 }
             })
 
-
             const invoice = await heliosService.bookings.getBookingRequest({
                 rdd: date
             })
 
             await sequelize.transaction( async t => {
                 await models.helios_invoices_hdr_tbl.bulkCreateData({
-                    data:invoice.header,
+                    data:invoice.header.map(item => {
+                        return {
+                            ...item,
+                            job_id: job.id
+                        }
+                    }),
                     options:{
                         transaction:t,
                         updateOnDuplicate: ['updatedAt','vehicle_type','vehicle_id','trip_no'],
@@ -46,8 +51,8 @@ exports.tmsautosync = () => {
                 })
             })
 
+            job.progress('completed',invoice)
             done()
-            return invoice
 
         }
         catch(e){
@@ -66,11 +71,20 @@ exports.tmsautosync = () => {
             }
         })
 
-        console.log(`Job with id ${job.id} has been completed`)
-    })
+        const getInvoices = await models.helios_invoices_hdr_tbl.getData({
+            where:{
+                job_id: job.id
+            }
+        })
 
-    TMS_DATA_SYNC.on('error', (err) => {
-        console.log(err)
+        await emailService.sendEmail({
+            subject:`Tranport Data Sync Job: ${job.id}`,
+            scheduler_id: scheduler_id,
+            data:`<p>Job with id ${job.id} has been completed</p>
+            <p>Fetched new Invoices from POD: <b>${getInvoices.length}</b></p>`
+        })
+
+        console.log(`Job with id ${job.id} has been completed`)
     })
 
     TMS_DATA_SYNC.on('failed', async (job,err) => {
@@ -87,6 +101,12 @@ exports.tmsautosync = () => {
             console.log(e)
         })
         console.error(err)
+
+        await emailService.sendEmail({
+            subject:`Tranport Data Sync Job: ${job.id}`,
+            scheduler_id,
+            data:`Failed job with id ${job.id}`
+        })
     })
 }
 
@@ -101,7 +121,7 @@ exports.transportSell = () => {
                     job_id:             job.id,
                     scheduler_id:       scheduler_id,
                     transaction_date:   date,
-                    job_status: 'INPROGRESS'
+                    job_status:         'INPROGRESS'
                 }
             })
 
@@ -122,9 +142,9 @@ exports.transportSell = () => {
           
             const {data,revenue_leak} = await draftBillService.sell({
                 invoices,
-                rdd: date
+                rdd: date,
+                job_id: job.id
             })
-
 
             done();
             return {data,revenue_leak}
@@ -145,6 +165,24 @@ exports.transportSell = () => {
             }
         })
 
+        const getDraftBills = await models.draft_bill_hdr_tbl.getData({
+            where:{
+                job_id: job.id
+            }
+        })
+
+        const getRevenueLeak = await models.transport_rev_leak_hdr_tbl.getData({
+            job_id: job.id
+        })
+
+        await emailService.sendEmail({
+            subject:`Draft Bill Sell Job: ${job.id}`,
+            scheduler_id: scheduler_id,
+            data:`<p>Job with id ${job.id} has been completed</p>
+            <p>Created Draft Bills: <b>${getDraftBills.length}</b></p>
+            <p>Invoices with Revenue Leak: <b>${getRevenueLeak.length}</b></p>`
+        })
+
         console.log(`Job with id ${job.id} has been completed`)
     })
 
@@ -161,6 +199,13 @@ exports.transportSell = () => {
         .catch(e => {
             console.log(e)
         })
+
+        await emailService.sendEmail({
+            subject:`Draft Bill Sell Job: ${job.id}`,
+            scheduler_id,
+            data:`Failed job with id ${job.id}`
+        })
+
         console.error('Job failed ',err)
     })
 }
@@ -215,14 +260,13 @@ exports.transportBuy = () => {
                 })
             })
     
-            const {data,revenue_leak} = await draftBillService.buy({
+            await draftBillService.buy({
                 invoices,
-                rdd: date
+                rdd: date,
+                job_id: job.id
             })
     
             done()
-            return {data,revenue_leak}
-
         }
         catch(e){
             done(e)
@@ -239,6 +283,23 @@ exports.transportBuy = () => {
             }
         })
 
+        const getDraftBills = await models.draft_bill_hdr_tbl.getData({
+            where:{
+                job_id: job.id
+            }
+        })
+
+        const getRevenueLeak = await models.transport_rev_leak_hdr_tbl.getData({
+            job_id: job.id
+        })
+
+        await emailService.sendEmail({
+            subject:`Draft Bill Buy Job: ${job.id}`,
+            scheduler_id: scheduler_id,
+            data:`<p>Job with id ${job.id} has been completed</p>
+            <p>Created Draft Bills: <b>${getDraftBills.length}</b></p>
+            <p>Invoices with Revenue Leak: <b>${getRevenueLeak.length}</b></p>`
+        })
         console.log(`Job with id ${job.id} has been completed`)
     })
 
@@ -255,6 +316,13 @@ exports.transportBuy = () => {
         .catch(e => {
             console.log(e)
         })
+
+        await emailService.sendEmail({
+            subject:`Draft Bill Buy Job: ${job.id}`,
+            scheduler_id,
+            data:`Failed job with id ${job.id}`
+        })
+
         console.error('Job failed ',err)
     })
 }

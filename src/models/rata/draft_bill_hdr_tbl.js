@@ -91,6 +91,9 @@ class draft_bill_hdr_tbl extends Model {
             sub_service_type:{
                 type: DataTypes.STRING(50)
             },
+            job_id:{
+                type: DataTypes.STRING
+            },
             created_by:{type: DataTypes.STRING(50)},
             updated_by:{type: DataTypes.STRING(50)},
             createdAt:Sequelize.DATE,

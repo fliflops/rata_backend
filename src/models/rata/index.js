@@ -77,12 +77,14 @@ const models = {
 
     scheduler_setup_tbl:            scheduler_setup_tbl.init(sequelize),
     scheduler_auto_sync_trckr_tbl:  scheduler_auto_sync_trckr_tbl.init(sequelize),
+    scheduler_email_tbl:            require('./scheduler_email_tbl').init(sequelize),
 
     wms_data_header_tbl:            wms_data_header_tbl.init(sequelize),
     wms_data_details_tbl:           wms_data_details_tbl.init(sequelize),
 
     wms_draft_bill_hdr_tbl:         wms_draft_bill_hdr_tbl.init(sequelize),      
-    wms_draft_bill_dtl_tbl:         wms_draft_bill_dtl_tbl.init(sequelize)
+    wms_draft_bill_dtl_tbl:         wms_draft_bill_dtl_tbl.init(sequelize),
+    wms_rev_leak_tbl:               require('./wms_rev_leak_tbl').init(sequelize)
 }
 
 //associations

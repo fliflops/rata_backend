@@ -10,4 +10,10 @@ router.route('/')
 router.route('/details')
 .get(authorize,schedulerController.getSchedulerDetails)
 
+router.route('/email')
+.get(authorize,     schedulerController.getEmails)
+.post(authorize,    schedulerController.postEmail)
+.put(authorize,     schedulerController.putEmail)
+
+
 module.exports = router;

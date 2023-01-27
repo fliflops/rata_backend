@@ -3,7 +3,8 @@ const moment = require('moment');
 const {v4:uuidv4} = require('uuid');
 const Queue = require('../jobs/queues/queues');
 
-const redis = require('../../config').redis
+const redis = require('../../config').redis;
+
 
 exports.getScheduler = async(req,res,next) => {
     try{
@@ -59,7 +60,6 @@ exports.getSchedulerDetails = async(req,res,next) => {
         next(e)
     }
 }
-
 
 exports.updateScheduler = async(req,res,next) => {
     try{
@@ -137,6 +137,87 @@ exports.postManualTrigger = async(req,res,next) => {
     }
     catch(e){
         console.log(e)
+        next(e)
+    }
+}
+
+exports.getEmails = async(req,res,next) => {
+    try{    
+        const {
+            page,
+            totalPage,
+            ...filters
+        } = req.query;
+
+        const {count,rows} =  await models.scheduler_email_tbl.paginated({
+            filters,
+            order: [
+                ['createdAt','DESC']
+            ],
+            page,
+            totalPage
+        })
+
+        res.status(200).json({
+            data:rows,
+            rows:count,
+            pageCount:Math.ceil(count/totalPage)
+        })
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.postEmail = async(req,res,next) => {
+    try{
+        const {data} = req.body;
+
+        const emails = await models.scheduler_email_tbl.findOneData({
+            where:{
+                email: data.email,
+                scheduler_id: data.scheduler_id
+            }
+        })
+
+        if(emails) {
+            return res.status(400).json({
+                message: 'Email already exists!'
+            })
+        }
+
+        await models.scheduler_email_tbl.createData({
+            data:{
+                ...data,
+                created_by: req.processor.id
+            }   
+        })
+
+        res.status(200).end()    
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.putEmail = async(req,res,next) => {
+    try{
+        const {scheduler_id,email} = req.query;
+        const {data} = req.body
+        
+        await models.scheduler_email_tbl.updateData({
+            where:{
+                scheduler_id,
+                email
+            },
+            data: {
+                ...data
+            }
+        })
+
+        res.status(200).end(); 
+    }
+    catch(e){
         next(e)
     }
 }

@@ -278,19 +278,16 @@ const generateWithAggDraftBill = async({
             
             const wms_details = raw_group[item].map(item => {
                 const details = item.details
-                const actual_qty =  _.sumBy(details,item => isNaN(item.actual_qty) ? 0 : parseFloat(item.actual_qty)).toFixed(2)
-                const actual_cbm =  _.sumBy(details,item => isNaN(item.actual_cbm ) ? 0 : parseFloat(item.actual_cbm)).toFixed(2)
+                const actual_qty =  _.sumBy(details,item => isNaN(parseFloat(item.actual_qty)) ? 0 : parseFloat(item.actual_qty)).toFixed(2)
+                const actual_cbm =  _.sumBy(details,item => isNaN(parseFloat(item.actual_cbm)) ? 0 : parseFloat(item.actual_cbm)).toFixed(2)
                 const billing_qty = _.sumBy(details,item => {
-                    if(item[header.tariff.parameter] && !isNaN(item[header.tariff.parameter])) {
+                    if(item[header.tariff.parameter] && !isNaN(parseFloat(item[header.tariff.parameter]))) {
                         return parseFloat(item[header.tariff.parameter])
                     }
 
                     return 0
                 }).toFixed(2)
-                
-                
-                //_.sumBy(details,item => item[header.tariff.parameter] ? parseFloat(item[header.tariff.parameter]) : 0)
-                
+                        
                 return {
                     draft_bill_no:      null,
                     transaction_date:   item.transaction_date,

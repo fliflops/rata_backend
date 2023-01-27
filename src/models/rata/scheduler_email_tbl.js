@@ -1,58 +1,29 @@
-const {Sequelize,Model,DataTypes} = require('sequelize');
+const {Model,Sequelize,DataTypes} = require('sequelize');
 
-class scheduler_setup_tbl extends Model {
+class scheduler_email_tbl extends Model {
     static init(sequelize) {
         return super.init({
-            id:{
+            email: {
                 primaryKey: true,
                 type: DataTypes.STRING
             },
-            system_type:{
-                allowNull:false,
+            scheduler_id:{
+                primaryKey: true,
                 type: DataTypes.STRING
             },
-            job_description:{
-                allowNull:false,
+            status:{
                 type: DataTypes.STRING
             },
-            start_time_label:{
-                allowNull:false,
-                type: DataTypes.STRING
-            },
-            start_time_cron:{
-                allowNull:false,
-                type: DataTypes.STRING
-            },
-            is_active:{
-                allowNull:false,
-                type: DataTypes.STRING
-            },
-            redis_key:{
-                allowNull:false,
-                type: DataTypes.STRING
-            },
-            redis_scheduler_key:{
-                allowNull:false,
-                type: DataTypes.STRING
-            },
+            updatedAt: DataTypes.STRING,
+            updated_by: DataTypes.STRING,
             createdAt:Sequelize.DATE,
-            updatedAt:Sequelize.DATE,
-            created_by:{
-                type: DataTypes.STRING(50) 
-            },
-            updated_by:{
-                type: DataTypes.STRING(50) 
-            }
+            updatedAt:Sequelize.DATE
         },
         {
             sequelize,
             freezeTableName:true,
-            tableName:'scheduler_setup_tbl'
+            tableName:'scheduler_email_tbl'
         })
-    }
-
-    static async getID(id) {
-        return await this.findByPk(id)
     }
 
     static async getData({where,options}) {
@@ -63,6 +34,15 @@ class scheduler_setup_tbl extends Model {
             ...options
         })
         .then(result => JSON.parse(JSON.stringify(result)))
+    }
+
+    static async findOneData({where,options}) {
+        return await this.findOne({
+            where:{
+                ...where
+            },
+            ...options
+        })
     }
 
     static async paginated({
@@ -81,7 +61,7 @@ class scheduler_setup_tbl extends Model {
             limit:parseInt(totalPage),
             order
         })
-    }
+    }   
 
     static async updateData({
         where,
@@ -97,7 +77,12 @@ class scheduler_setup_tbl extends Model {
         })
     }
 
-    
+    static async createData({
+        data
+    }) {
+        return await this.create({...data})
+    }
+
 }
 
-module.exports = scheduler_setup_tbl
+module.exports = scheduler_email_tbl;

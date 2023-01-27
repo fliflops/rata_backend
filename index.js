@@ -43,7 +43,7 @@ app.use(cors({
 }))
 
 app.set('trust proxy', 1)
-// app.use('/bull',bullBoard.getRouter())
+app.use('/bull',bullBoard.getRouter())
 
 app.use(api);
 

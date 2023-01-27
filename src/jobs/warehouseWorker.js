@@ -5,10 +5,10 @@ const models = require('../models/rata');
 const {sequelize} = models;
 const {generateDraftBill} = wmsDraftBill;
 const moment = require('moment');
+const emailService =require ('../services/emailService');   
 
 exports.wmsautosync = () => {
     const scheduler_id = 'WMS_DATA_SYNC';
-
 
     WMS_DATA_SYNC.process(async(job,done) => {
         try{
@@ -35,7 +35,12 @@ exports.wmsautosync = () => {
             await sequelize.transaction(async t => {
                 try{
                     await models.wms_data_header_tbl.bulkCreateData({
-                        data:header,
+                        data:header.map(item => {
+                            return {
+                                ...item,
+                                job_id: job.id
+                            }
+                        }),
                         options:{
                             transaction:t,
                             ignoreDuplicates:true,
@@ -80,11 +85,21 @@ exports.wmsautosync = () => {
             }
         })
 
-        console.log(`Job with id ${job.id} has been completed`)
-    })
+        const getWmsData = await models.wms_data_header_tbl.getData({
+            where:{
+                job_id: job.id
+            }
+        })
 
-    WMS_DATA_SYNC.on('error', (err) => {
-        console.log(err)
+        await emailService.sendEmail({
+            subject:`${scheduler_id} Job: ${job.id}`,
+            scheduler_id: scheduler_id,
+            data:`<p>Job with id ${job.id} has been completed</p>
+            <p>Fetched new WMS Data from WMS: <b>${getWmsData.length}</b></p>
+            `
+        })
+
+        console.log(`Job with id ${job.id} has been completed`)
     })
 
     WMS_DATA_SYNC.on('failed', async (job,err) => {
@@ -100,6 +115,13 @@ exports.wmsautosync = () => {
         .catch(e => {
             console.log(e)
         })
+
+        await emailService.sendEmail({
+            subject:`${scheduler_id} Job: ${job.id}`,
+            scheduler_id,
+            data:`Failed job with id ${job.id}`
+        })
+
         console.error(err)
     })
 }
@@ -140,17 +162,15 @@ exports.wmsdraftbill = () => {
 
             job.progress(85);
             
-            const draftBill = await generateDraftBill({
+            await generateDraftBill({
                 wms_data:data,
                 transaction_date:date,
                 job_id:job.id
             })
 
-
             job.progress(100);
             done()
 
-            return draftBill
         }
         catch(e){
             done(e)
@@ -167,6 +187,27 @@ exports.wmsdraftbill = () => {
             where: {
                 job_id: job.id
             }
+        })
+
+        const getDraftBills = await models.wms_draft_bill_hdr_tbl.getData({
+            where:{
+                job_id: job.id
+            }
+        })
+
+        const getRevenueLeak = await models.wms_rev_leak_tbl.getData({
+            where:{
+                job_id: job.id
+            }
+        })
+
+        await emailService.sendEmail({
+            subject:`${scheduler_id} Job: ${job.id}`,
+            scheduler_id: scheduler_id,
+            data:`<p>Job with id ${job.id} has been completed</p>
+            <p>Created Draft Bills: <b>${getDraftBills.length}</b></p>
+            <p>WMS Data with Revenue Leak: <b>${getRevenueLeak.length}</b></p>
+            `
         })
 
         console.log(`Job with id ${job.id} has been completed`)
@@ -186,6 +227,13 @@ exports.wmsdraftbill = () => {
                 job_id: job.id
             }
         })
+
+        await emailService.sendEmail({
+            subject:`${scheduler_id} Job: ${job.id}`,
+            scheduler_id,
+            data:`Failed job with id ${job.id}`
+        })
+
         console.error(err)
     })
 

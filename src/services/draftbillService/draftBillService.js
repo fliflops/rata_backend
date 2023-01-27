@@ -36,7 +36,7 @@ const moment = require('moment')
 const {Op} = Sequelize;
 
 const getSum = (details,uom,field) => {
-    return _.sumBy(details.filter(item => item.uom === uom), item => isNaN(Number(item[field])) ? 0 : parseFloat(item[field]))
+    return _.sumBy(details.filter(item => item.uom === uom), item => isNaN(parseFloat(item[field])) ? 0 : parseFloat(item[field]))
 }
 
 const getContracts = async ({rdd,where}) => {
@@ -441,11 +441,11 @@ const draftBillIC = async({invoices}) => {
                     return parseFloat(item.actual_qty)
                 })
 
-                const planned_weight    = _.sumBy(details, item => isNaN(Number(item.planned_weight)) ? 0 : parseFloat(item.planned_weight))
-                const planned_cbm       = _.sumBy(details, item => isNaN(Number(item.planned_cbm)) ? 0 : parseFloat(item.planned_cbm))
-                const actual_weight     = _.sumBy(details, item => isNaN(Number(item.actual_weight)) ? 0 : parseFloat(item.actual_weight))
-                const actual_cbm        = _.sumBy(details, item => isNaN(Number(item.actual_cbm)) ? 0 : parseFloat(item.actual_cbm))
-                const return_qty        = _.sumBy(details, item => isNaN(Number(item.return_qty)) ? 0 : parseFloat(item.return_qty))
+                const planned_weight    = _.sumBy(details, item => isNaN(parseFloat(item.planned_weight)) ? 0 : parseFloat(item.planned_weight))
+                const planned_cbm       = _.sumBy(details, item => isNaN(parseFloat(item.planned_cbm)) ? 0 : parseFloat(item.planned_cbm))
+                const actual_weight     = _.sumBy(details, item => isNaN(parseFloat(item.actual_weight)) ? 0 : parseFloat(item.actual_weight))
+                const actual_cbm        = _.sumBy(details, item => isNaN(parseFloat(item.actual_cbm)) ? 0 : parseFloat(item.actual_cbm))
+                const return_qty        = _.sumBy(details, item => isNaN(parseFloat(item.return_qty)) ? 0 : parseFloat(item.return_qty))
 
                 draft_bill_details.push({
                     draft_bill_no:      '',
@@ -515,7 +515,7 @@ const draftBillIC = async({invoices}) => {
                 total_charges = _.sum(rates)
             }
 
-            let total_weight  = _.sumBy(draft_bill_details, item => parseFloat(item.actual_weight));
+            let total_weight  = _.sumBy(draft_bill_details, item =>  parseFloat(item.actual_weight));
             let total_cbm     = _.sumBy(draft_bill_details, item => parseFloat(item.actual_cbm));
             let total_qty     = _.sumBy(draft_bill_details, item => parseFloat(item.actual_qty));
 
@@ -598,11 +598,11 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                 const details = item.details;
                 const planned_qty       = getSum(details,item.tariff.min_billable_unit,'planned_qty') 
                 const actual_qty        = getSum(details,item.tariff.min_billable_unit,'actual_qty')     
-                const planned_weight    = _.sumBy(details,item => Number(item.planned_weight) || 0)
-                const planned_cbm       = _.sumBy(details,item => Number(item.planned_cbm) || 0)
-                const actual_weight     = _.sumBy(details,item => Number(item.actual_weight) || 0)
-                const actual_cbm        = _.sumBy(details,item => Number(item.actual_cbm) || 0)
-                const return_qty        = _.sumBy(details,item => Number(item.return_qty) || 0)
+                const planned_weight    = _.sumBy(details,item => isNaN(parseFloat(item.planned_weight)) ?  0 : parseFloat(item.planned_weight))
+                const planned_cbm       = _.sumBy(details,item => isNaN(parseFloat(item.planned_cbm))   ? 0 : parseFloat(item.planned_cbm))
+                const actual_weight     = _.sumBy(details,item => isNaN(parseFloat(item.actual_weight)) ? 0 : parseFloat(item.actual_weight))
+                const actual_cbm        = _.sumBy(details,item => isNaN(parseFloat(item.actual_cbm))    ? 0 : parseFloat(item.actual_cbm))
+                const return_qty        = _.sumBy(details,item => isNaN(parseFloat(item.return_qty))    ? 0 : parseFloat(item.return_qty))
 
                 draft_bill_details.push({
                     draft_bill_no:      '',
@@ -813,11 +813,11 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
             const planned_qty       = getSum(details,invoice.tariff.min_billable_unit,'planned_qty') 
             const actual_qty        = getSum(details,invoice.tariff.min_billable_unit,'actual_qty')     
          
-            const planned_weight    = _.sumBy(details, item => isNaN(item.planned_weight) ? 0 : parseFloat(item.planned_weight))
-            const planned_cbm       = _.sumBy(details, item => isNaN(item.planned_cbm) ? 0 : parseFloat(item.planned_cbm))
-            const actual_weight     = _.sumBy(details, item => isNaN(item.actual_weight) ? 0 : parseFloat(item.actual_weight))
-            const actual_cbm        = _.sumBy(details, item => isNaN(item.actual_cbm) ? 0 : parseFloat(item.actual_cbm))
-            const return_qty        = _.sumBy(details, item => isNaN(item.return_qty) ? 0 : parseFloat(item.return_qty))
+            const planned_weight    = _.sumBy(details, item => isNaN(parseFloat(item.planned_weight)) ? 0 : parseFloat(item.planned_weight))
+            const planned_cbm       = _.sumBy(details, item => isNaN(parseFloat(item.planned_cbm)) ? 0 : parseFloat(item.planned_cbm))
+            const actual_weight     = _.sumBy(details, item => isNaN(parseFloat(item.actual_weight)) ? 0 : parseFloat(item.actual_weight))
+            const actual_cbm        = _.sumBy(details, item => isNaN(parseFloat(item.actual_cbm)) ? 0 : parseFloat(item.actual_cbm))
+            const return_qty        = _.sumBy(details, item => isNaN(parseFloat(item.return_qty)) ? 0 : parseFloat(item.return_qty))
 
             
             let aggCondition = {
@@ -988,12 +988,17 @@ const assignDraftBillNo = async({rdd,draft_bill}) => {
     }
 }
 
-const createDraftBill = async({draft_bill, revenue_leak,invoices, contract_type}) => {
+const createDraftBill = async({draft_bill, revenue_leak,invoices, contract_type,job_id}) => {
     try{
         return await sequelize.transaction (async t => {
             let revenue_leak_details = [];
             await models.draft_bill_hdr_tbl.bulkCreateData({
-                data:draft_bill,
+                data:draft_bill.map(item => {
+                    return {
+                        ...item,
+                        job_id
+                    }
+                }),
                 options:{
                     transaction: t,
                     include:[
@@ -1034,7 +1039,8 @@ const createDraftBill = async({draft_bill, revenue_leak,invoices, contract_type}
                         draft_bill_type: contract_type,
                         is_draft_bill: 0,
                         rdd: item.rdd,
-                        revenue_leak_reason: item.revenue_leak_reason
+                        revenue_leak_reason: item.revenue_leak_reason,
+                        job_id
                     }
                 }),
                 options:{
@@ -1056,8 +1062,6 @@ const createDraftBill = async({draft_bill, revenue_leak,invoices, contract_type}
                 }
             })
         })
-       
-
     }
     catch(e){
         throw e
@@ -1108,7 +1112,8 @@ const createRevenueLeak = async({draft_bill, revenue_leak, invoices}) => {
 
 const buy = async ({
     invoices,
-    rdd
+    rdd,
+    job_id
 }) => {
     try{
         let data;
@@ -1155,7 +1160,8 @@ const buy = async ({
             draft_bill:draft_bill,
             revenue_leak: revenue_leak,
             invoices,
-            contract_type: 'BUY'
+            contract_type: 'BUY',
+            job_id: job_id || null
         })
 
         return {
@@ -1171,7 +1177,8 @@ const buy = async ({
 
 const sell = async ({
     invoices,
-    rdd
+    rdd,
+    job_id
 }) => {
     try{
         let data;
@@ -1220,7 +1227,8 @@ const sell = async ({
             draft_bill:draft_bill,
             revenue_leak: revenue_leak,
             invoices,
-            contract_type: 'SELL'
+            contract_type: 'SELL',
+            job_id: job_id || null
         })
 
 

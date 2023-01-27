@@ -13,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
         location:{type: DataTypes.STRING(50)},				
         service_type:{type: DataTypes.STRING(50)},			
         transaction_date :{type: DataTypes.DATEONLY},		
-        job_id	:{type: DataTypes.STRING(50)},				
+        job_id	:{type: DataTypes.STRING},				
         contract_id	:{type: DataTypes.STRING(50)},			
         uom		:{type: DataTypes.STRING(50)},				
         tariff_id:{type: DataTypes.STRING(50)},				

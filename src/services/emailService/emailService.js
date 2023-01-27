@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const {email,password} =require('../../../config').nodeMailer;
+const models = require('../../models/rata');
 
 const transporter = nodemailer.createTransport({
     service:'Gmail',
@@ -9,13 +10,28 @@ const transporter = nodemailer.createTransport({
     }
 })
 
+//Sends email on completed and failed jobs
 exports.sendEmail = async({
-    job_id,
-    status
+    subject,
+    scheduler_id,
+    data
 }) => {
-
     try{
 
+        const emails = await models.scheduler_email_tbl.getData({
+            where:{
+                scheduler_id,
+                status: 'ACTIVE'
+            }
+        })
+
+        if(emails.length > 0) {
+            await transporter.sendMail({
+                to: emails.map(item => item.email),
+                subject,
+                html: data
+            })
+        }
     }
     catch(e){
         throw e
