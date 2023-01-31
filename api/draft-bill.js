@@ -470,7 +470,6 @@ router.route('/wms/draft-bill/:draft_bill_no')
     }
 })
 
-
 router.route('/wms/revenue-leak')
 .get(async(req,res)=>{
     try{
