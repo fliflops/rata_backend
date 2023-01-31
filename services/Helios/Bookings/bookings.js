@@ -56,7 +56,6 @@ exports.getBookingRequest = async ({
         return {
             header: header.map(item => {
                 const invoice = String(item.invoice_no).split('|')
-            
                 return {
                     ...item,
                     is_billable: item.reason_code === null ? true : item.is_billable,
@@ -66,20 +65,6 @@ exports.getBookingRequest = async ({
             }),
             details
         }
-
-        // return header.map(item => {
-        //     const bookingDetails = details
-        //     .filter(dtl => dtl.br_no === item.tms_reference_no)
-        //     const invoice = String(item.invoice_no).split('|')
-            
-        //     return {
-        //         ...item,
-        //         is_billable: item.reason_code === null ? true : item.is_billable,
-        //         invoice_no: invoice[0],
-        //         redel_remarks: typeof invoice[1] === 'undefined' ? null : invoice[1],
-        //         helios_invoices_hdr_tbls:bookingDetails
-        //     }
-        // })
         
     }
     catch(e){

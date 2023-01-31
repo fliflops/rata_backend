@@ -1,13 +1,13 @@
-const { Model, Sequelize, DataTypes} = require('sequelize');
+const { Model, Sequelize, DataTypes } = require('sequelize');
 
 class wms_rev_leak_tbl extends Model {
     static init(sequelize) {
         return super.init({
-            wms_reference_no:{
+            wms_reference_no: {
                 type: DataTypes.STRING(50),
-                allowNull:false,
+                allowNull: false,
                 primaryKey: true,
-            },		
+            },
             fk_wms_reference_no: { type: DataTypes.STRING(50) },
             fk_soh_reference_no: { type: DataTypes.STRING(50) },
             principal_code: { type: DataTypes.STRING(50) },
@@ -26,54 +26,54 @@ class wms_rev_leak_tbl extends Model {
             updatedAt: Sequelize.DATE,
 
         },
-        {
-            sequelize,
-            tableName:'wms_rev_leak_tbl',
-            freezeTableName: true
-        }) 
+            {
+                sequelize,
+                tableName: 'wms_rev_leak_tbl',
+                freezeTableName: true
+            })
     }
 
-    static async getData({where,options}) {
+    static async getData({ where, options }) {
         return await this.findAll({
             ...options,
-            where:{
+            where: {
                 ...where
             }
         })
-        .then(result => JSON.parse(JSON.stringify(result)))
+            .then(result => JSON.parse(JSON.stringify(result)))
     }
 
-    static async paginated ({
+    static async paginated({
         filters,
         options,
         order,
         page,
-        totalPage}) {
-        const {search,...newFilters} = filters
+        totalPage }) {
+        const { search, ...newFilters } = filters
 
         return await this.findAndCountAll({
-            where:{
+            where: {
                 ...newFilters
             },
             ...options,
-            distinct:true,
+            distinct: true,
             offset: parseInt(page) * parseInt(totalPage),
-            limit:parseInt(totalPage),
+            limit: parseInt(totalPage),
             order
         })
-        .then(result => JSON.parse(JSON.stringify(result)))
+            .then(result => JSON.parse(JSON.stringify(result)))
     }
 
-    static async updateData ({data,options,where}) {
+    static async updateData({ data, options, where }) {
         return await this.update({
             ...data
         },
-        {
-            where: {
-                ...where
-            },
-            ...options
-        })
+            {
+                where: {
+                    ...where
+                },
+                ...options
+            })
     }
 
 }

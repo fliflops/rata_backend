@@ -26,6 +26,9 @@ exports.tmsautosync = () => {
                 rdd: date
             })
 
+            
+
+
             await sequelize.transaction( async t => {
                 await models.helios_invoices_hdr_tbl.bulkCreateData({
                     data:invoice.header.map(item => {
@@ -51,7 +54,7 @@ exports.tmsautosync = () => {
                 })
             })
 
-            job.progress('completed',invoice)
+            job.progress('completed')
             done()
 
         }

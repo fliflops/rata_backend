@@ -938,14 +938,11 @@ const assignDraftBillNo = async({rdd,draft_bill}) => {
     try{
         let count = await models.draft_bill_hdr_tbl.getData({
             where: {
-                [Op.and] :  [
-                    Sequelize.where(Sequelize.fn('date',Sequelize.col('createdAt')),'=',moment().format('YYYY-MM-DD'))
-                ]
+                draft_bill_date: moment().format('YYYY-MM-DD')
+                // [Op.and] :  [
+                //     Sequelize.where(Sequelize.fn('date',Sequelize.col('createdAt')),'=',moment().format('YYYY-MM-DD'))
+                // ]
             }
-            // where:{
-
-            //     createdAt:moment().format("YYYY-MM-DD")
-            // }
         })
         .then(result => parseInt(result.length))
 

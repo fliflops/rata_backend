@@ -77,6 +77,7 @@ const getBookingRequest = async ({
             left join reason_codes_tbl d on c.reasonCode = d.code    
             where cast(c.date_cleared as date) between :from and :to
             and c.rudStatus = 'CLEARED'
+            and b.tripStatus <> 'SHORT_CLOSED'
         `,{
             type:Sequelize.QueryTypes.SELECT,
             replacements:{
@@ -114,7 +115,8 @@ const getBookingRequestDetails = async({
             from trip_br_dtl_tbl ax    
             left join trip_plan_hdr_tbl bx on ax.tripPlan = bx.tripPlanNo and ax.isDeleted = 0    
             left join booking_request_hdr_tbl cx on ax.brNo = cx.bookingRequestNo and ax.isDeleted = 0    
-            where cx.rudStatus = 'CLEARED'    
+            where cx.rudStatus = 'CLEARED'  
+            and bx.tripStatus <> 'SHORT_CLOSED'  
             and cast(cx.date_cleared as date) between :from and :to
         ) a    
             
