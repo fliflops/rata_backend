@@ -85,7 +85,7 @@ exports.asciiConfirmationReceipt = async(data) => {
                 LOCATION_CODE:      header.ascii_loc_code,
                 UM_CODE:            details[0].vehicle_type,
                 QUANTITY:           1,
-                UNIT_PRICE:         _.round(header.rate,2),
+                UNIT_PRICE:         _.round(header.total_charges,2),
                 EXTENDED_AMT:       _.round(header.total_charges,2)
             }]
 
