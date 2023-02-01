@@ -39,7 +39,7 @@ exports.tmsautosync = () => {
                     }),
                     options:{
                         transaction:t,
-                        updateOnDuplicate: ['updatedAt','vehicle_type','vehicle_id','trip_no'],
+                        updateOnDuplicate: ['updatedAt','vehicle_type','vehicle_id','trucker_id','trip_no'],
                         logging:false
                     }
                 })
