@@ -32,6 +32,16 @@ class vendor_group_dtl_tbl extends Model {
             tableName:'vendor_group_dtl_tbl'
         })
     }
+
+    static async getData ({options,where}) {
+        return await this.findAll({
+            where:{
+                ...where
+            },
+            ...options
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
 }
 
 module.exports = vendor_group_dtl_tbl;

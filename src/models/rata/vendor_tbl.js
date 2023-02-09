@@ -92,6 +92,17 @@ class vendor_tbl extends Model {
         })
     }
 
+    static async getData ({where,options}) {
+        return await this.findAll({
+            where:{
+                ...where
+            },
+            ...options
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+
+    }
+
 }
 
 module.exports = vendor_tbl;

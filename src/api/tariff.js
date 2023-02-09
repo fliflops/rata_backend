@@ -9,7 +9,7 @@ router.route('/tariff-id/:tariff_id')
 .put(authorize, tariffController.updateTariff)
 
 router.route('/tariff-ic')
-.get(   authorize,tariffController.getTariffIC)
+.get( authorize,tariffController.getTariffIC)
 // .post(  authorize,validate(post_tariff_ic),tariffController.postTariffIC)
 // .put(   authorize,validate(put_tariff_ic),tariffController.putTariffIC)
 

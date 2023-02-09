@@ -1,37 +1,36 @@
-const {Model, DataTypes, Sequelize} = require('sequelize')
+const {Sequelize,Model,DataTypes} = require('sequelize');
 
-class location_tbl extends Model {
+class geo_barangay_tbl extends Model {
     static init(sequelize) {
         return super.init({
-            loc_code:{
+            country_code:{
+                type: DataTypes.STRING(50)
+            },
+            region_code:{
+                type:DataTypes.STRING(50)
+            },
+            province_code:{
+                type:DataTypes.STRING(50)
+            },
+            city_code:{
+                type: DataTypes.STRING(50)
+            },
+            barangay_code:{
                 primaryKey:true,
                 type: DataTypes.STRING(50)
             },
-            loc_name:{
-                type: DataTypes.STRING(255)
+            barangay_name:{
+                type:DataTypes.STRING(50)
             },
-            loc_description:{
-                type: DataTypes.STRING(255)
-            },
-            ascii_loc_code:{
-                type: DataTypes.STRING(255)
-            },
-            loc_status:{
-                type: DataTypes.STRING(255)
-            },
-            createdAt:Sequelize.DATE,
-            updatedAt:Sequelize.DATE,
-            created_by:{
-                type: DataTypes.STRING(255)
-            },
-            updated_by:{
-                type: DataTypes.STRING(255)
+            is_active:{
+                type:DataTypes.BOOLEAN
             }
         },
         {
             sequelize,
+            tableName:'geo_barangay_tbl',
             freezeTableName: true,
-            tableName: 'location_tbl'
+            timestamps: false
         })
     }
 
@@ -55,15 +54,15 @@ class location_tbl extends Model {
         .then(result => JSON.parse(JSON.stringify(result)))
     }
 
-    static async getData({options,where}) {
+    static async getData ({where,options}) {
         return await this.findAll({
             where:{
                 ...where
             },
             ...options
-        })
-        .then(result => JSON.parse(JSON.stringify(result)))
+        })   
+        .then(result => JSON.parse(JSON.stringify(result)))   
     }
 }
 
-module.exports = location_tbl;
+module.exports = geo_barangay_tbl

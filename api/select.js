@@ -1,6 +1,26 @@
 const router = require('express').Router();
 const {principal,shipPoint,quickCode,location,tariff,geography,aggregation,vendor,roles} = require('../services')
+const models = require('../src/models/rata')
 
+router.get('/transport-contract',async(req,res,next) => {
+    try{
+        const data = await models.contract_hdr_tbl.getContracts({})
+
+        const selectData = data.map(item=> {
+            return {
+                label: item.contract_id,
+                value: item.contract_id
+            }
+        })
+
+        res.status(200).json({
+            data:selectData
+        })
+    }
+    catch(e){
+        next(e)
+    }
+})
 
 router.get('/principal',async(req,res) => {
     try{

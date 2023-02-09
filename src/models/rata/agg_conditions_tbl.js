@@ -26,6 +26,22 @@ class agg_conditions_tbl extends Model {
         })
     }
 
+    static async bulkCreateData({data,options}) {
+        this.bulkCreate(data,{
+            ...options
+        })
+    }
+
+    static async getData({options,where}) {
+        return await this.findAll({
+            where:{
+                ...where
+            },
+            ...options
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
+
     static associate(models) {
         this.agg = this.belongsTo(models.agg_tbl,{
             foreignKey:'agg_id'

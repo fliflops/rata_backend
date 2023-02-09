@@ -41,7 +41,36 @@ class ship_point_tbl extends Model {
         })
     }
 
+    static async paginated ({
+        filters,
+        options,
+        order,
+        page,
+        totalPage}) {
+        const {search,...newFilters} = filters
+
+        return await this.findAndCountAll({
+            where:{
+                ...newFilters
+            },
+            ...options,
+            offset: parseInt(page) * parseInt(totalPage),
+            limit:parseInt(totalPage),
+            order
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
+
     
+    static async getData({options,where}) {
+        return await this.findAll({
+            where:{
+                ...where
+            },
+            ...options
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
 }
 
 module.exports = ship_point_tbl;

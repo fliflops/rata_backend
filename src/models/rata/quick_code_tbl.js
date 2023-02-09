@@ -1,55 +1,58 @@
-const { Model, Sequelize, DataTypes} = require('sequelize');
+const {Sequelize,Model,DataTypes} = require('sequelize')
 
-class principal_tbl extends Model {
+class quick_code_tbl extends Model {
     static init (sequelize) {
         return super.init({
-            principal_code:{
+            qc_type:{
                 primaryKey: true,
                 type: DataTypes.STRING(50)
             },
-            principal_name:{
+            qc_code:{
                 allowNull:false,
+                primaryKey: true,
                 type: DataTypes.STRING(50)
             },
-            description:{
+            qc_name:{
                 type: DataTypes.STRING(255)
             },
-            address:{
+            sequence_no:{
                 type: DataTypes.STRING(255)
             },
             is_active:{
-                type: DataTypes.INTEGER
-            },
-            ascii_principal_code:{
-                type: DataTypes.STRING
-            },
-            ascii_customer_code:{
-                type: DataTypes.STRING
+                type: DataTypes.STRING(255)
             },
             created_date:{
                 allowNull:false,
                 type: Sequelize.DATE
+                
+            },
+            created_by:{
+                allowNull:false,
+                type: DataTypes.STRING(255)
             },
             modified_date:{
                 allowNull:false,
                 type: Sequelize.DATE
+            },
+            modified_by:{
+                allowNull:false,
+                type: DataTypes.STRING(255)
             }
         },
         {
             sequelize,
-            freezeTableName:true,
-            timestamps : false,
-            tableName:'principal_tbl'
+            tableName:'quick_code_tbl',
+            freezeTableName: true,
+            timestamps: false
         })
     }
 
-    static async paginated({
+    static async paginated ({
         filters,
         options,
         order,
         page,
-        totalPage
-    }) {
+        totalPage}) {
         const {search,...newFilters} = filters
 
         return await this.findAndCountAll({
@@ -64,7 +67,7 @@ class principal_tbl extends Model {
         .then(result => JSON.parse(JSON.stringify(result)))
     }
 
-    static async getData ({options,where}) {
+    static async getData({options,where}) {
         return await this.findAll({
             where:{
                 ...where
@@ -74,6 +77,6 @@ class principal_tbl extends Model {
         .then(result => JSON.parse(JSON.stringify(result)))
     }
 
-}
+} 
 
-module.exports = principal_tbl
+module.exports = quick_code_tbl

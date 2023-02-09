@@ -64,3 +64,378 @@ exports.updateVendor = async(req,res,next) => {
         next(e)
     }
 }
+
+exports.getGeo = async(req,res,next) => {
+    try{
+        const {
+            page,
+            totalPage,
+            search,
+            ...filters
+        } = req.query;
+
+        const where = {};
+
+        const globalFilter = useGlobalFilter.defaultFilter({
+            model:models.geo_barangay_tbl.rawAttributes,
+            filters:{
+                search
+            }
+        })  
+
+        const {count,rows} = await models.geo_barangay_tbl.paginated({
+            filters:{
+                ...globalFilter
+            },
+            order:[['region_code','DESC']],
+            page,
+            totalPage,
+        })
+
+        res.status(200).json({
+            data:rows,
+            rows:count,
+            pageCount: Math.ceil(count/totalPage)
+        })
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.getShipPoint = async(req,res,next) => {
+    try{
+        const {
+            page,
+            totalPage,
+            search,
+            ...filters
+        } = req.query;
+
+        const where = {};
+
+        const globalFilter = useGlobalFilter.defaultFilter({
+            model:models.ship_point_tbl.rawAttributes,
+            filters:{
+                search
+            }
+        })
+       
+        const {count,rows} = await models.ship_point_tbl.paginated({
+            filters:{
+                ...globalFilter
+            },
+            order:[['createdAt','DESC']],
+            page,
+            totalPage,
+        })  
+
+        res.status(200).json({
+            data:rows,
+            rows:count,
+            pageCount: Math.ceil(count/totalPage)
+        })
+
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.getLocation = async(req,res,next) => {
+    try{
+        const {
+            page,
+            totalPage,
+            search,
+            ...filters
+        } = req.query;
+
+        const where = {};
+
+        const globalFilter = useGlobalFilter.defaultFilter({
+            model:models.location_tbl.rawAttributes,
+            filters:{
+                search
+            }
+        })
+       
+        const {count,rows} = await models.location_tbl.paginated({
+            filters:{
+                ...globalFilter
+            },
+            order:[['createdAt','DESC']],
+            page,
+            totalPage,
+        })  
+
+        res.status(200).json({
+            data:rows,
+            rows:count,
+            pageCount: Math.ceil(count/totalPage)
+        })
+
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.getQuickCode = async(req,res,next) => {
+    try{
+        const {
+            page,
+            totalPage,
+            search,
+            ...filters
+        } = req.query;
+
+        const where = {};
+
+        const globalFilter = useGlobalFilter.defaultFilter({
+            model:models.quick_code_tbl.rawAttributes,
+            filters:{
+                search
+            }
+        })
+       
+        const {count,rows} = await models.quick_code_tbl.paginated({
+            filters:{
+                ...globalFilter
+            },
+            order:[['qc_type','ASC'],['sequence_no','ASC']],
+            page,
+            totalPage,
+        })  
+
+        res.status(200).json({
+            data:rows,
+            rows:count,
+            pageCount: Math.ceil(count/totalPage)
+        })
+
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.getPrincipal = async(req,res,next) => {
+    try{
+        const {
+            page,
+            totalPage,
+            search,
+            ...filters
+        } = req.query;
+
+        const where = {};
+
+        const globalFilter = useGlobalFilter.defaultFilter({
+            model:models.principal_tbl.rawAttributes,
+            filters:{
+                search
+            }
+        })
+       
+        const {count,rows} = await models.principal_tbl.paginated({
+            filters:{
+                ...globalFilter
+            },
+            order:[['principal_code','DESC']],
+            page,
+            totalPage,
+        })  
+
+        res.status(200).json({
+            data:rows,
+            rows:count,
+            pageCount: Math.ceil(count/totalPage)
+        })
+
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.getAlgorithm = async(req,res,next) => {
+    try{
+        const {
+            page,
+            totalPage,
+            search,
+            ...filters
+        } = req.query;
+
+        const where = {};
+
+        const globalFilter = useGlobalFilter.defaultFilter({
+            model:models.agg_tbl.rawAttributes,
+            filters:{
+                search
+            }
+        })
+       
+        const {count,rows} = await models.agg_tbl.paginated({
+            options:{
+                include:[
+                    {
+                        model: models.agg_conditions_tbl,
+                        required: false
+                    }
+                ]
+            },
+            filters:{
+                ...globalFilter
+            },
+            order:[['createdAt','DESC']],
+            page,
+            totalPage
+        })  
+
+        res.status(200).json({
+            data:rows,
+            rows:count,
+            pageCount: Math.ceil(count/totalPage)
+        })
+
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.getAlgorithmDetails = async(req,res,next) => {
+    try{
+        const {id} = req.params;
+
+        const data = await models.agg_tbl.getOneData({
+            where:{
+                id: id
+            },
+            options: {
+                include: [
+                    {
+                        model: models.agg_conditions_tbl,
+                        required: false
+                    }
+                ]
+            }
+        })
+    
+        if(!data) {
+            return res.status(404).json({
+                message: 'Algorithm not found'
+            })
+        }
+
+        const {agg_conditions_tbls,...algo} = data
+
+        res.status(200).json({
+            ...algo,
+            details:agg_conditions_tbls
+        })
+    }
+    catch(e){
+        next(e)
+    }
+ 
+}
+
+exports.createAlgorithm = async(req,res,next) => {
+    try{
+        const {
+            data
+        } =req.body;
+
+        const getAgg = await models.agg_tbl.getOneData({
+            where:{
+                id: data.agg_name
+            }
+        })
+
+        if(getAgg){
+            return res.status(400).json({
+                message: 'Algorithm already exists!'
+            })
+        }
+        
+        await models.agg_tbl.createData({
+            data:{
+                ...data,
+                id: data.agg_name,
+                created_by: req.processor.id
+            }
+        })
+
+        res.status(200).end()
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.updateAlgorithm = async(req,res,next) => {
+    try{
+        const {data} =req.body;
+        const {id} = req.params;
+
+        const algo = models.agg_tbl.getOneData({
+            where: {
+                id
+            }
+        })
+
+        if(!algo) {
+            return res.status(400).json({
+                message:'Algorithm does not exists!'
+            })
+        }
+
+        if(algo.status === 'ACTIVE')
+        return res.status(400).json({
+            message:'Algorithm is already active!'
+        })
+
+        await models.agg_tbl.updateData({
+            where:{
+                id
+            },
+            data:{
+                ...data
+            }
+        })
+
+        res.status(200).end()
+
+   }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.createAlgorithmDetails = async(req,res,next) => {
+    try{
+
+        const {data} = req.body
+        
+        await models.agg_conditions_tbl.bulkCreateData({
+            data:data.map((item,index)=> {
+                const {is_editable,...algo} = item;
+                return {
+                    ...algo,
+                    line_no: index + 1
+                }
+            }),
+            options:{
+                ignoreDuplicates:true
+            }
+        })
+
+        res.status(200).end()
+    }
+    catch(e){
+        next(e)
+    }
+}

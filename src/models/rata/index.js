@@ -7,8 +7,6 @@ const role_modules_tbl              = require('./role_module');
 const helios_invoices_hdr_tbl       = require('./helios_invoices_hdr_tbl');
 const helios_invoices_dtl_tbl       = require('./helios_invoices_dtl_tbl');
 
-
-
 const contract_hdr_tbl              = require('./contract_hdr_tbl');
 const contract_tariff_dtl           = require('./contract_tariff_dtl');
 const tariff_sell_hdr_tbl           = require('./tariff_sell_hdr_tbl');
@@ -51,10 +49,11 @@ const models = {
     principal_tbl:                  require('./principal_tbl').init(sequelize),
     service_type_tbl:               require('./service_type_tbl').init(sequelize),
     location_tbl:                   require('./location_tbl').init(sequelize),
+    quick_code_tbl:                 require('./quick_code_tbl').init(sequelize),
 
     helios_invoices_hdr_tbl:        helios_invoices_hdr_tbl.init(sequelize),
     helios_invoices_dtl_tbl:        helios_invoices_dtl_tbl.init(sequelize),
-    
+
     contract_hdr_tbl:               contract_hdr_tbl.init(sequelize),
     contract_tariff_dtl:            contract_tariff_dtl.init(sequelize),
     
@@ -84,7 +83,13 @@ const models = {
 
     wms_draft_bill_hdr_tbl:         wms_draft_bill_hdr_tbl.init(sequelize),      
     wms_draft_bill_dtl_tbl:         wms_draft_bill_dtl_tbl.init(sequelize),
-    wms_rev_leak_tbl:               require('./wms_rev_leak_tbl').init(sequelize)
+    wms_rev_leak_tbl:               require('./wms_rev_leak_tbl').init(sequelize),
+
+    geo_barangay_tbl:               require('./geo_barangay_tbl').init(sequelize),
+    geo_city_tbl:                   require('./geo_city_tbl').init(sequelize),
+    geo_province_tbl:               require('./geo_province_tbl').init(sequelize),
+    geo_region_tbl:                 require('./geo_region_tbl').init(sequelize),
+    geo_country_tbl:                require('./geo_country_tbl').init(sequelize)
 }
 
 //associations

@@ -48,7 +48,25 @@ class agg_tbl extends Model {
         })
     }
 
-    static async getData ({where,options}) {
+    static async createData ({data,options}) {
+        return await this.create(data,{
+            ...options
+        })
+    }
+
+    static async updateData ({where,data,options}) {
+        return await this.update({
+            ...data
+        },
+        {
+            where:{
+                ...where
+            },
+            ...options
+        })
+    }
+
+    static async getData({where,options}) {
         return await this.findAll({
             ...options,
             where:{
@@ -58,6 +76,36 @@ class agg_tbl extends Model {
         .then(result => JSON.parse(JSON.stringify(result)))
     }
 
+    static async getOneData({where,options}) {
+        return await this.findOne({
+            ...options,
+            where:{
+                ...where
+            }
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
+
+    static async paginated({
+        filters,
+        options,
+        order,
+        page,
+        totalPage
+    }) {
+        const {search,...newFilters} = filters
+
+        return await this.findAndCountAll({
+            where:{
+                ...newFilters
+            },
+            ...options,
+            offset: parseInt(page) * parseInt(totalPage),
+            limit:parseInt(totalPage),
+            order
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
 
     static associate(models) {  
         this.conditions = this.hasMany(models.agg_conditions_tbl,{

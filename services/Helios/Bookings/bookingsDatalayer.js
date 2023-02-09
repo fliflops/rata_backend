@@ -78,6 +78,7 @@ const getBookingRequest = async ({
             where cast(c.date_cleared as date) between :from and :to
             and c.rudStatus = 'CLEARED'
             and b.tripStatus <> 'SHORT_CLOSED'
+            and a.isDeleted <> 1
         `,{
             type:Sequelize.QueryTypes.SELECT,
             replacements:{
