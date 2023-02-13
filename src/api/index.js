@@ -1,6 +1,6 @@
 const router = require('express').Router();
 
-router.use('/auth',             require('./auth'))
+router.use('/authentication',   require('./authentication'))
 router.use('/draft-bill',       require('./draftbill'))
 router.use('/invoice',          require('./invoices'))
 router.use('/tariff',           require('./tariff'))
@@ -11,6 +11,6 @@ router.use('/data-management',  require('./data-management'))
 router.use('/data-upload',      require('./data-upload'))
 router.use('/data-export',      require('./data-export'))
 router.use('/ascii',            require('./ascii'))
-
+router.use('/administration',   require('./administration'))
 
 module.exports = router;

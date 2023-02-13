@@ -30,5 +30,5 @@ exports.defaultFilter = ({
             }
         })
 
-        return formattedFilters
+    return formattedFilters
 }

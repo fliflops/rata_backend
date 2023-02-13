@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const {sessionAuthentication} = require('../loaders/middleware');
+const {authorize} = require('../src/middleware/auth')
 
 
 router.get('/', (req,res) => {
@@ -7,16 +8,16 @@ router.get('/', (req,res) => {
 })
 
 router.use('/auth',             sessionAuthentication,  require('./authentication'));
-router.use('/users',            sessionAuthentication,  require('./users'));
-router.use('/data-management',  sessionAuthentication,  require('./data-management'));
-router.use('/select',           sessionAuthentication,  require('./select'));
-router.use('/helios',           sessionAuthentication,  require('./helios'));
-router.use('/contract-tariff',  sessionAuthentication,  require('./contract-tariff'));
-router.use('/draft-bill',       sessionAuthentication,  require('./draft-bill'));
-router.use('/data-upload',      sessionAuthentication,  require('./data-upload'));
-router.use('/data-download',    sessionAuthentication,  require('./data-download'));
-router.use('/roles',            sessionAuthentication,  require('./roles'));
-router.use('/scheduler',        sessionAuthentication,  require('./scheduler'));
+router.use('/users',            authorize,  require('./users'));
+router.use('/data-management',  authorize,  require('./data-management'));
+router.use('/select',           authorize,  require('./select'));
+router.use('/helios',           authorize,  require('./helios'));
+router.use('/contract-tariff',  authorize,  require('./contract-tariff'));
+router.use('/draft-bill',       authorize,  require('./draft-bill'));
+router.use('/data-upload',      authorize,  require('./data-upload'));
+router.use('/data-download',    authorize,  require('./data-download'));
+router.use('/roles',            authorize,  require('./roles'));
+router.use('/scheduler',        authorize,  require('./scheduler'));
 router.use('/test',             require('./test'));
 
 module.exports = router

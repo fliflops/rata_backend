@@ -1,14 +1,15 @@
 const router = require('express').Router();
 const controller = require('../controllers/revenueLeakController');
+const {authorize} = require('../middleware/auth');
 
 router.route('/')
-.get(controller.getRevenueLeaks)
+.get(authorize,controller.getRevenueLeaks)
 
 router.route('/transport/sell')
-.post(controller.transportReplanSell)
+.post(authorize,controller.transportReplanSell)
 
 router.route('/transport/buy')
-.post(controller.transportReplanBuy)
+.post(authorize,controller.transportReplanBuy)
 
 
 module.exports = router;

@@ -64,7 +64,7 @@ class principal_tbl extends Model {
         .then(result => JSON.parse(JSON.stringify(result)))
     }
 
-    static async getData ({options,where}) {
+    static async getData({options,where}) {
         return await this.findAll({
             where:{
                 ...where

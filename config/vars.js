@@ -11,6 +11,7 @@ module.exports = {
     nodeMailer: {
         email:process.env.NODEMAILER_EMAIL,
         password:process.env.NODEMAILER_PASSWORD
-    }
+    },
+    redisKey: 'rata'
 }
   

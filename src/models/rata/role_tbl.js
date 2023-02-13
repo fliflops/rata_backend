@@ -36,11 +36,67 @@ class role_tbl extends Model {
         })
     }
 
-    static async getAllRoles (where) {
-        return this.findAll({
+    static async getAllRoles ({where}) {
+        return await this.findAll({
             where:{
                 ...where
             }
+        })
+        
+    }
+
+    static async getOneData ({where,options}){
+
+        return await this.findOne({
+            where:{
+                ...where
+            },
+            ...options
+        })
+        .then(result => result ? JSON.parse(JSON.stringify(result)) : result)
+    }
+
+    static async createData({data,options}){
+        return await this.create(data,{
+            ...options
+        })
+    }
+
+    static async updateData({where,data,options}){
+        return await this.update(data,{
+            where:{
+                ...where
+            },
+            ...options
+        })
+    }
+
+    static async paginated ({
+        filters,
+        options,
+        order,
+        page,
+        totalPage}) {
+            
+        const {search,...newFilters} = filters
+
+        return await this.findAndCountAll({
+            where:{
+                ...newFilters
+            },
+            ...options,
+            offset: parseInt(page) * parseInt(totalPage),
+            limit:parseInt(totalPage),
+            order
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
+
+    static associate (models) {
+        this.details = this.hasMany(models.role_access_tbl,{
+            foreignKey:'role_id',
+            sourceKey:'role_id',
+            as: 'access'
         })
     }
 }

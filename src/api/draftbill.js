@@ -1,18 +1,19 @@
 const router = require('express').Router();
 const controller = require('../controllers/draftbillController');
+const {authorize} = require('../middleware/auth');
 
 router.route('/')
-.get(controller.getDraftBill)
+.get(authorize,controller.getDraftBill)
 
 router.route('/sell')
-.post(controller.createDraftBillSell)
+.post(authorize,controller.createDraftBillSell)
 
 router.route('/buy')
-.post(controller.createDraftBillBuy)
+.post(authorize,controller.createDraftBillBuy)
 
 
 router.route('/wms')
-.get(controller.getWMSDraftBill)
+.get(authorize,controller.getWMSDraftBill)
 
 
 module.exports = router;

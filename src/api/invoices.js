@@ -1,7 +1,8 @@
 const router = require('express').Router();
 const controllers = require('../controllers/invoiceController');
+const {authorize} = require('../middleware/auth');
 
 router.route('/')
-.get(controllers.getInvoices)
+.get(authorize,controllers.getInvoices)
 
 module.exports = router;

@@ -63,6 +63,41 @@ class user_tbl extends Model {
             }
         })
     }
+
+    static async getOneData ({where,options}) {
+        return this.findOne({
+            where:{
+                ...where
+            },
+            ...options
+        })
+        .then(result => result ? JSON.parse(JSON.stringify(result)) : null)
+    }
+
+    static async getAllData ({where}) {
+        return this.findAll({
+            where:{
+                ...where
+            }
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
+
+    static associate (models) {
+        this.role = this.hasOne(models.role_tbl,{
+            sourceKey:'user_role_id',
+            foreignKey:'role_id',
+            as:'role'
+        })
+
+        this.role_access = this.hasMany(models.role_access_tbl,{
+            sourceKey:'user_role_id',
+            foreignKey:'role_id',
+            as:'access'
+        })
+    }
+
+
 }
 
 module.exports = user_tbl

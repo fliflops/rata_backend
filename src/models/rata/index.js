@@ -1,7 +1,7 @@
 const Sequelize = require('sequelize');
 const {dbConfig} = require('../../../config');
 const user_tbl                      = require('./user_tbl')
-const role_tbl                      = require('./user_tbl')
+const role_tbl                      = require('./role_tbl')
 const role_modules_tbl              = require('./role_module');
 
 const helios_invoices_hdr_tbl       = require('./helios_invoices_hdr_tbl');
@@ -31,11 +31,11 @@ const tranport_rev_leak_dtl_tbl     = require('./tranport_rev_leak_dtl_tbl');
 const scheduler_setup_tbl           = require('./scheduler_setup_tbl');
 const scheduler_auto_sync_trckr_tbl = require('./scheduler_auto_sync_trckr_tbl');
 
-const wms_data_details_tbl = require('./wms_data_details_tbl');
-const wms_data_header_tbl = require('./wms_data_header_tbl');
+const wms_data_details_tbl          = require('./wms_data_details_tbl');
+const wms_data_header_tbl           = require('./wms_data_header_tbl');
 
-const wms_draft_bill_hdr_tbl = require('./wms_draft_bill_hdr_tbl');
-const wms_draft_bill_dtl_tbl = require('./wms_draft_bill_dtl_tbl');
+const wms_draft_bill_hdr_tbl        = require('./wms_draft_bill_hdr_tbl');
+const wms_draft_bill_dtl_tbl        = require('./wms_draft_bill_dtl_tbl');
 
 const sequelize = new Sequelize({
     ...dbConfig
@@ -44,6 +44,7 @@ const sequelize = new Sequelize({
 const models = {
     user_tbl:                       user_tbl.init(sequelize),
     role_tbl:                       role_tbl.init(sequelize),
+    role_access_tbl:                require('./role_access_tbl').init(sequelize),
     role_modules_tbl:               role_modules_tbl.init(sequelize),
     ship_point_tbl:                 ship_point_tbl.init(sequelize),
     principal_tbl:                  require('./principal_tbl').init(sequelize),

@@ -1,7 +1,8 @@
 const router = require('express').Router();
 const controllers = require('../controllers/asciiControllers');
+const {authorize} = require('../middleware/auth');
 
-router.route('/transport').post(controllers.transportController)
-router.route('/warehouse').post(controllers.warehouseController)
+router.route('/transport').post(authorize,controllers.transportController)
+router.route('/warehouse').post(authorize,controllers.warehouseController)
 
 module.exports = router
