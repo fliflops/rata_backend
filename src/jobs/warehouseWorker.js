@@ -95,8 +95,7 @@ exports.wmsautosync = () => {
             subject:`${scheduler_id} Job: ${job.id}`,
             scheduler_id: scheduler_id,
             data:`<p>Job with id ${job.id} has been completed</p>
-            <p>Fetched new WMS Data from WMS: <b>${getWmsData.length}</b></p>
-            `
+            <p>Fetched new WMS Data from WMS: <b>${getWmsData.length}</b></p>`
         })
 
         console.log(`Job with id ${job.id} has been completed`)
@@ -178,7 +177,6 @@ exports.wmsdraftbill = () => {
     })
 
     //events
-
     RATA_DRAFT_BILL_WMS.on('completed',async (job) => {
         await models.scheduler_auto_sync_trckr_tbl.updateData({
             data:{

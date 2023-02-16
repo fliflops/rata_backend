@@ -74,6 +74,12 @@ class principal_tbl extends Model {
         .then(result => JSON.parse(JSON.stringify(result)))
     }
 
+    static async bulkCreateData ({data,options}){
+        return await this.bulkCreate(data,{
+            ...options
+        })
+    }
+
 }
 
 module.exports = principal_tbl

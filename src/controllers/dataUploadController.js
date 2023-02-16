@@ -1,18 +1,12 @@
 const {tariff,geography,shipPoint,principal,contract,vendor} = require('../../services');
 const locationService = require('../../services/location')
 const dataUploadService = require('../services/dataUploadService')
-
 const models = require('../models/rata');
-
 const path = require('path');
 const mime = require('mime');
 const fs = require('fs');
 const _ =require('lodash');
 const moment = require('moment');
-
-
-
-const {sequelize} = models
 
 exports.uploadWMSContractTariff = async(req,res,next) => {
     try{
@@ -680,6 +674,195 @@ exports.uploadVendor=async(req,res,next)=>{
         })
 
     }   
+    catch(e){
+        next(e)
+    }
+}
+
+exports.uploadPrincipal = async(req,res,next)=>{
+    try{
+
+        const {data}=req.body
+        let principal_validation = [];
+
+        if(typeof data.principal === 'undefined'){
+            return res.status(400).json({
+                message:'Invalid File!'
+            })
+        }
+
+        const allPrincipals = await principal.getAllPrincipal({
+            filters:{
+                is_active:true
+            }
+        })
+
+        for(let i in data.principal){
+            const principalData = data.principal[i];
+            const isExists = allPrincipals.filter(item => item.principal_code === String(principalData.principal_code))
+          
+            if(isExists.length > 0){
+                principal_validation.push({
+                    principal_code:principalData.principal_code,
+                    reason:'Principal already exists!'
+                })
+
+                continue;
+            }
+
+            if(!principalData.principal_code){
+                principal_validation.push({
+                    principal_code:principalData.principal_code,
+                    reason:'Principal code is required'
+                })
+            }
+
+            if(!principalData.principal_name){
+                principal_validation.push({
+                    principal_code:principalData.principal_code,
+                    reason:'Principal name is required'
+                })
+            }
+
+            if(!principalData.ascii_principal_code){
+                principal_validation.push({
+                    principal_code:principalData.principal_code,
+                    reason:'Principal code mapping to ascii is required!'
+                })
+            }
+
+            if(!principalData.ascii_customer_code){
+                principal_validation.push({
+                    principal_code:principalData.principal_code,
+                    reason:'Customer code mapping to ascii is required!'
+                })
+            }
+        }
+
+        await models.principal_tbl.bulkCreateData({
+            data:_.differenceBy(data.principal,principal_validation,'principal_code').map(item => {
+                return {
+                    ...item,
+                    created_by:req.processor.id,
+                    modified_by:req.processor.id
+                }
+            }),
+            options:{
+                ignoreDuplicates:true
+            }
+        })
+
+        res.status(200).json({
+            principal: principal_validation
+        })
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.uploadShipPoint = async(req,res,next)=>{
+    try{
+        const {data} = JSON.parse(JSON.stringify(req.body));
+
+        let shipPoint_validation = [];
+        if(typeof data.ship_point === 'undefined'){
+            return res.status(400).json({
+                message:'Invalid File!'
+            })
+        }
+
+        const allShipPoints = await shipPoint.getAllShipPoint({})
+
+        const getRegion =   await geography.getGeoRegion({
+            filters:{is_active:true}
+        });
+        const getProvince=  await geography.getGeoProvince({
+            filters:{is_active:true}
+        });
+        const getCity=      await geography.getGeoCity({
+            filters:{is_active:true}
+        });
+
+        for(const i in data.ship_point){
+            const ship_point = data.ship_point[i]
+            // console.log(ship_point)
+            const isExists        = allShipPoints.filter(item => item.stc_code === ship_point.stc_code)
+            const isRegionExists  = _.find(getRegion,   {region_code:   String(ship_point.region)})
+            const isProviceExists = _.find(getProvince, {province_code: String(ship_point.province)})
+            const isCityExists    = _.find(getCity,     {city_code:     String(ship_point.city)})
+            
+            if(isExists.length > 0){
+                shipPoint_validation.push({
+                    stc_code:ship_point.stc_code,
+                    reason:'Ship Point already exists!'
+                })
+    
+                continue;
+            }
+
+            if(!ship_point.stc_code){
+                shipPoint_validation.push({
+                    stc_code:ship_point.stc_code,
+                    reason:'Ship Point code is required!'
+                })
+            }
+
+            if(!ship_point.stc_description){
+                shipPoint_validation.push({
+                    stc_code:ship_point.stc_code,
+                    reason:'Description is required!'
+                })
+            }
+
+            if(!ship_point.stc_name){
+                shipPoint_validation.push({
+                    stc_code:ship_point.stc_code,
+                    reason:'Ship Point name is required!'
+                })
+            }
+
+            if(!isRegionExists){
+                shipPoint_validation.push({
+                    stc_code:ship_point.stc_code,
+                    reason:`Region ${ship_point.region} does not exists!`
+                })
+            }
+
+            if(!isProviceExists){
+                shipPoint_validation.push({
+                    stc_code:ship_point.stc_code,
+                    reason:`Province ${ship_point.province} does not exists!`
+                })
+
+            }
+            if(!isCityExists){
+                shipPoint_validation.push({
+                    stc_code:ship_point.stc_code,
+                    reason:`City ${ship_point.city} does not exists!`
+                })
+
+            }
+
+        }
+
+        await shipPoint.bulkCreateShipPoint({
+            data:_.differenceBy(data.ship_point,shipPoint_validation,'stc_code').map(item => {
+                return {
+                    ...item,
+                    created_by:req.processor.id,
+                    updated_by:req.processor.id
+                }
+            })
+        })
+
+        res.status(200).json({
+          ship_point: shipPoint_validation
+        })
+        
+         
+        
+    }
     catch(e){
         next(e)
     }

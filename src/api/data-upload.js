@@ -2,6 +2,12 @@ const router = require('express').Router();
 const controllers = require('../controllers/dataUploadController');
 const {authorize} = require('../middleware/auth');
 
+router.route('/ship-point')
+.post(authorize,controllers.uploadShipPoint)
+
+router.route('/principal')
+.post(authorize,controllers.uploadPrincipal)
+
 router.route('/vendor')
 .post(authorize,controllers.uploadVendor)
 
