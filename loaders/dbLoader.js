@@ -1,7 +1,6 @@
 const models  = require('../models');
 const {podDB,scmdb} = require('../database');
-const redis = require('../config').redis
-const {redisIndex} = require('../helper');
+const {redis,redisIndex} = require('../config')
 const jobs = require('../src/jobs')
 
 module.exports = async() => {
@@ -10,8 +9,10 @@ module.exports = async() => {
         (async()=> {
             redis.on("error", (error) => console.error(`Error : ${error}`));
             await redis.connect(); 
+            await redisIndex.userSessionIndex(redis);
+            // await redisIndex.testIndex(redis);
         })();
- 
+
         //background worker v2
         jobs();
 

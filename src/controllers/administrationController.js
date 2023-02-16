@@ -1,5 +1,6 @@
 const models = require('../models/rata')
 const useGlobalFilter = require('../helpers/filters');
+const bcrypt = require('bcryptjs');
 
 exports.getRoles = async(req,res,next) => {
     try{ 
@@ -10,7 +11,7 @@ exports.getRoles = async(req,res,next) => {
             ...filters
         } = req.query;
 
-    const globalFilter = useGlobalFilter.defaultFilter({
+        const globalFilter = useGlobalFilter.defaultFilter({
             model:models.role_tbl.rawAttributes,
             filters:{
                 search
@@ -91,8 +92,12 @@ exports.postRoleAccess = async(req,res,next) => {
                 updateOnDuplicate: ['view','create','edit','export','updatedBy']
             }
         })
+        
+        req.sessions = {
+            role_id: id
+        }
 
-        res.status(200).end()
+        next();
     }
     catch(e){
         next(e)
@@ -193,3 +198,161 @@ exports.activateRole = async(req,res,next) => {
     }
 }
 
+exports.getUsers = async(req,res,next)=>{
+    try{
+        const {
+            page,
+            totalPage,
+            search,
+            ...filters
+        } = req.query;
+
+        const globalFilter = useGlobalFilter.defaultFilter({
+            model:models.user_tbl.rawAttributes,
+            filters:{
+                search
+            }
+        })
+
+        const {count,rows} = await models.user_tbl.paginated({
+            filters:{
+                ...globalFilter,
+                ...filters
+            },
+            order: [['createdAt','DESC']],
+            page,
+            totalPage,
+            options:{
+                include:[
+                    {
+                        model: models.role_tbl,
+                        required: false,
+                        as:'role'
+                    }
+                ]
+            }
+        })
+        .then(({rows,count}) => {
+            const data = rows.map(item => {
+                const {role,...users} = item;
+                return {    
+                    ...users,
+                    role_name: role?.role_name,
+                    role_id: role?.role_id
+                }
+            })
+            
+            return {
+                count,
+                rows: data
+            }
+        })
+        
+        res.status(200).json({
+            data:rows,
+            rows:count,
+            pageCount: Math.ceil(count/totalPage)
+        })
+
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.createUser = async(req,res,next) =>{
+    try{
+        const {
+            data
+        } = req.body;
+
+        const getUser = await models.user_tbl.getOneData({
+            where:{
+                email: data.email
+            }
+        })
+
+        if(getUser) return res.status(400).json({message:'User exists!'})
+
+        await models.user_tbl.createData({
+            data: {
+                ...data,
+                status:'ACTIVE',
+                password: bcrypt.hashSync('secret',10),
+                created_by: req.processor.id
+            }
+        })
+
+        res.status(200).end();
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.updateUser = async(req,res,next) => {
+    try{
+
+        const {type,id} = req.params;
+        const {data} = req.body;
+
+        switch(type) {
+            case 'status' : {
+                await models.user_tbl.updateData({
+                    data:{
+                        status: data.status,
+                        updated_by: req.processor.id
+                    },
+                    where:{
+                        id
+                    }
+                })
+
+                req.sessions = {
+                    id: id
+                }
+
+                return next()
+            }
+            case 'role' : {
+                await models.user_tbl.updateData({
+                    data:{
+                        user_role_id: data.role_id
+                    },
+                    where:{
+                        id
+                    }
+                })
+
+                req.sessions = {
+                    id: id
+                }
+
+                return next()
+            }
+            case 'password': {
+                await models.user_tbl.updateData({
+                    data:{
+                        password:bcrypt.hashSync('secret',10),
+                        updated_by: req.processor.id
+                    },
+                    where:{
+                        id
+                    }
+                })
+
+                req.sessions = {
+                    id: id
+                }
+                
+                return next()
+            }
+            default: return res.status(400).json({
+                message: 'Invalid Type'
+            })     
+        }
+    }
+    catch(e){
+        next(e)
+    }
+}

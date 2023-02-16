@@ -14,21 +14,52 @@ exports.authorize = async(req,res,next) => {
     try{
         const token = req.headers['x-access-token'];
         if(!token){
-            throw new Error('Invalid Token')
+            return next(new APIError(err))
         }
         
-        jwt.verify(token,jwtSecret,(error,result) => {
+        jwt.verify(token,jwtSecret,async (error,result) => {
             if(error){
                 //delete the redis session
-                redis.del(`rata:session:${token}`)
-                throw Error('Invalid Token')            
+                await redis.del(`rata:session:${token}`)
+                return next(new APIError(err))            
+            }
+
+            const session = await redis.json.get(`rata:session:${token}`)
+
+            if(!session){
+                await redis.del(`rata:session:${token}`)
+                return next(new APIError(err))
             }
             
-            req.processor=result
+            req.processor = {
+                id: session.id                
+            }
+
             return next()
         })
     }
     catch(e){
         return next(new APIError(err))
+    }
+}
+
+exports.revokeAccess = async(req,res,next) => {
+    try{
+        const sessions = req.sessions;
+        let filters = '';
+        Object.keys(sessions).map(key => {
+            filters = `@${key}:{${sessions[key].replace(/[-.@\\]/g, '\\$&')}}`
+        })
+        const redisSessions = await redis.ft.search('idx:ratasession',filters)
+        
+        //delete sessions
+        redisSessions.documents.map(async docs => {
+            await redis.del(docs.id)
+        })
+
+        res.status(200).end()
+    }
+    catch(e) {
+        next(e)
     }
 }

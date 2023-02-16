@@ -5,8 +5,6 @@ const wmsDraftBill = require('../services/wms-draftbill');
 const transportDraftBill = require('../src/services/draftbillService')
 const models = require('../src/models/rata');
 
-
-
 const {sequelize,Sequelize} = models;
 
 const moment = require('moment');
@@ -20,6 +18,47 @@ const dataMaster = require('../services/dataMaster');
 
 const _ = require('lodash')
 
+const {redis} = require('../config')
+
+
+
+router.post('/redis', async(req,res,next)=>{
+    // await Promise.all([
+    //     redis.json.set('noderedis:users:1', '$', {
+    //       name: 'Alice',
+    //       age: 32,
+    //       coins: 100,
+    //       email: 'alice@nonexist.com'
+    //     }),
+    //     redis.json.set('noderedis:users:2', '$', {
+    //       name: 'Bob',
+    //       age: 23,
+    //       coins: 15,
+    //       email: 'bob@somewhere.gov'
+    //     })
+    //   ]);
+
+    await redis.json.set('noderedis:users:3', '$', {
+        name:'Vincent',
+        age:25,
+        coins:500,
+        email: 'vincent.lindayag@kerrylogistikus.com'
+    })
+
+    res.status(200).end()
+})
+
+router.get('/redis', async(req,res,next)=>{
+   
+    const emailAddress = 'admin@cdi.com'.replace(/[.@\\]/g, '\\$&');
+    console.log(emailAddress)
+    const result = 
+    await redis.ft.search('idx:ratasession', `@email:{${emailAddress}}`) 
+    //await redis.ft.search('idx:users', `@email:{${emailAddress}`)
+    // await redis.ft.search('idx:ratasession', `@email:{${emailAddress}})`)
+    
+    res.status(200).json(result)
+})
 
 
 router.get('/ascii', async(req,res,next) => {

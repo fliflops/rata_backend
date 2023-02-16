@@ -64,6 +64,27 @@ class user_tbl extends Model {
         })
     }
 
+    static async paginated({
+        filters,
+        options,
+        order,
+        page,
+        totalPage
+    }) {
+        const {search,...newFilters} = filters
+
+        return await this.findAndCountAll({
+            where:{
+                ...newFilters
+            },
+            ...options,
+            offset: parseInt(page) * parseInt(totalPage),
+            limit:parseInt(totalPage),
+            order
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
+    }
+
     static async getOneData ({where,options}) {
         return this.findOne({
             where:{
@@ -83,6 +104,24 @@ class user_tbl extends Model {
         .then(result => JSON.parse(JSON.stringify(result)))
     }
 
+    static async createData ({
+        data,
+        options
+    }) {
+        return await this.create(data,{
+            ...options
+        })
+    }
+
+    static async updateData ({data,where,options}) {
+        return await this.update(data,{
+            where:{
+                ...where
+            },
+            ...options            
+        })
+    }
+
     static associate (models) {
         this.role = this.hasOne(models.role_tbl,{
             sourceKey:'user_role_id',
@@ -95,6 +134,7 @@ class user_tbl extends Model {
             foreignKey:'role_id',
             as:'access'
         })
+
     }
 
 

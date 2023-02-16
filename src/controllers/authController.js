@@ -53,6 +53,7 @@ exports.login = async (req,res,next) => {
                 first_name: user.first_name,
                 last_name: user.last_name,
                 role_name: role?.role_name,
+                role_id: role?.role_id,
                 access
             }
         })
@@ -62,12 +63,18 @@ exports.login = async (req,res,next) => {
         if(!bcrypt.compareSync(password,getUser.password)) return res.status(400).json(errorMessage)
         
         //generate Token
-        const token = jwt.sign({email}, jwtSecret,{
+        const token = jwt.sign({email,role:getUser.role_name}, jwtSecret,{
             expiresIn:'24h'
         })
         
         //insert into redis
-        await redis.json.set(`rata:session:${token}`,'.', getUser)
+        await redis.json.set(`rata:session:${token}`, '$', {
+            id: getUser.id,
+            email:getUser.email,
+            role_id:getUser.role_id,
+            role_name: getUser.role_name,
+            access: getUser.access
+        })
 
         res.status(200).json({
             token
@@ -77,8 +84,6 @@ exports.login = async (req,res,next) => {
     catch(e){
         next(e)
     }
-
-
 }
 
 exports.logout = async(req,res,next) => {
@@ -114,6 +119,37 @@ exports.authAccess=async(req,res,next) => {
     }
 }
 
-exports.authMiddleWare = async() => {
+exports.updateUser = async(req,res,next)=>{
+    try{
+        const token = req.headers['x-access-token']
+        const {data} = req.body;
+        const session = jwt.decode(token)
 
+        const getUser = await models.user_tbl.getOneData({
+            where:{
+                email: session.email
+            }
+        })
+        
+        if(!bcrypt.compareSync(data.oldPassword,getUser.password)) return res.status(400).json({
+            message:'Old Password not match'
+        })
+        
+
+        await models.user_tbl.updateData({
+            where:{
+                email: session.email
+            },
+            data:{
+                password: bcrypt.hashSync(data.password,10),
+                updated_by: req.processor.id    
+            }
+        })
+
+        res.status(200).end()
+    }
+    catch(e){
+        next(e)
+    }
 }
+
