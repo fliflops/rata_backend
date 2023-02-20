@@ -144,35 +144,35 @@ const getGr = async({date,options}) => {
 const getSoh = async({date,options}) => {
     try{
         return await sequelize.query(`
-        Select 	
-        gx.wms_div_loc_code 'location',
-        ax.sbl_bin			'bin_location',
-        ax.sbl_zone			'bin_zone',
-        ax.sbl_item_code	'sku_code',
-        fx.wms_itm_short_desc 'sku_description',
-        fx.wms_itm_itemgroup  'class_of_store',
-        ax.sbl_su_serial_no	'pallet_id',
-        ax.sbl_supp_bat_no	'batch_no',
-        (ax.sbl_quantity * bx.wms_ex_itm_quantity) * cx.wms_ex_itm_quantity 'qty',
-        --(ax.sbl_quantity * bx.wms_ex_itm_quantity) / ex.wms_ex_itm_quantity 'case_qty',
-        cx.wms_ex_itm_storage_unit 'uom',
-        ((fx.wms_itm_length * fx.wms_itm_breadth * fx.wms_itm_height) / 1000000 ) * ((ax.sbl_quantity * bx.wms_ex_itm_quantity) / ex.wms_ex_itm_quantity) 'cbm',
-        hx.lm_expiry_date 'expiry_date',
-        ax.sbl_stock_status 'in_process_status'
-        from 
-        wms_stockbal_su_lot ax (nolock)
-        left join wms_ex_itm_su_conversion_dtl bx (nolock)	on  ax.sbl_item_code			= bx.wms_ex_itm_code 
-                                                    and bx.wms_ex_itm_loc_code		= ax.sbl_wh_code
-                                                    and bx.wms_ex_itm_storage_unit	= CASE WHEN ax.sbl_su = 'PALLET-A' THEN 'PALLET' ELSE ax.sbl_su END
-        left join wms_ex_itm_su_conversion_dtl cx (nolock)	on  ax.sbl_item_code			= cx.wms_ex_itm_code 
-                                                    and cx.wms_ex_itm_loc_code		= ax.sbl_wh_code
-                                                    and cx.wms_ex_itm_storage_unit	= 'PCS'
-        left join wms_ex_itm_su_conversion_dtl ex (NOLOCK) on ex.wms_ex_itm_code	= bx.wms_ex_itm_code
-                                                    AND ex.wms_ex_itm_loc_code		= ax.sbl_wh_code
-                                                    AND ex.wms_ex_itm_storage_unit	= 'CASE'
-        left join wms_item_hdr				  fx (nolock) on ax.sbl_item_code = fx.wms_itm_code
-        left join wms_div_location_list_dtl	  gx (NOLOCK) on ax.sbl_wh_code = gx.wms_div_loc_code
-        left join wms_lnm_lm_lotmaster		  hx (nolock) on ax.sbl_lot_no = hx.lm_lot_no    
+            Select 	
+            gx.wms_div_loc_code 'location',
+            ax.sbl_bin			'bin_location',
+            ax.sbl_zone			'bin_zone',
+            ax.sbl_item_code	'sku_code',
+            fx.wms_itm_short_desc 'sku_description',
+            fx.wms_itm_itemgroup  'class_of_store',
+            ax.sbl_su_serial_no	'pallet_id',
+            ax.sbl_supp_bat_no	'batch_no',
+            (ax.sbl_quantity * bx.wms_ex_itm_quantity) * cx.wms_ex_itm_quantity 'qty',
+            --(ax.sbl_quantity * bx.wms_ex_itm_quantity) / ex.wms_ex_itm_quantity 'case_qty',
+            cx.wms_ex_itm_storage_unit 'uom',
+            ((fx.wms_itm_length * fx.wms_itm_breadth * fx.wms_itm_height) / 1000000 ) * ((ax.sbl_quantity * bx.wms_ex_itm_quantity) / ex.wms_ex_itm_quantity) 'cbm',
+            hx.lm_expiry_date 'expiry_date',
+            ax.sbl_stock_status 'in_process_status'
+            from 
+            wms_stockbal_su_lot ax (nolock)
+            left join wms_ex_itm_su_conversion_dtl bx (nolock)	on  ax.sbl_item_code			= bx.wms_ex_itm_code 
+                                                        and bx.wms_ex_itm_loc_code		= ax.sbl_wh_code
+                                                        and bx.wms_ex_itm_storage_unit	= CASE WHEN ax.sbl_su = 'PALLET-A' THEN 'PALLET' ELSE ax.sbl_su END
+            left join wms_ex_itm_su_conversion_dtl cx (nolock)	on  ax.sbl_item_code			= cx.wms_ex_itm_code 
+                                                        and cx.wms_ex_itm_loc_code		= ax.sbl_wh_code
+                                                        and cx.wms_ex_itm_storage_unit	= 'PCS'
+            left join wms_ex_itm_su_conversion_dtl ex (NOLOCK) on ex.wms_ex_itm_code	= bx.wms_ex_itm_code
+                                                        AND ex.wms_ex_itm_loc_code		= ax.sbl_wh_code
+                                                        AND ex.wms_ex_itm_storage_unit	= 'CASE'
+            left join wms_item_hdr				  fx (nolock) on ax.sbl_item_code = fx.wms_itm_code
+            left join wms_div_location_list_dtl	  gx (NOLOCK) on ax.sbl_wh_code = gx.wms_div_loc_code
+            left join wms_lnm_lm_lotmaster		  hx (nolock) on ax.sbl_lot_no = hx.lm_lot_no    
     `,{
         replacements: { date },
         type: QueryTypes.SELECT,

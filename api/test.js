@@ -1,5 +1,6 @@
 const router         = require('express').Router();
 const wmsService    = require('../services/wms')
+const {wmsRevenueLeakService,wmsRevenueLeak}            =require('../services/wms-revenueLeak')
 
 const models = require('../src/models/rata')
 const {sequelize} = models;
@@ -45,6 +46,37 @@ router.get('/wms',async(req,res,next) => {
 
     res.status(200).end()
 
+})
+
+router.post('/revenue-leak/wms', async(req,res,next)=> {
+    try{
+        const {date} = req.query;
+
+        const revenueLeaks = await wmsRevenueLeakService.getAllRevenueLeak({
+            filters:{
+                transaction_date: date,
+                is_draft_bill:0
+            }
+        }) 
+
+        const data = await wmsRevenueLeak({
+            rev_leak_data:revenueLeaks,
+            transaction_date: date
+        })
+
+        res.status(200).json({
+            data : {
+                revenue_leaks:revenueLeaks,
+                wms_data: data.wms_reference_no,
+                wms_revenue_leak: data.revenue_leak
+            }  
+        })
+
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({message:`${e}`})
+    }
 })
 
 module.exports = router;

@@ -383,7 +383,6 @@ router.post('/ascii/buy',async(req,res)=>{
     }
 })
 
-
 router.route('/wms')
 .get(async(req,res)=> {
     try{
@@ -542,9 +541,5 @@ router.route('/wms/revenue-leak/:reference_no')
         res.status(500).json({message:`${e}`})
     }
 })
-
-
-
-
 
 module.exports = router;

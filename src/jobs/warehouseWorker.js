@@ -25,6 +25,7 @@ exports.wmsautosync = () => {
                 date:date,
                 jobId:job.id
             })
+            
             await sequelize.transaction(async t => {
                 try{
                     await models.wms_data_header_tbl.bulkCreateData({
