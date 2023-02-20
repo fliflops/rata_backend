@@ -12,10 +12,7 @@ exports.wmsautosync = () => {
 
     WMS_DATA_SYNC.process(async(job,done) => {
         try{
-            const date = job.data.isRepeatable ? moment().format('YYYY-MM-DD') : job.data.date
-
-            job.progress(1);
-            
+            const date = job.data.isRepeatable ? moment().format('YYYY-MM-DD') : job.data.date            
             await models.scheduler_auto_sync_trckr_tbl.createData({
                 data:{
                     job_id:             job.id,
@@ -24,14 +21,10 @@ exports.wmsautosync = () => {
                     job_status:         'INPROGRESS'
                 }
             })
-
             const {header,details} = await getWMSData({
                 date:date,
                 jobId:job.id
             })
-
-            job.progress(25)
-                
             await sequelize.transaction(async t => {
                 try{
                     await models.wms_data_header_tbl.bulkCreateData({
@@ -48,8 +41,6 @@ exports.wmsautosync = () => {
                         }
                     })
     
-                    job.progress(50)
-    
                     await models.wms_data_details_tbl.bulkCreateData({
                         data:details,
                         options:{
@@ -63,12 +54,9 @@ exports.wmsautosync = () => {
                 catch(e){
                     throw e
                 }
-                
             })
 
             done();
-
-            return header
         }
         catch(e){
             done(e)

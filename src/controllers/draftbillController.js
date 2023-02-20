@@ -138,6 +138,7 @@ exports.getDraftBill = async(req,res,next) => {
                 include:[
                     {
                         model:models.draft_bill_details_tbl,
+                        required: false,
                         as:'details'
                     }
                 ]
