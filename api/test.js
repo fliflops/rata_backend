@@ -44,7 +44,10 @@ router.get('/wms',async(req,res,next) => {
         }
     })
 
-    res.status(200).end()
+    res.status(200).json({
+        header,
+        details
+    })
 
 })
 
