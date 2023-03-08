@@ -22,31 +22,28 @@ exports.createInvoiceTransaction = async({
 }) => {
     try{
         
-        let inv_details = details;
+        let newDetails = [];
 
-        for(const i in inv_details){
-            const invoice = details[i]
-
-            const fk_invoice_id = _.find(invoices,item => {
-                return item.trip_no === invoice.trip_no && item.br_no === invoice.br_no
-            }).id
-
-            if(fk_invoice_id){
-                inv_details[i]={
-                    ...invoice,
-                    fk_invoice_id
+        invoices.map(header =>{
+            const dtl = details.filter(item => item.trip_no === header.trip_no && item.br_no === header.br_no)
+            .map(item => {
+                return {
+                    ...item,
+                    fk_invoice_id: header.id
                 }
-            }
-        }
+            })
+
+            newDetails = newDetails.concat(dtl)
+        })
 
         await dataLayer.createInvoiceTransaction({
             invoices:invoices,
-            details:inv_details
+            details:newDetails
         })
 
         return {
             invoices,
-            inv_details
+            newDetails
         }  
     }
     catch(e){
