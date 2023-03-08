@@ -4,7 +4,6 @@ const useGlobalFilter = require('../helpers/filters');
 const {sequelize} = models;
 exports.getTariffIC = async (req,res,next) => {
     try{
-
         const {
             page,
             totalPage,
@@ -72,15 +71,6 @@ exports.postTariffIC = async(req,res,next) => {
                 message:'Tariff is already approved!'
             })
         }
-
-        console.log(data)
-
-        // await models.tariff_ic_algo_tbl.createData({
-        //     data:{
-        //         ...data,
-        //         created_by: req.processor.id
-        //     }
-        // })
 
         res.status(200).json({
             message:'Success!'
