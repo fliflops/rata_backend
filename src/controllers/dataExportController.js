@@ -136,10 +136,11 @@ exports.exportRevenueLeak = async(req,res,next) => {
             const {helios_invoices_hdr_tbl,tranport_rev_leak_dtl_tbls,...header} = item;
             
             headers.push({
-                ...helios_invoices_hdr_tbl,
+                draft_bill_type: header.draft_bill_type,
                 class_of_store: header.class_of_store,
                 revenue_leak_reason: header.revenue_leak_reason,
-                is_draft_bill: header.is_draft_bill === 1 ? 'true' : 'false'
+                is_draft_bill: header.is_draft_bill === 1 ? 'true' : 'false',
+                ...helios_invoices_hdr_tbl,
             })
 
             details = details.concat(tranport_rev_leak_dtl_tbls)
@@ -153,10 +154,8 @@ exports.exportRevenueLeak = async(req,res,next) => {
 
         res.set('Content-disposition',`transport_revenue_leak.xlsx`);
         res.set('Content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');    
-
         res.send(xlsx)
 
-        
     }
     catch(e){
         next(e)
