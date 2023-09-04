@@ -141,7 +141,8 @@ exports.getDraftBill = async(req,res,next) => {
                         required: false,
                         as:'details'
                     }
-                ]
+                ],
+                distinct: true
             }
         })
 

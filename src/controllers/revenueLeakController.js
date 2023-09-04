@@ -50,13 +50,13 @@ exports.getRevenueLeaks = async(req,res,next) => {
                 include: [
                     {
                         model:models.helios_invoices_hdr_tbl,
-                        required:true
                     },
-                    {
-                        model:models.tranport_rev_leak_dtl_tbl,
-                        required:true
-                     }
-                ]
+                    // {
+                    //     model:models.tranport_rev_leak_dtl_tbl,
+                    //     required:false
+                    // }
+                ],
+                //distinct:true
             }
         })
         .then(result => {
@@ -66,7 +66,7 @@ exports.getRevenueLeaks = async(req,res,next) => {
                 return {
                     ...header,
                     ...helios_invoices_hdr_tbl,
-                    details:tranport_rev_leak_dtl_tbls
+                    //details:tranport_rev_leak_dtl_tbls
                 }
             })
 
@@ -83,6 +83,25 @@ exports.getRevenueLeaks = async(req,res,next) => {
             pageCount:Math.ceil(count/totalPage)  
         })
         
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.getRevenueLeaksDetails = async(req,res,next) => {
+    try{
+        const {br_no} = req.params;
+
+        if(!br_no) throw 'Booking Number is required';
+
+        const data = await models.tranport_rev_leak_dtl_tbl.findAll({
+            where:{
+                br_no
+            }
+        })
+
+        res.status(200).json(JSON.parse(JSON.stringify(data)))
     }
     catch(e){
         next(e)

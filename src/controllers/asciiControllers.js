@@ -14,9 +14,18 @@ const api = axios.create({
 
 const login = async() => {
     try{
+
         const username = process.env.ASCII_USER_NAME
         const password = process.env.ASCII_PASSWORD
         const apiKey = process.env.ASCII_API_KEY
+
+        console.log({
+            username,
+            password,
+            apiKey,
+            url:process.env.ASCII_API
+
+        })
 
         const token = await api.post('/login',{
             username,
@@ -148,8 +157,8 @@ exports.transportController = async(req,res,next) => {
         let data;
         let result;
         const token = await login();
-
-      
+        
+        console.log(token)
 
         const draftBill = await models.draft_bill_hdr_tbl.getData({
             options:{
