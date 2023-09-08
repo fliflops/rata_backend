@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const models = require('../../models/rata');
+
 exports.tariffICUpload = async (data) => {
     try{
         let ic_data = [];
@@ -154,4 +155,15 @@ exports.tariffICUpload = async (data) => {
     catch(e){
         throw e
     }
+}
+
+exports.getContractUniqueRateValidity = async ({contracts=[]}) => {
+    return await models.contract_tariff_dtl.findAll({
+        attributes:['contract_id','valid_from','valid_to'],
+        distinct: true,
+        where:{
+            contract_id: contracts,
+            status:'ACTIVE'
+        }
+    })
 }

@@ -164,9 +164,10 @@ exports.exportRevenueLeak = async(req,res,next) => {
 
 exports.exportContract = async(req,res,next) => {
     try{
-        const {contract_id} = req.query;
+        const {contract_id, from, to} = req.query;
         const contracts = [];
         let tariffs = [];
+
         const getContracts = await models.contract_hdr_tbl.getContracts({   
             where:{
                 contract_id
@@ -175,10 +176,19 @@ exports.exportContract = async(req,res,next) => {
                 include: [
                     {
                         model: models.contract_tariff_dtl,
+                        attributes:['contract_id','tariff_id','tariff_rate','fk_agg_id','valid_from','valid_to','status'],
                         where: {
-                            status: 'ACTIVE'  
-                        },
-                        require: false
+                            status: 'ACTIVE',
+                            [Op.and] : {
+                                valid_from: {
+                                    [Op.gte]: from
+                                },
+                                valid_to: {
+                                    [Op.lte]:to
+                                }
+                            }   
+                       },
+                        required: false
                     }
                 ]
             }

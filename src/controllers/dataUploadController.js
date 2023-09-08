@@ -104,6 +104,16 @@ exports.uploadWMSContractTariff = async(req,res,next) => {
                 continue;
             }
 
+            if(tariff.tariff_status === 'DRAFT'){
+                contract_details.push({
+                    contract_id:contract_tariff.contract_id,
+                    tariff_id:contract_tariff.tariff_id,
+                    reason:'Tariff is in DRAFT Status'
+                })
+
+                continue;
+            }
+
             const dbContract = _.find(getContracts,(value)=>{
                 return value.contract_id === contract_tariff.contract_id
             })
@@ -380,7 +390,7 @@ exports.uploadTariff = async (req,res,next) => {
             .map(item => {
                 return {
                     ...item,
-                    tariff_status:'DRAFT',
+                    tariff_status:'APPROVED',
                     tariff_id:String(item.tariff_id).trim(),
                     from_geo:String(item.from_geo).trim(),
                     to_geo:String(item.to_geo).trim(),
@@ -429,13 +439,13 @@ exports.uploadContract=async(req,res,next)=>{
         }
 
         //Contract Header validation
-        const getContracts = await contract.getAllWMSContracts({
+        const getContracts = await contract.getAllContracts({
             filters:{
                 contract_id: contracts.map(item => item.contract_id)
             }
         })
 
-        const getCustomers = await contract.getAllWMSContracts({
+        const getCustomers = await contract.getAllContracts({
             filters:{
                 principal_code: contracts.map(item => item.principal_code)
             }
@@ -488,7 +498,7 @@ exports.uploadContract=async(req,res,next)=>{
                 tariff_id:_.uniq(details.map(item => item.tariff_id))
             }
         })
-        
+
         for(let i in details){
             const contract_tariff = details[i]
 
@@ -509,13 +519,26 @@ exports.uploadContract=async(req,res,next)=>{
                 continue;
             }
 
-            if(!moment(today).isBetween(valid_from,valid_to)){
+            if(tariff.tariff_status === 'DRAFT'){
                 contract_details.push({
                     contract_id:contract_tariff.contract_id,
                     tariff_id:contract_tariff.tariff_id,
-                    reason:'Invalid Tariff Validity'
+                    reason:'Tariff is in DRAFT Status'
                 })
+
+                continue;
             }
+
+            // check validation
+            // if(!moment(today).isBetween(valid_from,valid_to)){
+            //     contract_details.push({
+            //         contract_id:contract_tariff.contract_id,
+            //         tariff_id:contract_tariff.tariff_id,
+            //         reason:'Invalid Tariff Validity'
+            //     })
+            // }
+
+
         }
 
         await contract.bulkCreateContractDetails({

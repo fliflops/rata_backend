@@ -19,20 +19,13 @@ const login = async() => {
         const password = process.env.ASCII_PASSWORD
         const apiKey = process.env.ASCII_API_KEY
 
-        console.log({
-            username,
-            password,
-            apiKey,
-            url:process.env.ASCII_API
-
-        })
-
         const token = await api.post('/login',{
             username,
             password,
             api_key:apiKey
         })
         .then(result => {
+            
             return result.data.access_token
         })
 
@@ -47,10 +40,7 @@ exports.warehouseController = async (req,res,next) => {
     try{
         const {date} = req.query;
         let result;
-        
         const token = await login();
-
-        
         const data = await models.wms_draft_bill_hdr_tbl.getData({
             options:{
                 include:[
@@ -158,8 +148,6 @@ exports.transportController = async(req,res,next) => {
         let result;
         const token = await login();
         
-        console.log(token)
-
         const draftBill = await models.draft_bill_hdr_tbl.getData({
             options:{
                 include:[
@@ -293,6 +281,74 @@ exports.transportController = async(req,res,next) => {
     catch(e){
         next(e)
     }
+}
+
+exports.getSo = async (req,res,next) => {
+    try{
+        const {date,location,type} = req.query;
+
+        const draftBill = await models.draft_bill_hdr_tbl.getData({
+            options:{
+                include:[
+                    {
+                        model: models.location_tbl,
+                        attributes:['ascii_loc_code'],
+                        required:false
+                        
+                    },
+                    {
+                        model:models.vendor_tbl,
+                        attributes:['ascii_vendor_code'],
+                        required:false
+                    },
+                    {
+                        model: models.principal_tbl,
+                        attributes:['ascii_principal_code','ascii_customer_code'],
+                        required: false
+                    },
+                    {
+                        model: models.service_type_tbl,
+                        attributes:['ascii_service_type','ascii_item_code']
+                    },
+                    {
+                        model: models.draft_bill_details_tbl,
+                        as:'details'
+                    }
+                ]
+            },
+            where:{
+                delivery_date: date,
+                location: location,
+                contract_type: type,
+                status:'DRAFT_BILL'
+            }
+        })
+        .then(result => {
+            return result.map(item => {
+                const {location_tbl,vendor_tbl,principal_tbl,service_type_tbl,...newItem} = item
+    
+                return {
+                    ...newItem,
+                    ascii_service_type: service_type_tbl?.ascii_service_type || null,
+                    ascii_item_code:    service_type_tbl?.ascii_item_code || null,
+                    ascii_vendor_code:      typeof  vendor_tbl?.ascii_vendor_code === 'undefined' ? null: vendor_tbl?.ascii_vendor_code,
+                    ascii_loc_code:         typeof location_tbl?.ascii_loc_code === 'undefined' ? null :location_tbl?.ascii_loc_code, 
+                    ascii_principal_code:   typeof principal_tbl?.ascii_principal_code === 'undefined' ? null : principal_tbl?.ascii_principal_code,
+                    ascii_customer_code:    typeof principal_tbl?.ascii_customer_code === 'undefined' ? null : principal_tbl?.ascii_customer_code
+                }
+            })
+    
+        })
+
+        const data = await asciiService.asciiSalesOrder(draftBill);
+
+        res.json(data)
+    }
+    catch(e){
+        next(e)
+    }
+    
+   
 }
 
 

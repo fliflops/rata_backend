@@ -177,3 +177,36 @@ exports.updateTariff = async(req,res,next) => {
     }
 }
 
+exports.bulkUpdateStatus = async(req,res,next) => {
+    try{
+        const {data} = req.body;
+
+        if(!data) throw 'Tariffs are required!';
+
+        const tariffs = await models.tariff_sell_hdr_tbl.findAll({
+            where:{
+                tariff_id: data.map(item => item.tariff_id),
+                tariff_status: 'DRAFT'
+            }
+        })
+
+        if(tariffs.length !== 0)
+        {
+            await models.tariff_sell_hdr_tbl.update({
+            tariff_status: 'APPROVED',
+            updated_by:req.processor.id
+            },
+            {
+                where:{
+                    tariff_id: tariffs.map(item => item.tariff_id)
+                }
+            })
+        }
+
+        res.json(tariffs);
+    }
+    catch(e){
+        next(e)
+    }
+} 
+

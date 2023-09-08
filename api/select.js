@@ -208,6 +208,17 @@ router.get('/tariff',async(req,res)=>{
     }
 })
 
+router.get('/tariff-status', async(req,res) => {
+    const types = ['DRAFT','APPROVED'].map(item => ({
+        label: item,
+        value: item
+    }));
+
+    res.json({
+        data:types
+    })
+})
+
 router.get('/geography',async(req,res) => {
     try{
         const {type} =req.query

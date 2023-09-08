@@ -3,25 +3,27 @@ const xlsx = require('xlsx');
 
 exports.asciiSalesOrder = async (data) => {
     try{
-
         return data.map(header => {
             let SALES_ORDER_DETAIL;
             const details = header.details
             const SO_AMT  =  _.round(header.total_charges,2)
 
             if(header.customer === '10005' && details[0].class_of_store === 'COLD') {
-                SALES_ORDER_DETAIL=[{
-                    COMPANY_CODE:   '00001',
-                    SO_CODE:        header.draft_bill_no,
-                    ITEM_CODE:      header.ascii_item_code,
-                    LINE_NO:        1,
-                    LOCATION_CODE:  header.ascii_loc_code,
-                    UM_CODE:        ['2002','2003'].includes(details[0].service_type) ? details[0].vehicle_type :details[0].min_billable_unit,
-                    QUANTITY:       1,
-                    UNIT_PRICE:     SO_AMT,//parseFloat(item.total_charges).toFixed(2),   
-                    EXTENDED_AMT:   SO_AMT//parseFloat(item.total_charges).toFixed(2)                    
-                }]
-            }
+                SALES_ORDER_DETAIL=[
+                        {
+                            COMPANY_CODE:   '00001',
+                            SO_CODE:        header.draft_bill_no,
+                            ITEM_CODE:      header.ascii_item_code,
+                            LINE_NO:        1,
+                            LOCATION_CODE:  header.ascii_loc_code,
+                            UM_CODE:        ['2002','2003','2004','2008'].includes(details[0].service_type) ? 'lot' //details[0].vehicle_type
+                                : details[0].min_billable_unit,
+                            QUANTITY:       1,
+                            UNIT_PRICE:     SO_AMT,   
+                            EXTENDED_AMT:   SO_AMT                    
+                        }
+                    ]
+                }
             else{
 
                 SALES_ORDER_DETAIL=[{
@@ -30,8 +32,8 @@ exports.asciiSalesOrder = async (data) => {
                     ITEM_CODE:      header.ascii_item_code,
                     LINE_NO:        1,
                     LOCATION_CODE:  header.ascii_loc_code,
-                    UM_CODE:        ['2002','2003'].includes(details[0].service_type)? details[0].vehicle_type : details[0].min_billable_unit,
-                    QUANTITY:       ['2002','2003'].includes(details[0].service_type) ? 1 :     
+                    UM_CODE:        ['2002','2003','2004','2008'].includes(details[0].service_type) ? details[0].vehicle_type : details[0].min_billable_unit,
+                    QUANTITY:       ['2002','2003','2004','2008'].includes(details[0].service_type) ? 1 :     
                     _.round(_.sumBy(details,(i)=>{
                         if(String(details[0].min_billable_unit).toLowerCase() === 'cbm'){
                             return parseFloat(i.actual_cbm)
@@ -90,18 +92,18 @@ exports.asciiConfirmationReceipt = async(data) => {
             }]
 
             return {
-                COMPANY_CODE:   '00001',
-                CR_CODE:        header.draft_bill_no,
-                REF_CODE:       details[0].trip_plan,
-                CR_DATE:        header.draft_bill_date,
-                DATE_CONFIRMED: header.draft_bill_date,
-                ITEM_TYPE:      'S',
-                SUPPLIER_CODE:  header.ascii_vendor_code,
-                DEPARTMENT_CODE:header.ascii_service_type,
-                PARTICULAR:     details.map(i => i.invoice_no).join(','),
-                REF_SI_NO:      'n/a',
-                REF_CROSS:      header.contract_id,
-                CR_AMT:         _.round(header.total_charges,2),
+                COMPANY_CODE:       '00001',
+                CR_CODE:            header.draft_bill_no,
+                REF_CODE:           details[0].trip_plan,
+                CR_DATE:            header.draft_bill_date,
+                DATE_CONFIRMED:     header.draft_bill_date,
+                ITEM_TYPE:          'S',
+                SUPPLIER_CODE:      header.ascii_vendor_code,
+                DEPARTMENT_CODE:    header.ascii_service_type,
+                PARTICULAR:         details.map(i => i.invoice_no).join(','),
+                REF_SI_NO:          'n/a',
+                REF_CROSS:          header.contract_id,
+                CR_AMT:             _.round(header.total_charges,2),
                 CONFIRMATION_RECEIPT_DETAIL
             }
         })

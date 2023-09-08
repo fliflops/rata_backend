@@ -50,11 +50,7 @@ exports.getRevenueLeaks = async(req,res,next) => {
                 include: [
                     {
                         model:models.helios_invoices_hdr_tbl,
-                    },
-                    // {
-                    //     model:models.tranport_rev_leak_dtl_tbl,
-                    //     required:false
-                    // }
+                    }
                 ],
                 //distinct:true
             }
@@ -66,7 +62,6 @@ exports.getRevenueLeaks = async(req,res,next) => {
                 return {
                     ...header,
                     ...helios_invoices_hdr_tbl,
-                    //details:tranport_rev_leak_dtl_tbls
                 }
             })
 

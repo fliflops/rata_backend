@@ -59,6 +59,10 @@ const getContracts = async ({rdd,where}) => {
                         include:[
                             {
                                model: models.tariff_sell_hdr_tbl,
+                            //    required:true,
+                            //    where:{
+                            //         tariff_status: 'APPROVED'
+                            //    }
                             },
                             {
                                 model:models.agg_tbl,
@@ -78,6 +82,7 @@ const getContracts = async ({rdd,where}) => {
                         ],
                         required:false,
                         where:{
+
                             status:'ACTIVE',
                             valid_from: {
                                 [Op.lte]: rdd
