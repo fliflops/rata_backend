@@ -32,7 +32,7 @@ exports.asciiSalesOrder = async (data) => {
                     ITEM_CODE:      header.ascii_item_code,
                     LINE_NO:        1,
                     LOCATION_CODE:  header.ascii_loc_code,
-                    UM_CODE:        ['2002','2003','2004','2008'].includes(details[0].service_type) ? details[0].vehicle_type : details[0].min_billable_unit,
+                    UM_CODE:        ['2002','2003','2004','2008'].includes(details[0].service_type) ? 'lot' : details[0].min_billable_unit,
                     QUANTITY:       ['2002','2003','2004','2008'].includes(details[0].service_type) ? 1 :     
                     _.round(_.sumBy(details,(i)=>{
                         if(String(details[0].min_billable_unit).toLowerCase() === 'cbm'){
