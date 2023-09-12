@@ -95,7 +95,7 @@ class transport_rev_leak_hdr_tbl extends Model {
     static associate(models) {
         this.helios_info = this.hasOne(models.helios_invoices_hdr_tbl,{
             foreignKey:'tms_reference_no',
-            sourceKey:'tms_reference_no'
+            sourceKey:'fk_tms_reference_no'
         })
 
         this.details = this.hasMany(models.tranport_rev_leak_dtl_tbl,{

@@ -149,7 +149,7 @@ const getRevenueLeakNoFormula = ({invoices,draft_bill_details}) => {
     //let revenue_leak = [];
     const revenue_leak_reason = 'NO FORMULA OR CONDITION MATCHED'
     
-    return invoices.filter(item =>  draft_bill_details.map(dtl => dtl.fk_tms_reference_no).includes(item.fk_tms_reference_no))
+    return invoices.filter(item =>  draft_bill_details.map(dtl => dtl.tms_reference_no).includes(item.tms_reference_no))
     .map(item => {
         const {ship_point_from,ship_point_to,group_id,tariff,...header} = item;
         return {
@@ -163,7 +163,7 @@ const getRevenueLeakNoFormula = ({invoices,draft_bill_details}) => {
 const getInvalidTotalCharges = ({invoices,draft_bill_details, total_charges}) => {
     const revenue_leak_reason = 'INVALID TOTAL CHARGES RESULT: '+total_charges;
 
-    return invoices.filter(item =>  draft_bill_details.map(dtl => dtl.fk_tms_reference_no).includes(item.fk_tms_reference_no))
+    return invoices.filter(item =>  draft_bill_details.map(dtl => dtl.tms_reference_no).includes(item.tms_reference_no))
     .map(item => {
         const {ship_point_from,ship_point_to,group_id,tariff,...header} = item;
         return {
@@ -251,7 +251,6 @@ const assignContract = async({invoices,contracts}) =>{
         const revenue_leak_reason = 'NO CONTRACT'
         contracts.map(contract => {
             const filtered_data = invoices.filter(item => {
-               // console.log(contract.contract_type)
                 if(contract.contract_type === 'SELL'){
                     return item.principal_code === contract.principal_code
                 }
@@ -722,6 +721,7 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                     const formula = cnd.raw_formula.split(',').join('')
                     const fnFormula = new Function(['tariff','invoice'],'return '+formula)
                     total_charges = parseFloat(fnFormula(tariff,invoice)).toFixed(2)
+                   
                     aggCondition = {
                         ...aggCondition,
                         condition:condition,
@@ -768,13 +768,13 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                     }
                 })
             }
-
             //revenue_leaks
             if(!aggCondition.formula) {
                 revenue_leak = revenue_leak.concat(getRevenueLeakNoFormula({
                     invoices:invoices,
                     draft_bill_details: header.draft_bill_details
                 }))
+
             }
             else if(!total_charges || Number(total_charges) <= 0 || isNaN(parseFloat(total_charges)))  {
                 revenue_leak = revenue_leak.concat(getInvalidTotalCharges({
@@ -1360,7 +1360,7 @@ const replanSell = async({invoices,rdd}) => {
                 is_draft_bill: 1
             }
         })
-
+        
         await createRevenueLeak({
             draft_bill,
             revenue_leak,
