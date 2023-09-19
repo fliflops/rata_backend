@@ -140,12 +140,12 @@ exports.transportReplanBuy = async(req,res,next) => {
                 const {vendor_group_dtl_tbl,vendor_tbl,...invoice} = helios_invoices_hdr_tbl; 
                 return {
                     ...invoice,
-                    vg_code: vendor_group_dtl_tbl?.vg_code || null,
-                    is_ic: vendor_tbl?.is_ic || 0,
-                    tms_reference_no: headers.tms_reference_no,
+                    vg_code:             vendor_group_dtl_tbl?.vg_code || null,
+                    is_ic:               vendor_tbl?.is_ic || 0,
+                    tms_reference_no:    headers.tms_reference_no,
                     fk_tms_reference_no: headers.fk_tms_reference_no,
-                    class_of_store: headers.class_of_store,
-                    draft_bill_type: headers.draft_bill_type,
+                    class_of_store:      headers.class_of_store,
+                    draft_bill_type:     headers.draft_bill_type,
                     revenue_leak_reason: headers.revenue_leak_reason,
                     details: tranport_rev_leak_dtl_tbls
                 }
@@ -153,13 +153,14 @@ exports.transportReplanBuy = async(req,res,next) => {
             })
         })
 
-        const draft_bill = await replanBuy({
-            invoices,
-            rdd
-        })
+        // const draft_bill = await replanBuy({
+        //     invoices,
+        //     rdd
+        // })
 
         res.status(200).json({
-            ...draft_bill
+            invoices
+           // ...draft_bill
         })
 
         

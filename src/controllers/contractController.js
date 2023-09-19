@@ -1,6 +1,8 @@
 const models = require('../models/rata');
 const useGlobalFilter = require('../helpers/filters');
-const moment = require('moment')
+const moment = require('moment');
+
+const contractService = require('../services/contract.service');
 
 exports.getContracts = async(req,res,next) => {
     try{
@@ -156,6 +158,41 @@ exports.updateContractTariff = async(req,res,next) => {
 
     }
     catch(e){
+        next(e)
+    }
+}
+
+exports.updateContractValidity = async(req,res,next) => {
+    const transaction = await models.sequelize.transaction();
+    try{
+        const data = req.body;
+        const {contract_id} = req.params;
+        const user = req.processor.id;
+
+        const contract = await contractService.getContract({
+            contract_id
+        });
+
+        if(!contract) throw 'No contract found!';
+        
+        await contractService.updateContract({
+            ...data,
+            contract_id,
+            updated_by: user
+        },transaction);
+
+        await contractService.createContractHistory({
+            ...data,
+            contract_id,
+            created_by: user
+        },transaction)
+
+        await transaction.commit();
+        res.end();
+    }
+    catch(e){
+        console.log(e)
+        await  transaction.rollback();
         next(e)
     }
 }

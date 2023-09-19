@@ -63,7 +63,12 @@ exports.getBookingRequest = async ({
                     redel_remarks: typeof invoice[1] === 'undefined' ? null : invoice[1]
                 }
             }),
-            details
+            details: details.map(value => ({
+                ...value,
+                actual_qty: value.delivery_status === 'UNDELIVERED' ? value.planned_qty : value.actual_qty, 
+                actual_weight: value.delivery_status === 'UNDELIVERED' ? value.planned_weight : value.actual_weight,
+                actual_cbm: value.delivery_status === 'UNDELIVERED' ? value.planned_cbm : value.actual_cbm
+            }))
         }
         
     }

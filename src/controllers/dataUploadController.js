@@ -537,8 +537,6 @@ exports.uploadContract=async(req,res,next)=>{
             //         reason:'Invalid Tariff Validity'
             //     })
             // }
-
-
         }
 
         await contract.bulkCreateContractDetails({

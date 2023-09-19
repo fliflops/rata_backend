@@ -9,6 +9,7 @@ const helios_invoices_dtl_tbl       = require('./helios_invoices_dtl_tbl');
 
 const contract_hdr_tbl              = require('./contract_hdr_tbl');
 const contract_tariff_dtl           = require('./contract_tariff_dtl');
+const contract_history_tbl          = require('./contract_history_tbl');
 const tariff_sell_hdr_tbl           = require('./tariff_sell_hdr_tbl');
 const tariff_ic_algo_tbl            = require('./tariff_ic_algo_tbl');
 const agg_tbl                       = require('./agg_tbl');
@@ -22,6 +23,8 @@ const ship_point_tbl                = require('./ship_point_tbl');
 
 const draft_bill_hdr_tbl            = require("./draft_bill_hdr_tbl");
 const draft_bill_details_tbl        = require('./draft_bill_details_tbl');
+const draft_bill_ascii_hdr_tbl      = require('./draft_bill_ascii_hdr_tbl');
+const draft_bill_ascii_dtl_tbl      = require('./draft_bill_ascii_dtl_tbl');
 // v1 draft bill details
 const draft_bill_invoice_tbl        = require('./draft_bill_invoice_tbl');
 
@@ -57,7 +60,8 @@ const models = {
 
     contract_hdr_tbl:               contract_hdr_tbl.init(sequelize),
     contract_tariff_dtl:            contract_tariff_dtl.init(sequelize),
-    
+    contract_history_tbl:           contract_history_tbl.init(sequelize),
+
     tariff_sell_hdr_tbl:            tariff_sell_hdr_tbl.init(sequelize), 
     tariff_ic_algo_tbl:             tariff_ic_algo_tbl.init(sequelize),
     
@@ -70,6 +74,8 @@ const models = {
 
     draft_bill_hdr_tbl:             draft_bill_hdr_tbl.init(sequelize),
     draft_bill_invoice_tbl:         draft_bill_invoice_tbl.init(sequelize),
+    draft_bill_ascii_hdr_tbl:       draft_bill_ascii_hdr_tbl.init(sequelize),
+    draft_bill_ascii_dtl_tbl:       draft_bill_ascii_dtl_tbl.init(sequelize),
     draft_bill_details_tbl:         draft_bill_details_tbl.init(sequelize),
     
     transport_rev_leak_hdr_tbl:     transport_rev_leak_hdr_tbl.init(sequelize),

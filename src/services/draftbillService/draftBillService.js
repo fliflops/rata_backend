@@ -327,7 +327,6 @@ const assignTariff = async({invoices,contracts}) => {
                 {
                     //if tariff has vehicle type maintained
                     if(vehicle_type){
-                        
                         //if tariff is equal to invoice vehicle type
                         if(vehicle_type === invoice.vehicle_type){
                             
@@ -398,6 +397,7 @@ const assignTariff = async({invoices,contracts}) => {
 
             if(tariffs.length === 0){
                 const {ship_point_from,ship_point_to,...header} = invoice
+                
                 revenue_leak.push({
                     ...header,
                     tariff_id:null,
@@ -913,9 +913,7 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
                     }
                 ],
             }
-
-
-
+            
             //revenue_leak
             if(!aggCondition.formula){
                 revenue_leak = revenue_leak.concat(getRevenueLeakNoFormula({invoices,draft_bill_details:draft_bill.draft_bill_details}))
@@ -1269,6 +1267,7 @@ const replanBuy = async({invoices,rdd}) => {
 
         revenue_leak = revenue_leak.concat(data.revenue_leak);
 
+
         data = await assignTariff({
             invoices:data.data,
             contracts
@@ -1296,11 +1295,11 @@ const replanBuy = async({invoices,rdd}) => {
             }
         })
 
-        await createRevenueLeak({
-            draft_bill,
-            revenue_leak,
-            invoices:data
-        })
+        // await createRevenueLeak({
+        //     draft_bill,
+        //     revenue_leak,
+        //     invoices:data
+        // })
 
         return {
             data: data,

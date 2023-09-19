@@ -221,9 +221,10 @@ router.get('/tariff-status', async(req,res) => {
 
 router.get('/geography',async(req,res) => {
     try{
-        const {type} =req.query
+        const {type,selected} =req.query
         let data;
         let selectData;
+
         if(type === 'country'){
             data = await geography.getGeoCountry({})
             selectData = await data.map(item => {
@@ -236,7 +237,8 @@ router.get('/geography',async(req,res) => {
         }
         
         if(type === 'region'){
-            data = await geography.getGeoRegion({})
+            data = await geography.getGeoRegion({
+            })  
             selectData = await data.map(item => {
                 return {
                     label:`Region: ${item.region_name}\nCountry: ${item.country_code}`,
@@ -247,7 +249,9 @@ router.get('/geography',async(req,res) => {
         }
         
         if(type === 'province'){
-            data = await geography.getGeoProvince({})
+            data = await geography.getGeoProvince({
+            })
+
             selectData = await data.map(item => {
                 return {
                     label:`Province: ${item.province_name}\nRegion: ${item.region_code}\nCountry: ${item.country_code}`,
@@ -269,7 +273,11 @@ router.get('/geography',async(req,res) => {
         }
         
         if(type === 'barangay'){
-            data = await geography.getGeoBrgy({})
+            data = await geography.getGeoBrgy({
+                filters:{
+                    city_code: selected
+                }
+            })
             selectData = await data.map(item => {
                 return {
                     label:`Barangay: ${item.barangay_name}\nCity: ${item.city_code}\nProvince: ${item.province_code}\nRegion: ${item.region_code}\nCountry: ${item.country_code}`,

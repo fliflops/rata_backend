@@ -1,7 +1,7 @@
 const {Sequelize,DataTypes,Model} = require('sequelize');
 
 
-class helios_invoices_hdr_tbl extends Model {
+class  helios_invoices_hdr_tbl extends Model {
     static init (sequelize) {
         return super.init({
             tms_reference_no:       {

@@ -98,27 +98,29 @@ const getBookingRequestDetails = async({
 })=>{
     try{
         return await sequelize.query(`Select distinct    
-            a.tripPlan 'trip_no',    
-            a.brNo 'br_no',    
-            b.class_of_stores 'class_of_store',    
-            b.uom,    
-            b.planned_qty,    
-            b.planned_weight,    
-            b.planned_cbm,    
-            b.actual_qty,    
-            CASE WHEN b.actual_qty = b.planned_qty THEN b.planned_weight ELSE b.actual_weight END 'actual_weight',  
-            CASE WHEN b.actual_qty = b.planned_qty THEN b.planned_cbm  ELSE b.actual_cbm  END 'actual_cbm',  
-            b.return_qty       
-            from (    
-            select     
-            ax.tripPlan,    
-            ax.brNo    
-            from trip_br_dtl_tbl ax    
-            left join trip_plan_hdr_tbl bx on ax.tripPlan = bx.tripPlanNo and ax.isDeleted = 0    
-            left join booking_request_hdr_tbl cx on ax.brNo = cx.bookingRequestNo and ax.isDeleted = 0    
-            where cx.rudStatus = 'CLEARED'  
-            and bx.tripStatus <> 'SHORT_CLOSED'  
-            and cast(cx.date_cleared as date) between :from and :to
+        a.tripPlan	      'trip_no',    
+        a.brNo			  'br_no',    
+        a.deliveryStatus  'delivery_status',
+        b.class_of_stores 'class_of_store',    
+        b.uom,    
+        b.planned_qty,    
+        b.planned_weight,    
+        b.planned_cbm,    
+        b.actual_qty,    
+        CASE WHEN b.actual_qty = b.planned_qty THEN b.planned_weight ELSE b.actual_weight END 'actual_weight',  
+        CASE WHEN b.actual_qty = b.planned_qty THEN b.planned_cbm  ELSE b.actual_cbm  END 'actual_cbm',  
+        b.return_qty
+        from (    
+        select     
+        ax.tripPlan,    
+        ax.brNo,
+        cx.deliveryStatus
+        from trip_br_dtl_tbl ax    
+        left join trip_plan_hdr_tbl bx on ax.tripPlan = bx.tripPlanNo and ax.isDeleted = 0    
+        left join booking_request_hdr_tbl cx on ax.brNo = cx.bookingRequestNo and ax.isDeleted = 0    
+        where cx.rudStatus = 'CLEARED'  
+        and bx.tripStatus <> 'SHORT_CLOSED'  
+        and cast(cx.date_cleared as date) between :from and :to
         ) a    
             
         OUTER APPLY (    

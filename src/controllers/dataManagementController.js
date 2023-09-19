@@ -1,5 +1,6 @@
 const models = require('../models/rata');
 const useGlobalFilter = require('../helpers/filters');
+const shipPointService = require('../services/shipPoint.service');
 
 exports.getVendor = async (req,res,next) => {
     try{
@@ -48,7 +49,8 @@ exports.updateVendor = async(req,res,next) => {
 
         await models.vendor_tbl.updateData({
             data: {
-                ...data
+                ...data,
+                updated_by: req.session.id
             },
             where:{
                 vendor_id
@@ -136,6 +138,25 @@ exports.getShipPoint = async(req,res,next) => {
             pageCount: Math.ceil(count/totalPage)
         })
 
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.getShipPointDetails = async(req,res,next) => {
+    try{
+        const {id} = req.params;
+
+        if(!id) throw 'Stc code is required!'
+
+        const shipPoint = await models.ship_point_tbl.findOne({
+            where:{
+                stc_code:id
+            }
+        })
+
+        res.json(shipPoint)
     }
     catch(e){
         next(e)
@@ -257,6 +278,23 @@ exports.getPrincipal = async(req,res,next) => {
     catch(e){
         next(e)
     }
+}
+
+exports.updateShipPoint = async(req,res,next) => {
+    try{
+        const data = req.body;
+        const {id} = req.params;
+        await shipPointService.updateShipPoint({
+            ...data,
+            stc_code: id,
+            updated_by: req.processor.id
+        })
+        res.end()
+    }
+    catch(e){
+        next(e)
+    }
+   
 }
 
 exports.getAlgorithm = async(req,res,next) => {

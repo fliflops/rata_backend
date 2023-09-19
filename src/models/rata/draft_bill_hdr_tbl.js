@@ -94,6 +94,9 @@ class draft_bill_hdr_tbl extends Model {
             job_id:{
                 type: DataTypes.STRING
             },
+            // is_transmitted:{
+            //     type: DataTypes.BOOLEAN
+            // },
             created_by:{type: DataTypes.STRING(50)},
             updated_by:{type: DataTypes.STRING(50)},
             createdAt:Sequelize.DATE,
