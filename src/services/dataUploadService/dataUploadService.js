@@ -167,3 +167,29 @@ exports.getContractUniqueRateValidity = async ({contracts=[]}) => {
         }
     })
 }
+
+exports.getVendorGroupDtl = async (filter) => {
+    return await models.vendor_group_dtl_tbl.findAll({
+        include: [
+            {
+                model: models.vendor_group_tbl,
+                attributes:['location'],
+                where: {
+                    vg_status:'ACTIVE'
+                },
+                required: false
+            }
+        ],
+        where:{
+            ...filter
+        }
+    })
+    .then(result => JSON.parse(JSON.stringify(result)))
+    .then(result => result.map(row => {
+        const {vendor_group_tbl,...vendor} = row
+        return {
+            ...vendor,
+            location: vendor_group_tbl.location
+        }
+    }))
+}

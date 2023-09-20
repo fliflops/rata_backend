@@ -577,9 +577,9 @@ exports.uploadContract=async(req,res,next)=>{
 exports.uploadVendor=async(req,res,next)=>{
     try{
         const {data} = JSON.parse(JSON.stringify(req.body));
-        let vendor_header=[]
-        let vendor_group=[]
-        let vendor_group_details=[]
+        let vendor_header=[];
+        let vendor_group=[];
+        let vendor_group_details=[];
 
         if(typeof data.vendor === 'undefined' || typeof data.vendor_group === 'undefined' || typeof data.vendor_group_details === 'undefined'){
             return res.status(400).json({
@@ -599,11 +599,8 @@ exports.uploadVendor=async(req,res,next)=>{
             }
         })
 
-        const getVendorGroupDetails = await vendor.getAllVendorGroupDtl({
-            filters:{
-                vg_code: _.uniq(data.vendor_group_details.map(item => item.vg_code))
-            }
-        })
+        const getVendorGroupDetails = await dataUploadService.getVendorGroupDtl()
+        
 
         for(let i in data.vendor){
             const vendor = data.vendor[i]
@@ -644,7 +641,7 @@ exports.uploadVendor=async(req,res,next)=>{
             const vendorGroupDetails = data.vendor_group_details[i];
 
             const isExist = _.find(getVendorGroupDetails,(value)=>{
-                return value.vg_code === vendorGroupDetails.vg_code && value.vg_vendor_id === vendorGroupDetails.vg_vendor_id
+                return String(value.location).toLowerCase() === String(vendorGroupDetails.location).toLowerCase() && String(value.vg_vendor_id).toLowerCase() === String(vendorGroupDetails.vg_vendor_id).toLowerCase() 
             })
 
             if(isExist){
@@ -667,8 +664,8 @@ exports.uploadVendor=async(req,res,next)=>{
             vendorGroup:        data.vendor_group.filter(item => !vendor_group.map(x=>x.vg_code).includes(item.vg_code)).map(item => {
                 return {
                     ...item,
-                    created_by:req.processor.id,
-                    updated_by:req.processor.id
+                    created_by: req.processor.id,
+                    updated_by: req.processor.id
                 }
             }),
             vendorGroupDetails: data.vendor_group_details.filter(item => {

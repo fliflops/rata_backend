@@ -42,6 +42,13 @@ class vendor_group_dtl_tbl extends Model {
         })
         .then(result => JSON.parse(JSON.stringify(result)))
     }
+
+    static associate (models) {
+        this.vendor_group = this.hasOne(models.vendor_group_tbl,{
+            sourceKey:'vg_code',
+            foreignKey:'vg_code'
+        })
+    }
 }
 
 module.exports = vendor_group_dtl_tbl;

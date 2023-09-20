@@ -10,12 +10,11 @@ exports.getRegion = async(req,res,next) => {
 
         res.json(data.map(item => {
             return {
-                label:`Region: ${item.region_name}\nCountry: ${item.country_code}`,
+                label:item.region_name,
                 value:item.region_code,
                 chipLabel:item.region_name
             }
         }))
-
     }
     catch(e){
         next(e)

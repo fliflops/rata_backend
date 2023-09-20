@@ -34,6 +34,8 @@ exports.login = async (req,res,next) => {
             }
         })
         .then(result => {
+            if(!result) return null;
+
             let {access,role,...user} = result;
 
             const accessHeaders = access.filter(item => item.is_header)
@@ -57,7 +59,7 @@ exports.login = async (req,res,next) => {
                 access
             }
         })
-
+    
         if(!getUser) return res.status(400).json(errorMessage)
 
         if(!bcrypt.compareSync(password,getUser.password)) return res.status(400).json(errorMessage)
