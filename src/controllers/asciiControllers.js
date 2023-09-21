@@ -174,7 +174,11 @@ exports.transportController = async(req,res,next) => {
                     {
                         model: models.draft_bill_details_tbl,
                         as:'details'
-                    }
+                    },
+                    // {
+                    //     model: models.tariff_sell_hdr_tbl,
+                    //     as:'tariff'
+                    // }
                 ]
             },
             where:{
@@ -201,7 +205,6 @@ exports.transportController = async(req,res,next) => {
 
         })
 
-
         if(type === 'SELL'){
             data = await asciiService.asciiSalesOrder(draftBill)
             await api.post('/get/sales-order',JSON.parse(JSON.stringify(data)),{
@@ -222,7 +225,6 @@ exports.transportController = async(req,res,next) => {
                     success:res.data.SUMMARY
                 }
             })
-
 
             await models.draft_bill_hdr_tbl.updateData({
                 data:{
@@ -265,8 +267,6 @@ exports.transportController = async(req,res,next) => {
                 }
             })
         }
-
-       
 
         const xlsx = await asciiService.generateResult({
             success:result.success,

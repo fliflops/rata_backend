@@ -183,6 +183,11 @@ class draft_bill_hdr_tbl extends Model {
             foreignKey:'service_type_code',
             sourceKey:'service_type'
         })
+        this.tariff = this.hasOne(models.tariff_sell_hdr_tbl,{
+            sourceKey:'tariff_id',
+            foreignKey:'tariff_id',
+            as:'tariff'
+        })
     }
  }
 

@@ -23,8 +23,7 @@ const ship_point_tbl                = require('./ship_point_tbl');
 
 const draft_bill_hdr_tbl            = require("./draft_bill_hdr_tbl");
 const draft_bill_details_tbl        = require('./draft_bill_details_tbl');
-const draft_bill_ascii_hdr_tbl      = require('./draft_bill_ascii_hdr_tbl');
-const draft_bill_ascii_dtl_tbl      = require('./draft_bill_ascii_dtl_tbl');
+
 // v1 draft bill details
 const draft_bill_invoice_tbl        = require('./draft_bill_invoice_tbl');
 
@@ -74,8 +73,6 @@ const models = {
 
     draft_bill_hdr_tbl:             draft_bill_hdr_tbl.init(sequelize),
     draft_bill_invoice_tbl:         draft_bill_invoice_tbl.init(sequelize),
-    draft_bill_ascii_hdr_tbl:       draft_bill_ascii_hdr_tbl.init(sequelize),
-    draft_bill_ascii_dtl_tbl:       draft_bill_ascii_dtl_tbl.init(sequelize),
     draft_bill_details_tbl:         draft_bill_details_tbl.init(sequelize),
     
     transport_rev_leak_hdr_tbl:     transport_rev_leak_hdr_tbl.init(sequelize),

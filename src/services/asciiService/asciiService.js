@@ -16,8 +16,7 @@ exports.asciiSalesOrder = async (data) => {
                             ITEM_CODE:      header.ascii_item_code,
                             LINE_NO:        1,
                             LOCATION_CODE:  header.ascii_loc_code,
-                            UM_CODE:        ['2002','2003','2004','2008'].includes(details[0].service_type) ? 'lot' //details[0].vehicle_type
-                                : details[0].min_billable_unit,
+                            UM_CODE:        ['2002','2003','2004','2008'].includes(details[0].service_type) ? 'lot' : details[0].min_billable_unit,
                             QUANTITY:       1,
                             UNIT_PRICE:     SO_AMT,   
                             EXTENDED_AMT:   SO_AMT                    
@@ -26,6 +25,18 @@ exports.asciiSalesOrder = async (data) => {
                 }
             else{
 
+                const quantity = ['2002','2003','2004','2008'].includes(details[0].service_type) ? 1 : _.round(_.sumBy(details,(i)=>{
+                    if(String(details[0].min_billable_unit).toLowerCase() === 'cbm'){
+                        return parseFloat(i.actual_cbm)
+                    }
+                    if(String(details[0].min_billable_unit).toLowerCase() === 'weight'){
+                        return parseFloat(i.actual_weight)
+                    }
+                    if(['CASE','PIECE'].includes(String(details[0].min_billable_unit).toUpperCase())){
+                        return parseFloat(i.actual_qty)
+                    }
+                }),2)
+
                 SALES_ORDER_DETAIL=[{
                     COMPANY_CODE:   '00001',
                     SO_CODE:        header.draft_bill_no,
@@ -33,18 +44,7 @@ exports.asciiSalesOrder = async (data) => {
                     LINE_NO:        1,
                     LOCATION_CODE:  header.ascii_loc_code,
                     UM_CODE:        ['2002','2003','2004','2008'].includes(details[0].service_type) ? 'lot' : details[0].min_billable_unit,
-                    QUANTITY:       ['2002','2003','2004','2008'].includes(details[0].service_type) ? 1 :     
-                    _.round(_.sumBy(details,(i)=>{
-                        if(String(details[0].min_billable_unit).toLowerCase() === 'cbm'){
-                            return parseFloat(i.actual_cbm)
-                        }
-                        if(String(details[0].min_billable_unit).toLowerCase() === 'weight'){
-                            return parseFloat(i.actual_weight)
-                        }
-                        if(['CASE','PIECE'].includes( String(details[0].min_billable_unit).toUpperCase())){
-                            return parseFloat(i.actual_qty)
-                        }
-                    }),2),
+                    QUANTITY:       quantity < Number(header.min_billable_value) ? Number(header.min_billable_value) : quantity,    
                     UNIT_PRICE:     _.round(header.rate,2),   
                     EXTENDED_AMT:   SO_AMT                    
                 }]
