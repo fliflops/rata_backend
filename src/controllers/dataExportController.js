@@ -179,7 +179,7 @@ exports.exportContract = async(req,res,next) => {
                         attributes:['contract_id','tariff_id','tariff_rate','fk_agg_id','valid_from','valid_to','status'],
                         where: {
                             status: 'ACTIVE',
-                            [Op.and] : {
+                            [Op.or] : {
                                 valid_from: {
                                     [Op.gte]: from
                                 },
