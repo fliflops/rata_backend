@@ -50,7 +50,7 @@ exports.updateVendor = async(req,res,next) => {
         await models.vendor_tbl.updateData({
             data: {
                 ...data,
-                updated_by: req.session.id
+                updated_by: req.processor.id
             },
             where:{
                 vendor_id
