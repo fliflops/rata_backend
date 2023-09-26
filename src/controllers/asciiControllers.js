@@ -259,8 +259,7 @@ exports.transportController = async(req,res,next) => {
 
             await models.draft_bill_hdr_tbl.updateData({
                 data:{
-                    status:'DRAFT_BILL_POSTED',
-                    // updated_by:req.session.userId
+                    status:'DRAFT_BILL_POSTED'
                 },
                 where:{
                     draft_bill_no:result.success.map(item => item.CR_CODE),
@@ -352,3 +351,4 @@ exports.getSo = async (req,res,next) => {
 }
 
 
+ 

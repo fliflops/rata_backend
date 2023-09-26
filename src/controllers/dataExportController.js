@@ -168,6 +168,21 @@ exports.exportContract = async(req,res,next) => {
         const contracts = [];
         let tariffs = [];
 
+        let dateFilter = {};
+
+        if(from && to) {    
+            dateFilter = {
+                [Op.and] : {
+                    valid_from: {
+                        [Op.gte]: from
+                    },
+                    valid_to: {
+                        [Op.lte]:to
+                    }
+                }   
+            }
+        }
+
         const getContracts = await models.contract_hdr_tbl.getContracts({   
             where:{
                 contract_id
@@ -179,14 +194,7 @@ exports.exportContract = async(req,res,next) => {
                         attributes:['contract_id','tariff_id','tariff_rate','fk_agg_id','valid_from','valid_to','status'],
                         where: {
                             status: 'ACTIVE',
-                            [Op.or] : {
-                                valid_from: {
-                                    [Op.gte]: from
-                                },
-                                valid_to: {
-                                    [Op.lte]:to
-                                }
-                            }   
+                            ...dateFilter
                        },
                         required: false
                     }
