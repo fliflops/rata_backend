@@ -9,7 +9,7 @@ exports.asciiSalesOrder = async (data) => {
             let SALES_ORDER_DETAIL;
             const details = header.details
             //removed the standard rounding of numbers;
-            const SO_AMT  = header.total_charges
+            const SO_AMT  = Number(header.total_charges)
 
             if(header.customer === '10005' && details[0].class_of_store === 'COLD') {
                 SALES_ORDER_DETAIL=[
@@ -79,7 +79,8 @@ exports.asciiConfirmationReceipt = async(data) => {
 
         return data.map(header => {
             const details = header.details
-            const amount = header.total_charges;
+            const amount = Number(header.total_charges);
+            
             const CONFIRMATION_RECEIPT_DETAIL = [{
                 COMPANY_CODE:       '00001',
                 CR_CODE:            header.draft_bill_no,

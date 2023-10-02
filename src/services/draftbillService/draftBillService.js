@@ -265,6 +265,7 @@ const assignContract = async({invoices,contracts}) =>{
                     contract_id: contract.contract_id
                 }
             })
+
             data = data.concat(filtered_data)
         })
 
