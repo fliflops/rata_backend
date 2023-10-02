@@ -7,6 +7,7 @@ const mime = require('mime');
 const fs = require('fs');
 const _ =require('lodash');
 const moment = require('moment');
+const round = require('../helpers/round');
 
 exports.uploadWMSContractTariff = async(req,res,next) => {
     try{
@@ -528,21 +529,16 @@ exports.uploadContract=async(req,res,next)=>{
 
                 continue;
             }
-
-            // check validation
-            // if(!moment(today).isBetween(valid_from,valid_to)){
-            //     contract_details.push({
-            //         contract_id:contract_tariff.contract_id,
-            //         tariff_id:contract_tariff.tariff_id,
-            //         reason:'Invalid Tariff Validity'
-            //     })
-            // }
         }
+
+
 
         await contract.bulkCreateContractDetails({
             contract:contracts.filter(item => !contract_header.map(x => x.contract_id).includes(item.contract_id)).map(item => {
+               
                 return {
                     ...item,
+                   
                     created_by:req.processor.id,
                     updated_by:req.processor.id
                 }
@@ -558,6 +554,7 @@ exports.uploadContract=async(req,res,next)=>{
             .map(item => {
                 return{
                     ...item,
+                    tariff_rate: round(item.tariff_rate,2),
                     created_by:req.processor.id,
                     updated_by:req.processor.id
                 }

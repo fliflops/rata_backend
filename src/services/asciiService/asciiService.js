@@ -1,12 +1,15 @@
 const _ = require('lodash')
 const xlsx = require('xlsx');
 
+const round = require('../../helpers/round');
+
 exports.asciiSalesOrder = async (data) => {
     try{
         return data.map(header => {
             let SALES_ORDER_DETAIL;
             const details = header.details
-            const SO_AMT  =  _.round(header.total_charges,2)
+            //removed the standard rounding of numbers;
+            const SO_AMT  = header.total_charges
 
             if(header.customer === '10005' && details[0].class_of_store === 'COLD') {
                 SALES_ORDER_DETAIL=[
@@ -25,14 +28,14 @@ exports.asciiSalesOrder = async (data) => {
                 }
             else{
 
-                const quantity = ['2002','2003','2004','2008'].includes(details[0].service_type) ? 1 : _.round(_.sumBy(details,(i)=>{
-                    if(String(details[0].min_billable_unit).toLowerCase() === 'cbm'){
+                const quantity = ['2002','2003','2004','2008'].includes(details[0].service_type) ? 1 : round(_.sumBy(details,(i)=>{
+                    if(String(header.min_billable_unit).toLowerCase() === 'cbm'){
                         return parseFloat(i.actual_cbm)
                     }
-                    if(String(details[0].min_billable_unit).toLowerCase() === 'weight'){
+                    if(String(header.min_billable_unit).toLowerCase() === 'weight'){
                         return parseFloat(i.actual_weight)
                     }
-                    if(['CASE','PIECE'].includes(String(details[0].min_billable_unit).toUpperCase())){
+                    if(['CASE','PIECE'].includes(String(header.min_billable_unit).toUpperCase())){
                         return parseFloat(i.actual_qty)
                     }
                 }),2)
@@ -43,7 +46,7 @@ exports.asciiSalesOrder = async (data) => {
                     ITEM_CODE:      header.ascii_item_code,
                     LINE_NO:        1,
                     LOCATION_CODE:  header.ascii_loc_code,
-                    UM_CODE:        ['2002','2003','2004','2008'].includes(details[0].service_type) ? 'lot' : details[0].min_billable_unit,
+                    UM_CODE:        ['2002','2003','2004','2008'].includes(header.service_type) ? 'lot' : header.min_billable_unit,
                     QUANTITY:       quantity < Number(header.min_billable_value) ? Number(header.min_billable_value) : quantity,    
                     UNIT_PRICE:     _.round(header.rate,2),   
                     EXTENDED_AMT:   SO_AMT                    
@@ -76,7 +79,7 @@ exports.asciiConfirmationReceipt = async(data) => {
 
         return data.map(header => {
             const details = header.details
-
+            const amount = header.total_charges;
             const CONFIRMATION_RECEIPT_DETAIL = [{
                 COMPANY_CODE:       '00001',
                 CR_CODE:            header.draft_bill_no,
@@ -87,8 +90,8 @@ exports.asciiConfirmationReceipt = async(data) => {
                 LOCATION_CODE:      header.ascii_loc_code,
                 UM_CODE:            details[0].vehicle_type,
                 QUANTITY:           1,
-                UNIT_PRICE:         _.round(header.total_charges,2),
-                EXTENDED_AMT:       _.round(header.total_charges,2)
+                UNIT_PRICE:         amount,//_.round(header.total_charges,2),
+                EXTENDED_AMT:       amount//_.round(header.total_charges,2)
             }]
 
             return {
@@ -103,7 +106,7 @@ exports.asciiConfirmationReceipt = async(data) => {
                 PARTICULAR:         details.map(i => i.invoice_no).join(','),
                 REF_SI_NO:          'n/a',
                 REF_CROSS:          header.contract_id,
-                CR_AMT:             _.round(header.total_charges,2),
+                CR_AMT:             amount,//_.round(header.total_charges,2),
                 CONFIRMATION_RECEIPT_DETAIL
             }
         })

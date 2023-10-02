@@ -68,7 +68,7 @@ exports.warehouseController = async (req,res,next) => {
         const asciiData = await data.map(item => {
             const {principal_tbl,service_type_tbl,location_tbl} = item
             let SALES_ORDER_DETAIL;
-            const SO_AMT = _.round(item.total_charges,2)
+            const SO_AMT = item.total_charges
 
             SALES_ORDER_DETAIL = [
                 {
