@@ -30,13 +30,13 @@ exports.asciiSalesOrder = async (data) => {
 
                 const quantity = ['2002','2003','2004','2008'].includes(details[0].service_type) ? 1 : round(_.sumBy(details,(i)=>{
                     if(String(header.min_billable_unit).toLowerCase() === 'cbm'){
-                        return parseFloat(i.actual_cbm)
+                        return Number(i.actual_cbm)
                     }
                     if(String(header.min_billable_unit).toLowerCase() === 'weight'){
-                        return parseFloat(i.actual_weight)
+                        return Number(i.actual_weight)
                     }
                     if(['CASE','PIECE'].includes(String(header.min_billable_unit).toUpperCase())){
-                        return parseFloat(i.actual_qty)
+                        return Number(i.actual_qty)
                     }
                 }),2)
 
@@ -48,8 +48,8 @@ exports.asciiSalesOrder = async (data) => {
                     LOCATION_CODE:  header.ascii_loc_code,
                     UM_CODE:        ['2002','2003','2004','2008'].includes(header.service_type) ? 'lot' : header.min_billable_unit,
                     QUANTITY:       quantity < Number(header.min_billable_value) ? Number(header.min_billable_value) : quantity,    
-                    UNIT_PRICE:     _.round(header.rate,2),   
-                    EXTENDED_AMT:   SO_AMT                    
+                    UNIT_PRICE:     Number(header.rate),   
+                    EXTENDED_AMT:   SO_AMT//round(round(((Number(header.rate) * quantity )* 100),2) / 100,2)          
                 }]
 
             }

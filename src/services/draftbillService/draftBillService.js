@@ -369,7 +369,7 @@ const assignTariff = async({invoices,contracts}) => {
                     min_billable_unit:  tariffs[0].min_billable_unit,
                     min_value:          tariffs[0].min_value,
                     max_value:          tariffs[0].max_value,
-                    tariff_rate:        tariffs[0].tariff_rate,
+                    tariff_rate:        Number(tariffs[0].tariff_rate),
                     group_by:           tariffs[0].group_by,
                     parameter:          tariffs[0].parameter,
                     with_agg:           tariffs[0].with_agg,
@@ -515,10 +515,10 @@ const draftBillIC = async({invoices}) => {
                 */
                 const sorted = rates.sort().reverse()
                 sorted.shift();
-                total_charges = Number(invoice.tariff.tariff_rate) + _.sum(sorted)
+                total_charges = round(Number(invoice.tariff.tariff_rate) + _.sum(sorted),2)
             }
             else {
-                total_charges = _.sum(rates)
+                total_charges = round(_.sum(rates),2)
             }
 
             let total_weight  =round( _.sumBy(draft_bill_details, item => parseFloat(item.actual_weight)),2);
@@ -585,7 +585,7 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                 return item.tariff.with_agg
             }
             else {
-                return item.is_ic === 0&&item.tariff.with_agg
+                return item.is_ic===0&&item.tariff.with_agg
             }
         });
 
@@ -668,7 +668,7 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                 min_billable_unit:  invoice.tariff.min_billable_unit,
                 parameters,
                 conditions: invoice.tariff.conditions,
-                tariff: invoice.tariff,
+                tariff:     invoice.tariff,
                 draft_bill_details
             })
 
@@ -722,7 +722,7 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                 if(fn(tariff,invoice) || fn(tariff,invoice) === null){
                     const formula = cnd.raw_formula.split(',').join('')
                     const fnFormula = new Function(['tariff','invoice'],'return '+formula)
-                    total_charges = round(Number(fnFormula(tariff,invoice)),2);
+                    total_charges = round(round(Number(fnFormula(tariff,invoice)) * 100,2) / 100, 2);
                    
                     aggCondition = {
                         ...aggCondition,
@@ -820,11 +820,11 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
             const planned_qty       = getSum(details,invoice.tariff.min_billable_unit,'planned_qty') 
             const actual_qty        = getSum(details,invoice.tariff.min_billable_unit,'actual_qty')     
          
-            const planned_weight    = _.sumBy(details, item => isNaN(parseFloat(item.planned_weight)) ? 0 : parseFloat(item.planned_weight))
-            const planned_cbm       = _.sumBy(details, item => isNaN(parseFloat(item.planned_cbm)) ? 0 :    parseFloat(item.planned_cbm))
-            const actual_weight     = _.sumBy(details, item => isNaN(parseFloat(item.actual_weight)) ? 0 :  parseFloat(item.actual_weight))
-            const actual_cbm        = _.sumBy(details, item => isNaN(parseFloat(item.actual_cbm)) ? 0 :     parseFloat(item.actual_cbm))
-            const return_qty        = _.sumBy(details, item => isNaN(parseFloat(item.return_qty)) ? 0 :     parseFloat(item.return_qty))
+            const planned_weight    = _.sumBy(details, item => isNaN(Number(item.planned_weight)) ? 0 : Number(item.planned_weight))
+            const planned_cbm       = _.sumBy(details, item => isNaN(Number(item.planned_cbm)) ? 0 :    Number(item.planned_cbm))
+            const actual_weight     = _.sumBy(details, item => isNaN(Number(item.actual_weight)) ? 0 :  Number(item.actual_weight))
+            const actual_cbm        = _.sumBy(details, item => isNaN(Number(item.actual_cbm)) ? 0 :     Number(item.actual_cbm))
+            const return_qty        = _.sumBy(details, item => isNaN(Number(item.return_qty)) ? 0 :     Number(item.return_qty))
 
             
             let aggCondition = {
@@ -845,7 +845,7 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
                 if(fn(invoice.tariff,total_data) || fn(invoice.tariff,total_data) === null){
                     const formula = cnd.raw_formula.split(',').join('')
                     const fnFormula = new Function(['tariff','invoice'],'return '+formula)
-                    total_charges = round(Number(fnFormula(invoice.tariff,total_data)),2)
+                    total_charges = round(round(Number(fnFormula(tariff,invoice)) * 100,2) / 100, 2)
                     aggCondition = {
                         ...aggCondition,
                         condition: condition,
