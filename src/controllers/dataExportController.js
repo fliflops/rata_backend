@@ -195,7 +195,7 @@ exports.exportContract = async(req,res,next) => {
                         where: {
                             status: 'ACTIVE',
                             ...dateFilter
-                       },
+                        },
                         required: false
                     }
                 ]

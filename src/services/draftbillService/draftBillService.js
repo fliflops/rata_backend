@@ -953,7 +953,7 @@ const assignDraftBillNo = async({rdd,draft_bill}) => {
 
         const generateDraftBillNo = ({count}) => {
             try {
-                return `${moment().format('MMDDYY')}-${String(count).padStart(5,"00000")}`    
+                return `R${moment().format('MMDDYY')}${String(count).padStart(5,"00000")}`    
             } 
             catch (error) {
                 throw error
