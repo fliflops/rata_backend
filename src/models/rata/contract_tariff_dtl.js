@@ -25,6 +25,9 @@ class contract_tariff_dtl extends Model {
                 allowNull:false,
                 type: DataTypes.DECIMAL(18,9)
            },
+           min_rate:{
+                type: DataTypes.DECIMAL(18,9)
+           },
            fk_agg_id:{
               allowNull:false,
               type: DataTypes.STRING(36)

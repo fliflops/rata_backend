@@ -164,17 +164,17 @@ exports.exportRevenueLeak = async(req,res,next) => {
 
 exports.exportContract = async(req,res,next) => {
     try{
-        const {contract_id, from, to} = req.query;
+        const {contract_id, from, to,service_type} = req.query;
         const contracts = [];
         let tariffs = [];
-
-        let dateFilter = {};
+        let filter = {};
+        let serviceTypeFilter = {};
 
         if(from && to) {    
-            dateFilter = {
+            filter = {
                 [Op.and] : {
                     valid_from: {
-                        [Op.gte]: from
+                        [Op.gte]:from
                     },
                     valid_to: {
                         [Op.lte]:to
@@ -183,18 +183,30 @@ exports.exportContract = async(req,res,next) => {
             }
         }
 
+        if(service_type) {
+            serviceTypeFilter.service_type = service_type;
+        }
+
         const getContracts = await models.contract_hdr_tbl.getContracts({   
             where:{
-                contract_id
+                contract_id,
             },
             options:{
                 include: [
                     {
                         model: models.contract_tariff_dtl,
-                        attributes:['contract_id','tariff_id','tariff_rate','fk_agg_id','valid_from','valid_to','status'],
+                        include: [
+                            {
+                                model: models.tariff_sell_hdr_tbl,
+                                required: true,
+                                where:{
+                                    ...serviceTypeFilter
+                                }
+                            }
+                        ],
                         where: {
                             status: 'ACTIVE',
-                            ...dateFilter
+                            ...filter
                         },
                         required: false
                     }
