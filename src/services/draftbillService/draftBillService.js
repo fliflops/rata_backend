@@ -113,6 +113,7 @@ const getTariffs = async({contracts}) => {
             const {
                 tariff_id,
                 tariff_rate,
+                min_rate,
                 valid_from,
                 valid_to,
                 tariff_sell_hdr_tbl,
@@ -125,6 +126,7 @@ const getTariffs = async({contracts}) => {
                 contract_id,
                 tariff_id,
                 tariff_rate,
+                min_rate,
                 valid_from,
                 valid_to,
                 tariff_ic_algo_tbls,
@@ -292,7 +294,7 @@ const assignContract = async({invoices,contracts}) =>{
     }
 }
 
-const assignTariff = async({invoices,contracts}) => {
+const   assignTariff = async({invoices,contracts}) => {
     try{
         let data = []
         let revenue_leak = []
