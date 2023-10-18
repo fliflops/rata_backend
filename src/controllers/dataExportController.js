@@ -55,6 +55,7 @@ exports.exportInvoice = async(req,res,next) => {
 exports.exportDraftBill = async(req,res,next) => {
     try{
         const {
+            type,
             from,
             to
         } = req.query;
@@ -64,7 +65,7 @@ exports.exportDraftBill = async(req,res,next) => {
 
         const getDraftBills = await models.draft_bill_hdr_tbl.getData({
             where:{
-                draft_bill_date:{
+                [type]:{
                     [Op.between] : [from,to]
                 }
             },

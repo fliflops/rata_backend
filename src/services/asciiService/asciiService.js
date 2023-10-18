@@ -11,6 +11,18 @@ exports.asciiSalesOrder = async (data) => {
             //removed the standard rounding of numbers;
             const SO_AMT  = Number(header.total_charges)
 
+            const quantity = ['2002','2003','2004','2008'].includes(details[0].service_type) ? 1 : round(_.sumBy(details,(i)=>{
+                if(String(header.min_billable_unit).toLowerCase() === 'cbm'){
+                    return Number(i.actual_cbm)
+                }
+                if(String(header.min_billable_unit).toLowerCase() === 'weight'){
+                    return Number(i.actual_weight)
+                }
+                if(['CASE','PIECE'].includes(String(header.min_billable_unit).toUpperCase())){
+                    return Number(i.actual_qty)
+                }
+            }),2)
+
             if(header.customer === '10005' && details[0].class_of_store === 'COLD') {
                 SALES_ORDER_DETAIL=[
                         {
@@ -26,19 +38,22 @@ exports.asciiSalesOrder = async (data) => {
                         }
                     ]
                 }
+            else if(header.customer === '10002' && details[0].service_type === '2001') 
+            {
+                const isEqual = quantity * Number(header.rate) ===  SO_AMT;
+                SALES_ORDER_DETAIL=[{
+                    COMPANY_CODE:   '00001',
+                    SO_CODE:        header.draft_bill_no,
+                    ITEM_CODE:      header.ascii_item_code,
+                    LINE_NO:        1,
+                    LOCATION_CODE:  header.ascii_loc_code,
+                    UM_CODE:        header.min_billable_unit,
+                    QUANTITY:       isEqual ? quantity : 1,    
+                    UNIT_PRICE:     Number(header.rate),   
+                    EXTENDED_AMT:   SO_AMT
+                }]
+            }
             else{
-
-                const quantity = ['2002','2003','2004','2008'].includes(details[0].service_type) ? 1 : round(_.sumBy(details,(i)=>{
-                    if(String(header.min_billable_unit).toLowerCase() === 'cbm'){
-                        return Number(i.actual_cbm)
-                    }
-                    if(String(header.min_billable_unit).toLowerCase() === 'weight'){
-                        return Number(i.actual_weight)
-                    }
-                    if(['CASE','PIECE'].includes(String(header.min_billable_unit).toUpperCase())){
-                        return Number(i.actual_qty)
-                    }
-                }),2)
 
                 SALES_ORDER_DETAIL=[{
                     COMPANY_CODE:   '00001',
@@ -51,7 +66,6 @@ exports.asciiSalesOrder = async (data) => {
                     UNIT_PRICE:     Number(header.rate),   
                     EXTENDED_AMT:   SO_AMT//round(round(((Number(header.rate) * quantity )* 100),2) / 100,2)          
                 }]
-
             }
 
             return {
