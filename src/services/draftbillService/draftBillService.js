@@ -818,6 +818,8 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
             }
         });
 
+      
+
         withoutAggData.map(invoice => {
             const details = invoice.details;
             const planned_qty       = getSum(details,invoice.tariff.min_billable_unit,'planned_qty') 
@@ -848,7 +850,7 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
                 if(fn(invoice.tariff,total_data) || fn(invoice.tariff,total_data) === null){
                     const formula = cnd.raw_formula.split(',').join('')
                     const fnFormula = new Function(['tariff','invoice'],'return '+formula)
-                    total_charges = round(round(Number(fnFormula(tariff,invoice)) * 100,2) / 100, 2)
+                    total_charges = round(round(Number(fnFormula(invoice.tariff,invoice)) * 100,2) / 100, 2)
                     aggCondition = {
                         ...aggCondition,
                         condition: condition,
