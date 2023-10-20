@@ -531,14 +531,11 @@ exports.uploadContract=async(req,res,next)=>{
             }
         }
 
-
-
         await contract.bulkCreateContractDetails({
             contract:contracts.filter(item => !contract_header.map(x => x.contract_id).includes(item.contract_id)).map(item => {
                
                 return {
                     ...item,
-                   
                     created_by:req.processor.id,
                     updated_by:req.processor.id
                 }
@@ -560,6 +557,8 @@ exports.uploadContract=async(req,res,next)=>{
                 }
             })
         })
+
+       
 
         res.status(200).json({
             contract_header,
