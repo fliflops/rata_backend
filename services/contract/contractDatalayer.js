@@ -1,7 +1,8 @@
 const models = require('../../models');
 const moment = require('moment');
 const {sequelize,Sequelize} = models;
-const {viewFilters} = require('../../helper')
+const {viewFilters} = require('../../helper');
+const { contract_tariff_dtl } = require('../../src/models/rata');
 
 const getContract = async({
     filters,
@@ -583,8 +584,7 @@ const bulkCreateContractDetail= async({
     options
 }) => {
     try{
-
-        return await models.contract_tariff_dtl.bulkCreate(data,{
+        return await contract_tariff_dtl.bulkCreate(data,{
             ...options
         })
     }
