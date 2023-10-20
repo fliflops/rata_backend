@@ -12,7 +12,7 @@ router.route('/transport/sell')
 .post(authorize,controller.transportReplanSell)
 
 router.route('/transport/buy')
-.post(controller.transportReplanBuy)
+.post(authorize,controller.transportReplanBuy)
 
 
 module.exports = router;
