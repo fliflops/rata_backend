@@ -49,7 +49,7 @@ exports.asciiSalesOrder = async (data) => {
                     LOCATION_CODE:  header.ascii_loc_code,
                     UM_CODE:        header.min_billable_unit,
                     QUANTITY:       isEqual ? quantity : 1,    
-                    UNIT_PRICE:     Number(header.rate),   
+                    UNIT_PRICE:     isEqual ? Number(header.rate) : SO_AMT,   
                     EXTENDED_AMT:   SO_AMT
                 }]
             }

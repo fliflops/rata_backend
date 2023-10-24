@@ -48,6 +48,10 @@ class draft_bill_hdr_tbl extends Model {
                 allowNull:false,
                 type: DataTypes.DECIMAL(18,9)
             },
+            min_rate:{
+                allowNull:true,
+                type: DataTypes.DECIMAL(18,9)
+            },
             vehicle_type:{
                 allowNull:true,
                 type: DataTypes.STRING(50)

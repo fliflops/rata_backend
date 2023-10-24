@@ -15,10 +15,27 @@ exports.createDraftBillBuy = async(req,res,next) => {
             },
             options:{
                 include:[
-                    {model: models.ship_point_tbl, as:'ship_point_from'},
-                    {model: models.ship_point_tbl, as:'ship_point_to'},
                     {model: models.helios_invoices_dtl_tbl},
-                    {model: models.vendor_tbl},
+                    {
+                        model: models.ship_point_tbl, 
+                        as:'ship_point_from',
+                        where:{
+                            is_active: 1
+                        }
+                    },
+                    {
+                        model: models.ship_point_tbl, 
+                        as:'ship_point_to',
+                        where:{
+                            is_active: 1
+                        }
+                    },
+                    {
+                        model: models.vendor_tbl,
+                        where:{
+                            vendor_status: 'ACTIVE'
+                        }
+                    },
                     {
                         model: models.vendor_group_dtl_tbl,
                         required: false,
