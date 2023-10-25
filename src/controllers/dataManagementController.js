@@ -284,11 +284,25 @@ exports.updateShipPoint = async(req,res,next) => {
     try{
         const data = req.body;
         const {id} = req.params;
+        
+        const shipPoint = await shipPointService.getShipPoint({
+            stc_code: id
+        })
+
+        if(!shipPoint){
+         return res.status(400).json({message: 'Ship point does not exists!'}) 
+        }
+
+        if(!shipPoint.is_active) {
+            return res.status(400).json({message: 'Ship point is already deactivated!'})  
+        }
+        
         await shipPointService.updateShipPoint({
             ...data,
             stc_code: id,
             updated_by: req.processor.id
         })
+
         res.end()
     }
     catch(e){

@@ -80,8 +80,38 @@ exports.exportDraftBill = async(req,res,next) => {
             }
         })
 
+        const headerLabel = {
+            draft_bill_no: 'Draft Bill No.',	
+            customer:'Customer',	
+            contract_type: 'Contract Type',	
+            draft_bill_date: 'Draft Bil Date',
+            delivery_date: 'Delivery Date',
+            contract_id:'Contract ID',
+            tariff_id: 'Tariff ID',
+            trip_no: 'Trip No.',
+            vendor: 'Vendor',
+            location: 'Location',
+            rate: 'Contracted Rate',
+            min_rate: 'Contracted Min. Rate',
+            vehicle_type: 'Vehicle Type',
+            stc_from: 'Ship From',
+            stc_to: 'Ship To',
+            min_billable_value: 'Min. Billable Value',
+            max_billable_value: 'Max. Billable Value',
+            min_billable_unit: 'Min. Billable Unit',	
+            total_charges: 'Total Charges',
+            status: 'Status',
+            condition: 'Condition',
+            formula: 'Formula',
+            service_type: 'Service Type',
+            sub_service_type: 'Sub Service Type',
+            job_id: 'Job ID',
+            createdAt: 'Created Date',
+            updatedAt: 'Updated Date'
+        };
+
         getDraftBills.map(item => {
-            const {details,...header} = item
+            const {details,created_by,updated_by,...header} = item
 
             headers.push({
                 ...header
@@ -92,7 +122,7 @@ exports.exportDraftBill = async(req,res,next) => {
 
 
         const xlsx = await dataExportService.generateExcel({
-            headers,
+            headers: [headerLabel].concat(headers),
             details: db_details
         })
 

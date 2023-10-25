@@ -6,7 +6,6 @@ const fs = require('fs');
 
 const api = axios.create({
     baseURL:process.env.ASCII_API,
-    // timeout:1000,
     headers:{
         [`Accept`]:'application/json'
     }
@@ -339,7 +338,13 @@ exports.getSo = async (req,res,next) => {
     
         })
 
-        const data = await asciiService.asciiSalesOrder(draftBill);
+        let data;
+        if (type === 'sell') {
+            data = await asciiService.asciiSalesOrder(draftBill);
+        }
+        else {
+            data = await asciiService.asciiConfirmationReceipt(draftBill);
+        }
 
         res.json(data)
     }

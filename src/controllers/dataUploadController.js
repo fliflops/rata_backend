@@ -153,6 +153,10 @@ exports.uploadWMSContractTariff = async(req,res,next) => {
             })
         })
 
+        if(contract_header.length === 0 && contract_details.length === 0){
+            return res.end();
+        }
+
         res.status(200).json({contract_header,
             contract_details
         })
@@ -228,6 +232,10 @@ exports.uploadWMSTariff = async(req,res,next) => {
                 }
             })
         })
+
+        if(tariff_header.length === 0){
+            return res.end();
+        }
 
         res.status(200).json({tariff_header})
 
@@ -391,6 +399,7 @@ exports.uploadTariff = async (req,res,next) => {
             .map(item => {
                 return {
                     ...item,
+                    min_value: item.min_value === 0 ? null : item.min_value,
                     tariff_status:'APPROVED',
                     tariff_id:String(item.tariff_id).trim(),
                     from_geo:String(item.from_geo).trim(),
@@ -411,6 +420,10 @@ exports.uploadTariff = async (req,res,next) => {
         await models.tariff_ic_algo_tbl.bulkCreateData({
             data: data.tariff_ic.filter(item => !tariff_ic.map(x => x.tariff_id).includes(item.tariff_id))
         })
+
+        if(tariff_header.length === 0 && tariff_ic.length === 0){
+            return res.end();
+        }
         
         res.status(200).json({
             tariff_header,
@@ -533,7 +546,6 @@ exports.uploadContract=async(req,res,next)=>{
 
         await contract.bulkCreateContractDetails({
             contract:contracts.filter(item => !contract_header.map(x => x.contract_id).includes(item.contract_id)).map(item => {
-               
                 return {
                     ...item,
                     created_by:req.processor.id,
@@ -557,8 +569,11 @@ exports.uploadContract=async(req,res,next)=>{
                 }
             })
         })
-
        
+
+        if (contract_header.length === 0 && contract_details.length === 0){
+                return res.end();
+        }
 
         res.status(200).json({
             contract_header,
@@ -681,6 +696,10 @@ exports.uploadVendor=async(req,res,next)=>{
             })
         })
 
+        if(vendor_header.length === 0 && vendor_group.length === 0 && vendor_group_details.length === 0){
+            return res.end();
+        }
+
         res.status(200).json({
             vendor_header,
             vendor_group,
@@ -765,6 +784,10 @@ exports.uploadPrincipal = async(req,res,next)=>{
                 ignoreDuplicates:true
             }
         })
+
+        if(principal_validation.length === 0){
+            return res.end();
+        }
 
         res.status(200).json({
             principal: principal_validation
@@ -869,6 +892,10 @@ exports.uploadShipPoint = async(req,res,next)=>{
                 }
             })
         })
+
+        if(shipPoint_validation.length === 0){
+            return res.end();
+        }
 
         res.status(200).json({
           ship_point: shipPoint_validation

@@ -18,7 +18,8 @@ exports.login = async (req,res,next) => {
 
         const getUser = await models.user_tbl.getOneData({
             where:{
-                email: email
+                email: email,
+                status: 'ACTIVE'
             },
             options:{
                 include: [

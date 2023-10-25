@@ -74,7 +74,7 @@ exports.asciiSalesOrder = async (data) => {
                 ITEM_TYPE:      'S',
                 SO_DATE:        header.draft_bill_date,
                 CUSTOMER_CODE:  header.ascii_customer_code,
-                PARTICULAR:     details.map(i => i.invoice_no).join(','),
+                PARTICULAR:     details.map(i => i.invoice_no).join(',')+`;MGV=${Number(header.min_billable_value).toFixed(2)}${header.min_billable_unit};TotalActual${header.min_billable_unit}=${quantity}`,
                 REF_EUPO:       details[0].trip_plan,
                 REF_CROSS:      header.contract_id,
                 SO_AMT,
