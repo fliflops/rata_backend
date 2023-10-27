@@ -23,7 +23,7 @@ exports.asciiSalesOrder = async (data) => {
                 }
             }),2)
 
-            if(header.customer === '10005' && details[0].class_of_store === 'COLD') {
+            if(header.customer === '10005' && String(details[0].class_of_store).toUpperCase() === 'COLD') {
                 SALES_ORDER_DETAIL=[
                         {
                             COMPANY_CODE:   '00001',
