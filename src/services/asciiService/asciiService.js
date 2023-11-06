@@ -38,8 +38,7 @@ exports.asciiSalesOrder = async (data) => {
                         }
                     ]
                 }
-            else if(header.customer === '10002' && details[0].service_type === '2001') 
-            {
+            else if(header.customer === '10002' && details[0].service_type === '2001') {
                 const isEqual = quantity * Number(header.rate) ===  SO_AMT;
                 SALES_ORDER_DETAIL=[{
                     COMPANY_CODE:   '00001',
