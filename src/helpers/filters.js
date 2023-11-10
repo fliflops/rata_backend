@@ -32,3 +32,22 @@ exports.defaultFilter = ({
 
     return formattedFilters
 }
+
+exports.transmittalHeaderFilter = (attributes=[],search) => {
+    let filters = {};
+    
+    if(search) {
+        let fields = {}
+        Object.keys(attributes).map(item => (fields[item === 'created_by' ? '$user_tbl.first_name$' : item] = {
+            [Sequelize.Op.like]:`%${search}%`
+        }))
+
+        filters = {
+            ...filters,
+            [Sequelize.Op.or]: fields
+        }
+    }
+
+    return filters;
+    
+}

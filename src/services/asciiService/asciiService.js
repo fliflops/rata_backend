@@ -1,7 +1,9 @@
 const _ = require('lodash')
 const xlsx = require('xlsx');
-
 const round = require('../../helpers/round');
+const models = require('../../models/rata');
+const useGlobalFilter = require('../../helpers/filters');
+const moment = require('moment');
 
 exports.asciiSalesOrder = async (data) => {
     try{
@@ -186,3 +188,235 @@ exports.generateResult = async({
         throw e
     }
 }
+
+exports.generateErrors = async(errors) => {
+    let data = [];
+
+    Object.keys(errors).map(item => {
+        const details = errors[item].DETAILS
+        details.map(item => {
+            Object.keys(item).map(key => {
+                item[key].map(data => {
+                    data.push({
+                        ref_code:data.REF_CODE,
+                        field_name:data.FIELD_NAME,
+                        field_value:data.FIELD_VALUE,
+                        response_code:data.RESPONSE_CODE,
+                        message:data.MESSAGE,
+                        result_type:'DETAILS'
+                    })
+                })
+            })
+        })
+    })
+
+    errors.map(item => {
+        item.HEADER.map(item => {
+            data.push({
+                ref_code:item.REF_CODE,
+                field_name:item.FIELD_NAME,
+                field_value:item.FIELD_VALUE,
+                response_code:item.RESPONSE_CODE,
+                message:item.MESSAGE,
+                result_type:'DETAILS'
+            })
+        })
+    })
+
+    return data
+}
+
+exports.getDraftBills = async(query) => {
+    const {
+        page,
+        totalPage,
+        search,
+        ...filters
+    } = query;
+
+    const where = {};
+
+    Object.keys(filters).map(key =>  {
+        if(key === 'draft_bill_type'){
+            return where[key] = filters[key]   
+        }
+        if(key === 'delivery_date'){
+            const dates = filters.delivery_date.split(',')
+            const from = moment(dates[0]).isValid() ? dates[0] : null;
+            const to = moment(dates[1]).isValid() ? dates[1] : null;
+            
+            if (from && to) {
+                return where.delivery_date = {
+                    [Sequelize.Op.and]: {
+                        [Sequelize.Op.gte] : from,
+                        [Sequelize.Op.lte] : to
+                    } 
+                }
+            }
+        }
+        if(key === 'draft_bill_date'){
+            const dates = filters.draft_bill_date.split(',')
+            const from = moment(dates[0]).isValid() ? dates[0] : null;
+            const to = moment(dates[1]).isValid() ? dates[1] : null;
+            
+            if (from && to) {
+                return where.draft_bill_date = {
+                    [Sequelize.Op.and]: {
+                        [Sequelize.Op.gte] : from,
+                        [Sequelize.Op.lte] : to
+                    } 
+                }
+            }
+
+        }
+        else{
+            return where[key] = filters[key]
+        }
+    })
+
+    const globalFilter = useGlobalFilter.defaultFilter({
+        model: models.draft_bill_hdr_tbl.getAttributes(),
+        filters:{
+            search
+        }
+    })
+
+    const {count,rows} = await models.draft_bill_hdr_tbl.findAndCountAll({
+        include:[
+            {
+                model: models.draft_bill_ascii_hdr_tbl,
+                required:false,
+                as:'attempts',
+                include:[
+                    {
+                        model: models.user_tbl,
+                        required:false
+                    } 
+                 ],  
+            }
+        ],
+        where:{
+            is_transmitted: 1,
+            ...where,
+            ...globalFilter
+
+        },
+        distinct:true,
+        order:[['createdAt','DESC']],
+        offset: parseInt(page) * parseInt(totalPage),
+        limit: parseInt(totalPage)        
+    })
+    .then(result => JSON.parse(JSON.stringify(result)))
+
+    return {
+        count,
+        rows: rows.map(item => {
+            const {attempts,...data} = item;
+            const lastAttempt = _.maxBy(attempts, (value) => moment(value.createdAt))
+            const user = lastAttempt?.user_tbl 
+
+            return {
+                ...data,
+                transmittal_count: attempts.length,
+                first_transmitted_date:_.minBy(attempts, (value) => moment(value.createdAt)).createdAt,
+                last_transmitted_date: lastAttempt.createdAt,
+                last_transmitted_by: user ? `${user?.first_name} ${user?.last_name}` : null
+            }
+        }),
+        pageCount: Math.ceil(count/totalPage)
+    }
+}
+
+exports.getDraftBill = async(query) => {
+    return await models.draft_bill_hdr_tbl.findOne({
+        where:{
+            ...query
+        }
+    })
+    .then(result => result ?  JSON.parse(JSON.stringify(result)):null)
+}
+
+exports.getLogHeader = async(query) => {
+    const {page,totalPage,search,...filters} = query;
+
+    const searchFilter = useGlobalFilter.transmittalHeaderFilter(models.draft_bill_ascii_hdr_tbl.getAttributes(),search);
+
+    const {count,rows} = await models.draft_bill_ascii_hdr_tbl.findAndCountAll({
+        include:[
+            {
+                model: models.user_tbl,
+                required:false
+            }
+        ],
+        where:{
+            ...filters,
+            ...searchFilter
+        },
+        order:[['createdAt','DESC']],
+        offset: parseInt(page) * parseInt(totalPage),
+        limit: parseInt(totalPage)    
+    })
+    .then(result => JSON.parse(JSON.stringify(result)))
+
+    return {
+        count,
+        rows: rows.map(item => {
+            const {user_tbl,...data} = item;
+
+            return {
+                ...data,
+                user: user_tbl ?  `${user_tbl.first_name} ${user_tbl.last_name}` : null
+            }
+        }),
+        pageCount: Math.ceil(count/totalPage)
+    }
+}
+
+exports.getLogDetail = async(query) => {
+    const {page,totalPage,search,...filters} = query;
+
+    const searchFilter = useGlobalFilter.transmittalHeaderFilter(models.draft_bill_ascii_dtl_tbl.getAttributes(),search);
+
+    const {count,rows} = await models.draft_bill_ascii_dtl_tbl.findAndCountAll({
+        where:{
+            ...filters,
+            ...searchFilter
+        },
+        offset: parseInt(page) * parseInt(totalPage),
+        limit: parseInt(totalPage)    
+    })
+    .then(result => JSON.parse(JSON.stringify(result)))
+
+    return {
+        count,
+        rows,
+        pageCount: Math.ceil(count/totalPage)
+    }
+}
+
+exports.updateDraftBill = async (data,filter,stx=null) => {
+    return await models.draft_bill_hdr_tbl.update({
+        ...data
+    },
+    {
+        where:{
+            ...filter
+        },
+        transaction: stx
+    })
+}
+
+exports.createTransmittalLogHeader=async(data = [],stx = null)=>{
+    const result = await models.draft_bill_ascii_hdr_tbl.bulkCreate(data,{
+        transaction: stx
+    })
+
+    return JSON.parse(JSON.stringify(result))
+}
+
+exports.createTransmittalLogDtl=async(data=[], stx = null) => {
+    return await models.draft_bill_ascii_dtl_tbl.bulkCreate(data,{
+        transaction: stx ?? null 
+    })
+}
+

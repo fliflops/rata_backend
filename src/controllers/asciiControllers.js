@@ -141,12 +141,14 @@ exports.warehouseController = async (req,res,next) => {
 }   
 
 exports.transportController = async(req,res,next) => {
+    const stx = await models.sequelize.transaction();
     try{
-        const {date,location,type} = req.query;
+      
+        const {date,location,type,isRetransmit} = req.query;
         let data;
         let result;
-        const token = await login();
         
+
         const draftBill = await models.draft_bill_hdr_tbl.getData({
             options:{
                 include:[
@@ -184,7 +186,8 @@ exports.transportController = async(req,res,next) => {
                 delivery_date: date,
                 location: location,
                 contract_type: type,
-                status:'DRAFT_BILL'
+                status: 'DRAFT_BILL',
+                is_transmitted: isRetransmit === 'true' ? true : false 
             }
         })
         .then(result => {
@@ -201,9 +204,11 @@ exports.transportController = async(req,res,next) => {
                     ascii_customer_code:    typeof principal_tbl?.ascii_customer_code === 'undefined' ? null : principal_tbl?.ascii_customer_code
                 }
             })
-
         })
-
+        
+        // res.status(200).json(draftBill);
+        const token = await login();
+      
         if(type === 'SELL'){
             data = await asciiService.asciiSalesOrder(draftBill)
             await api.post('/get/sales-order',JSON.parse(JSON.stringify(data)),{
@@ -225,14 +230,11 @@ exports.transportController = async(req,res,next) => {
                 }
             })
 
-            await models.draft_bill_hdr_tbl.updateData({
-                data:{
-                    status:'DRAFT_BILL_POSTED'
-                },
-                where:{
-                    draft_bill_no: result.success.map(item => item.SO_CODE)
-                }
-            })
+            await asciiService.updateDraftBill(
+                {status:'DRAFT_BILL_POSTED'},
+                {draft_bill_no:result.success.map(item => item.SO_CODE),},
+                stx
+            )
         }
         else {
             data = await asciiService.asciiConfirmationReceipt(draftBill)
@@ -256,16 +258,45 @@ exports.transportController = async(req,res,next) => {
                 }
             })
 
-            await models.draft_bill_hdr_tbl.updateData({
-                data:{
-                    status:'DRAFT_BILL_POSTED'
-                },
-                where:{
-                    draft_bill_no:result.success.map(item => item.CR_CODE),
-                }
-            })
+            await asciiService.updateDraftBill(
+                {status:'DRAFT_BILL_POSTED'},
+                {draft_bill_no:result.success.map(item => item.CR_CODE),},
+                stx
+            )
         }
 
+        if(isRetransmit === 'false'){
+            await asciiService.updateDraftBill(
+                {
+                    is_transmitted: true
+                },
+                {
+                    draft_bill_no: draftBill.map(item => item.draft_bill_no)
+                },
+                stx
+            )
+        }   
+
+        const errors = await asciiService.generateErrors(result.errors)
+
+        const logHeader = await asciiService.createTransmittalLogHeader(draftBill.map(item => ({
+            draft_bill_no: item.draft_bill_no,
+            created_by: req.processor.id
+        })),
+        stx)
+       
+        await asciiService.createTransmittalLogDtl(errors.map(item => {
+            const header = logHeader.find(db => db.draft_bill_no === item.ref_code);
+
+            return ({
+                ...item,
+                draft_bill_code: item.ref_code,
+                fk_id: header.id
+            })
+        }),stx)
+
+        await stx.commit();
+        
         const xlsx = await asciiService.generateResult({
             success:result.success,
             errors:result.errors,
@@ -277,6 +308,8 @@ exports.transportController = async(req,res,next) => {
         res.send(xlsx)
     }   
     catch(e){
+        await stx.rollback();
+        console.log(e)
         next(e)
     }
 }
@@ -355,5 +388,81 @@ exports.getSo = async (req,res,next) => {
    
 }
 
+exports.getPaginatedTransportDraftBill = async (req,res,next) => {
+    try{
+        const data = await asciiService.getDraftBills({
+            ...req.query
+        })
+
+        res.status(200).json({
+            data:       data.rows,
+            rows:       data.count,
+            pageCount: data.pageCount
+        })
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.getDraftBill = async(req,res,next) => {
+    try{
+        const {draft_bill_no} = req.params;
+
+        if(!draft_bill_no) return res.status(400).json({message:'draft bill no is required'});
+
+        const data = await asciiService.getDraftBill({
+            draft_bill_no: draft_bill_no
+        })
+
+        res.status(200).json(data)
+    }
+    catch (e) {
+        next(e)
+    }
+}
+
+exports.getTransmittalLogHeader = async(req,res,next) => {
+    try{
+        const {draft_bill_no} = req.params;
+        
+        const data = await asciiService.getLogHeader({
+            ...req.query,
+            draft_bill_no
+        })
+
+        res.status(200).json({
+            data:      data.rows,
+            rows:      data.count,
+            pageCount: data.pageCount
+        })
+
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.getTransmittalLogDetail = async(req,res,next) => {
+    try{
+        const {header_id} = req.params;
+        
+        const data = await asciiService.getLogDetail({
+            ...req.query,
+            fk_id: header_id
+        })
+
+        res.status(200).json({
+            data:      data.rows,
+            rows:      data.count,
+            pageCount: data.pageCount
+        })
+
+    
+    }
+    catch(e){
+        next(e)
+    }
+}
 
  
