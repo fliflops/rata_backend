@@ -160,7 +160,7 @@ exports.transportReplanBuy = async(req,res,next) => {
 
         res.status(200).json({
             draft_bill: draft_bill.draft_bill.length,
-            revenue_leak: draft_bill.revenue_leak.length,
+            revenue_leak: draft_bill.revenue_leak,
             invoices: draft_bill.data.length
         })        
     }
