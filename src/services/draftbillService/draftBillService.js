@@ -1344,11 +1344,11 @@ const replanBuy = async({invoices,rdd}) => {
             }
         })
 
-        // await createRevenueLeak({
-        //     draft_bill,
-        //     revenue_leak,
-        //     invoices:data
-        // })
+        await createRevenueLeak({
+            draft_bill,
+            revenue_leak,
+            invoices:data
+        })
 
         return {
             data: data,
