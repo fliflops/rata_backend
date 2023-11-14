@@ -294,7 +294,7 @@ const assignContract = async({invoices,contracts}) =>{
     }
 }
 
-const   assignTariff = async({invoices,contracts}) => {
+const assignTariff = async({invoices,contracts}) => {
     try{
         let data = []
         let revenue_leak = []
@@ -305,7 +305,7 @@ const   assignTariff = async({invoices,contracts}) => {
             const tariffs = contract_tariffs
             .filter(item => item.contract_id === header.contract_id)
             .filter(tariff => {
-                const {
+                let {
                     service_type,
                     from_geo_type,
                     from_geo,
@@ -320,50 +320,90 @@ const   assignTariff = async({invoices,contracts}) => {
                 
                 const inv_stc_from              = header?.ship_point_from[String(from_geo_type).toLowerCase()] || null
                 const inv_stc_to                = header?.ship_point_to[String(to_geo_type).toLowerCase()] || null
-                const invoice_sub_service_type  = String(invoice.sub_service_type).toLowerCase()
+                const invoice_sub_service_type  = String(invoice.sub_service_type).toLowerCase();
 
-                if(String(location).toLowerCase()           === String(invoice.location).toLowerCase()      &&
-                (String(inv_stc_from).toLowerCase()         === String(from_geo).toLowerCase()              &&
-                String(inv_stc_to).toLowerCase()            === String(to_geo).toLowerCase())               &&
-                service_type                                === invoice.service_type                        &&
-                (invoice_sub_service_type===null || invoice_sub_service_type==='null' || invoice_sub_service_type==='' ?   true  
-                : (invoice_sub_service_type === String(sub_service_type).toLowerCase())))
-                {
-                    //if tariff has vehicle type maintained
-                    if(vehicle_type){
-                        //if tariff is equal to invoice vehicle type
-                        if(vehicle_type === invoice.vehicle_type){
-                            
-                            //if tariff class off store is null 
-                            if(!class_of_store){
-                                return true
-                            }
-                            else{
-                                //if class of store is not null
-                                //check if the invoice class of store is equal to the tariff
-                                if(String(class_of_store).toLowerCase() === String(invoice.class_of_store).toLowerCase()){
+                if(String(contract_type).toUpperCase() === 'SELL'){
+                    if(String(location).toLowerCase()           === String(invoice.location).toLowerCase()      &&
+                    (String(inv_stc_from).toLowerCase()         === String(from_geo).toLowerCase()              &&
+                    String(inv_stc_to).toLowerCase()            === String(to_geo).toLowerCase())               &&
+                    service_type                                === invoice.service_type                        &&
+                    (invoice_sub_service_type===null || invoice_sub_service_type==='null' || invoice_sub_service_type=== '' ?   true : (invoice_sub_service_type === String(sub_service_type).toLowerCase())))
+                    {
+
+                        //if tariff has vehicle type maintained
+                        if(vehicle_type){
+                            //if tariff is equal to invoice vehicle type
+                            if(vehicle_type === invoice.vehicle_type){
+                                
+                                //if tariff class off store is null 
+                                if(!class_of_store){
                                     return true
                                 }
+                                else{
+                                    //if class of store is not null
+                                    //check if the invoice class of store is equal to the tariff
+                                    if(String(class_of_store).toLowerCase() === String(invoice.class_of_store).toLowerCase()){
+                                        return true
+                                    }
 
-                                return false
-                            }
-                        } 
-                        return false 
-                    }
-                    else{
-                        //check if the invoice class of store is equal to the tariff
-                        if(String(class_of_store).toLowerCase() === String(invoice.class_of_store).toLowerCase()){
-                        
-                            return true
+                                    return false
+                                }
+                            } 
+                            return false 
                         }
+                        else{
+                            //check if the invoice class of store is equal to the tariff
+                            if(String(class_of_store).toLowerCase() === String(invoice.class_of_store).toLowerCase()){
+                            
+                                return true
+                            }
 
-                        return false
+                            return false
+                        }
                     }
                 }
-                
+                else{
+                    if(String(location).toLowerCase()           === String(invoice.location).toLowerCase()      &&
+                    (String(inv_stc_from).toLowerCase()         === String(from_geo).toLowerCase()              &&
+                    String(inv_stc_to).toLowerCase()            === String(to_geo).toLowerCase())               &&
+                    service_type                                === invoice.service_type)
+                    {
+                        //if tariff has vehicle type maintained
+                        if(vehicle_type){
+                            //if tariff is equal to invoice vehicle type
+                            if(vehicle_type === invoice.vehicle_type){
+                                
+                                //if tariff class off store is null 
+                                if(!class_of_store){
+                                    return true
+                                }
+                                else{
+                                    //if class of store is not null
+                                    //check if the invoice class of store is equal to the tariff
+                                    if(String(class_of_store).toLowerCase() === String(invoice.class_of_store).toLowerCase()){
+                                        return true
+                                    }
+
+                                    return false
+                                }
+                            } 
+                            return false 
+                        }
+                        else{
+                            //check if the invoice class of store is equal to the tariff
+                            if(String(class_of_store).toLowerCase() === String(invoice.class_of_store).toLowerCase()){
+                            
+                                return true
+                            }
+
+                            return false
+                        }
+                    }
+                }
+
                 return false
             })
-    
+
             if(tariffs.length === 1){
                 const tariff={
                     tariff_id:          tariffs[0].tariff_id,
@@ -1304,11 +1344,11 @@ const replanBuy = async({invoices,rdd}) => {
             }
         })
 
-        await createRevenueLeak({
-            draft_bill,
-            revenue_leak,
-            invoices:data
-        })
+        // await createRevenueLeak({
+        //     draft_bill,
+        //     revenue_leak,
+        //     invoices:data
+        // })
 
         return {
             data: data,
