@@ -74,7 +74,11 @@ exports.exportDraftBill = async(req,res,next) => {
                     {
                         model: models.draft_bill_details_tbl,
                         required: false,
-                        as:'details'
+                        as:'details',
+                        include:[{
+                            model: models.helios_invoices_hdr_tbl,
+                            as:'invoice'
+                        }]
                     }
                 ]
             }
@@ -117,7 +121,14 @@ exports.exportDraftBill = async(req,res,next) => {
                 ...header
             })
 
-            db_details = db_details.concat(details)
+            db_details = db_details.concat(details.map(item =>{
+                const {invoice,...itms} = item;
+
+                return {
+                    ...itms,
+                    planned_vehicle_type: invoice.planned_vehicle_type
+                }
+            }))
         })
 
 

@@ -180,7 +180,11 @@ exports.getDraftBill = async(req,res,next) => {
                     {
                         model:models.draft_bill_details_tbl,
                         required: false,
-                        as:'details'
+                        as:'details',
+                        include:[{
+                            model: models.helios_invoices_hdr_tbl,
+                            as:'invoice'
+                        }]
                     }
                 ],
                 distinct: true
@@ -188,7 +192,18 @@ exports.getDraftBill = async(req,res,next) => {
         })
 
         res.status(200).json({
-            data:rows,
+            data:rows.map(item => {
+                const {details,...header} = item;
+                return {
+                    ...header,
+                    details: details.map((dtl) => {
+                        return{
+                            ...dtl,
+                            planned_vehicle_type: dtl.invoice.planned_vehicle_type
+                        }
+                    }),
+                }
+            }),
             rows:count,
             pageCount: Math.ceil(count/totalPage)
         })
