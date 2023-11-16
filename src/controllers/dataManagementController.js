@@ -293,9 +293,9 @@ exports.updateShipPoint = async(req,res,next) => {
          return res.status(400).json({message: 'Ship point does not exists!'}) 
         }
 
-        if(!shipPoint.is_active) {
-            return res.status(400).json({message: 'Ship point is already deactivated!'})  
-        }
+        // if(!shipPoint.is_active) {
+        //     return res.status(400).json({message: 'Ship point is already deactivated!'})  
+        // }
         
         await shipPointService.updateShipPoint({
             ...data,

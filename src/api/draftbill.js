@@ -11,7 +11,6 @@ router.route('/sell')
 router.route('/buy')
 .post(authorize,controller.createDraftBillBuy)
 
-
 router.route('/wms')
 .get(authorize,controller.getWMSDraftBill)
 
