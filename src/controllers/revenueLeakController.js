@@ -50,18 +50,18 @@ exports.getRevenueLeaks = async(req,res,next) => {
                 include: [
                     {
                         model:models.helios_invoices_hdr_tbl,
+                        require:false
                     }
                 ],
-                //distinct:true
             }
         })
         .then(result => {
             const rows = result.rows.map(item => {
                 const {helios_invoices_hdr_tbl,tranport_rev_leak_dtl_tbls,...header} = item;
-
                 return {
                     ...header,
                     ...helios_invoices_hdr_tbl,
+                    tms_reference_no: header.tms_reference_no
                 }
             })
 
