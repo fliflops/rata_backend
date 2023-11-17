@@ -294,7 +294,7 @@ exports.getDraftBills = async(query) => {
                         model: models.user_tbl,
                         required:false
                     } 
-                 ],  
+                ],  
             }
         ],
         where:{
@@ -320,8 +320,8 @@ exports.getDraftBills = async(query) => {
             return {
                 ...data,
                 transmittal_count: attempts.length,
-                first_transmitted_date:_.minBy(attempts, (value) => moment(value.createdAt)).createdAt,
-                last_transmitted_date: lastAttempt.createdAt,
+                first_transmitted_date:_.minBy(attempts, (value) => moment(value.createdAt))?.createdAt,
+                last_transmitted_date: lastAttempt?.createdAt,
                 last_transmitted_by: user ? `${user?.first_name} ${user?.last_name}` : null
             }
         }),
