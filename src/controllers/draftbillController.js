@@ -19,6 +19,7 @@ exports.createDraftBillBuy = async(req,res,next) => {
                     {
                         model: models.ship_point_tbl, 
                         as:'ship_point_from',
+                        required:false,
                         where:{
                             is_active: 1
                         }
@@ -26,12 +27,14 @@ exports.createDraftBillBuy = async(req,res,next) => {
                     {
                         model: models.ship_point_tbl, 
                         as:'ship_point_to',
+                        required:false,
                         where:{
                             is_active: 1
                         }
                     },
                     {
                         model: models.vendor_tbl,
+                        required: false,
                         where:{
                             vendor_status: 'ACTIVE'
                         }
