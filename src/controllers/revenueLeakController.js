@@ -113,9 +113,9 @@ exports.transportReplanBuy = async(req,res,next) => {
                     {
                         model:models.helios_invoices_hdr_tbl,
                         include:[
-                            {model: models.ship_point_tbl, as:'ship_point_from'},
-                            {model: models.ship_point_tbl, as:'ship_point_to'},
-                            {model: models.vendor_tbl},
+                            {model: models.ship_point_tbl, as:'ship_point_from',required:false},
+                            {model: models.ship_point_tbl, as:'ship_point_to',required:false},
+                            {model: models.vendor_tbl,required:false},
                             {
                                 model: models.vendor_group_dtl_tbl,
                                 required: false,
@@ -180,13 +180,14 @@ exports.transportReplanSell = async(req,res,next) => {
                     {
                         model:models.helios_invoices_hdr_tbl,
                         include:[
-                            {model: models.vendor_tbl},
-                            {model: models.ship_point_tbl, as:'ship_point_from'},
-                            {model: models.ship_point_tbl, as:'ship_point_to'}
+                            {model: models.vendor_tbl,required:false},
+                            {model: models.ship_point_tbl, as:'ship_point_from',required:false},
+                            {model: models.ship_point_tbl, as:'ship_point_to',required:false}
                         ]
                     },
                     {
-                        model: models.tranport_rev_leak_dtl_tbl
+                        model: models.tranport_rev_leak_dtl_tbl,
+                        required:false
                     }
                 ]
             },

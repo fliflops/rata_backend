@@ -89,10 +89,10 @@ exports.createDraftBillSell = async(req,res,next) => {
             },
             options:{
                 include:[
-                   {model: models.helios_invoices_dtl_tbl},
-                   {model: models.vendor_tbl},
-                   {model: models.ship_point_tbl, as:'ship_point_from'},
-                   {model: models.ship_point_tbl, as:'ship_point_to'}
+                   {model: models.helios_invoices_dtl_tbl, required:false},
+                   {model: models.vendor_tbl,required:false},
+                   {model: models.ship_point_tbl, as:'ship_point_from',required:false},
+                   {model: models.ship_point_tbl, as:'ship_point_to',required:false}
                 ]
             }
         })
