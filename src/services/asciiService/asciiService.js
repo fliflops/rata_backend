@@ -69,13 +69,15 @@ exports.asciiSalesOrder = async (data) => {
                 }]
             }
 
+            const mgvParticulars = quantity < Number(header.min_billable_value) ? `MGV=${Number(header.min_billable_value).toFixed(2)}${header.min_billable_unit};TotalActual${header.min_billable_unit}=${quantity}`: ''
+
             return {
                 COMPANY_CODE:   '00001',
                 SO_CODE:        header.draft_bill_no,
                 ITEM_TYPE:      'S',
                 SO_DATE:        header.draft_bill_date,
                 CUSTOMER_CODE:  header.ascii_customer_code,
-                PARTICULAR:     details.map(i => i.invoice_no).join(',')+`;MGV=${Number(header.min_billable_value).toFixed(2)}${header.min_billable_unit};TotalActual${header.min_billable_unit}=${quantity}`,
+                PARTICULAR:     details.map(i => i.invoice_no).join(',')+mgvParticulars,
                 REF_EUPO:       details[0].trip_plan,
                 REF_CROSS:      header.contract_id,
                 SO_AMT,
