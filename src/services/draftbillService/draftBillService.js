@@ -294,7 +294,7 @@ const assignContract = async({invoices,contracts}) =>{
     }
 }
 
-const assignTariff = async({invoices,contracts}) => {
+const assignTariff = async({invoices,contracts,contract_type}) => {
     try{
         let data = []
         let revenue_leak = []
@@ -315,7 +315,6 @@ const assignTariff = async({invoices,contracts}) => {
                     vehicle_type,    
                     class_of_store,
                     sub_service_type,
-                    contract_type
                 } = tariff;
                 
                 const inv_stc_from              = header?.ship_point_from[String(from_geo_type).toLowerCase()] || null
@@ -329,7 +328,6 @@ const assignTariff = async({invoices,contracts}) => {
                     service_type                                === invoice.service_type                        &&
                     (invoice_sub_service_type===null || invoice_sub_service_type==='null' || invoice_sub_service_type=== '' ?   true : (invoice_sub_service_type === String(sub_service_type).toLowerCase())))
                     {
-
                         //if tariff has vehicle type maintained
                         if(vehicle_type){
                             //if tariff is equal to invoice vehicle type
@@ -432,6 +430,7 @@ const assignTariff = async({invoices,contracts}) => {
             }
 
             if(tariffs.length > 1){
+                
                 const {ship_point_from,ship_point_to,...header} = invoice
                 revenue_leak.push({
                     ...header,
@@ -1192,7 +1191,7 @@ const buy = async ({
         revenue_leak = revenue_leak.concat(data.revenue_leak)
 
         //4. Assign Tariff
-        data = await assignTariff({invoices:data.data,contracts})
+        data = await assignTariff({invoices:data.data,contracts,contract_type:'BUY'})
         revenue_leak = revenue_leak.concat(data.revenue_leak)
 
         //5. Draft Bill IC
@@ -1257,7 +1256,7 @@ const sell = async ({
         revenue_leak = revenue_leak.concat(data.revenue_leak)
 
         //4. Assign Tariff
-        data = await assignTariff({invoices:data.data,contracts})
+        data = await assignTariff({invoices:data.data,contracts,contract_type:'SELL'})
         revenue_leak = revenue_leak.concat(data.revenue_leak)
       
         //6. compute normal draft bill with agg
@@ -1319,7 +1318,8 @@ const replanBuy = async({invoices,rdd}) => {
 
         data = await assignTariff({
             invoices:data.data,
-            contracts
+            contracts,
+            contract_type:'BUY'
         })
 
         revenue_leak = revenue_leak.concat(data.revenue_leak);
@@ -1383,7 +1383,7 @@ const replanSell = async({invoices,rdd}) => {
         revenue_leak = revenue_leak.concat(data.revenue_leak)
 
          //4. Assign Tariff
-        data = await assignTariff({invoices:data.data,contracts})
+        data = await assignTariff({invoices:data.data,contracts,contract_type:'SELL'})
         revenue_leak = revenue_leak.concat(data.revenue_leak)
         
         //6. compute normal draft bill with agg
