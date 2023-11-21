@@ -98,9 +98,9 @@ class draft_bill_hdr_tbl extends Model {
             job_id:{
                 type: DataTypes.STRING
             },
-            // is_transmitted:{
-            //     type: DataTypes.BOOLEAN
-            // },
+            is_transmitted:{
+                type: DataTypes.BOOLEAN
+            },
             created_by:{type: DataTypes.STRING(50)},
             updated_by:{type: DataTypes.STRING(50)},
             createdAt:Sequelize.DATE,
@@ -191,6 +191,12 @@ class draft_bill_hdr_tbl extends Model {
             sourceKey:'tariff_id',
             foreignKey:'tariff_id',
             as:'tariff'
+        })
+
+        this.attempts = this.hasMany(models.draft_bill_ascii_hdr_tbl,{
+            sourceKey:'draft_bill_no',
+            foreignKey:'draft_bill_no',
+            as:'attempts'
         })
     }
  }

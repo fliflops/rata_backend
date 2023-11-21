@@ -192,8 +192,6 @@ exports.getDraftBill = async(req,res,next) => {
             rows:count,
             pageCount: Math.ceil(count/totalPage)
         })
-
-
     }
     catch(e){
         next(e)
@@ -221,7 +219,6 @@ exports.getWMSDraftBill = async(req,res,next) => {
             }
         })
 
-        
         const globalFilter = useGlobalFilter.defaultFilter({
             model:models.wms_draft_bill_hdr_tbl.rawAttributes,
             filters:{
