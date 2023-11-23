@@ -400,7 +400,7 @@ exports.uploadTariff = async (req,res,next) => {
                 return {
                     ...item,
                     min_value: item.min_value === 0 ? null : item.min_value,
-                    tariff_status:'APPROVED',
+                    tariff_status:'DRAFT',
                     tariff_id:String(item.tariff_id).trim(),
                     from_geo:String(item.from_geo).trim(),
                     to_geo:String(item.to_geo).trim(),
