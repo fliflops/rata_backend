@@ -393,7 +393,7 @@ exports.getPaginatedTransportDraftBill = async (req,res,next) => {
         const data = await asciiService.getDraftBills({
             ...req.query
         })
-
+        
         res.status(200).json({
             data:       data.rows,
             rows:       data.count,

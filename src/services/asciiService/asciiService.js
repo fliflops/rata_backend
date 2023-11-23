@@ -2,8 +2,11 @@ const _ = require('lodash')
 const xlsx = require('xlsx');
 const round = require('../../helpers/round');
 const models = require('../../models/rata');
+
 const useGlobalFilter = require('../../helpers/filters');
 const moment = require('moment');
+
+const {Sequelize} = models;
 
 exports.asciiSalesOrder = async (data) => {
     try{
@@ -295,16 +298,39 @@ exports.getDraftBills = async(query) => {
                         required:false
                     } 
                 ],  
+            },
+            {
+                model:models.draft_bill_details_tbl,
+                required:false,
+                as:'details'
             }
         ],
+        attributes:[
+            [
+                Sequelize.literal(`(
+                    Select MAX(createdAt)
+                    from draft_bill_ascii_hdr_tbl
+                    where draft_bill_ascii_hdr_tbl.draft_bill_no = draft_bill_hdr_tbl.draft_bill_no
+                )`),
+                'last_transmitted_date'
+            ],
+            [
+                Sequelize.literal(`(
+                    Select MIN(createdAt)
+                    from draft_bill_ascii_hdr_tbl as attempts
+                    where attempts.draft_bill_no = draft_bill_hdr_tbl.draft_bill_no
+                )`),
+                'first_transmitted_date'
+            ],
+        ].concat(Object.keys(models.draft_bill_hdr_tbl.getAttributes()).map(field => field)),
         where:{
             is_transmitted: 1,
             ...where,
             ...globalFilter
 
-        },
-        distinct:true,
-        order:[['createdAt','DESC']],
+        },  
+        
+        order:[[Sequelize.literal('last_transmitted_date'),'DESC']],
         offset: parseInt(page) * parseInt(totalPage),
         limit: parseInt(totalPage)        
     })
@@ -313,16 +339,24 @@ exports.getDraftBills = async(query) => {
     return {
         count,
         rows: rows.map(item => {
-            const {attempts,...data} = item;
+            const {attempts,details,...data} = item;
             const lastAttempt = _.maxBy(attempts, (value) => moment(value.createdAt))
-            const user = lastAttempt?.user_tbl 
+            const user = lastAttempt?.user_tbl;
+
+            let actual_quantity = 0;
+
+            if(data.min_billable_unit === 'CBM') {
+                actual_quantity = _.sumBy(details, item => Number(item.actual_cbm)).toFixed(2)
+            }
+            else{
+                actual_quantity = _.sumBy(details, item => Number(item.actual_qty)).toFixed(2)
+            }
 
             return {
                 ...data,
                 transmittal_count: attempts.length,
-                first_transmitted_date:_.minBy(attempts, (value) => moment(value.createdAt))?.createdAt,
-                last_transmitted_date: lastAttempt?.createdAt,
-                last_transmitted_by: user ? `${user?.first_name} ${user?.last_name}` : null
+                last_transmitted_by: user ? `${user?.first_name} ${user?.last_name}` : null,
+                actual_quantity
             }
         }),
         pageCount: Math.ceil(count/totalPage)
