@@ -114,6 +114,14 @@ class draft_bill_details_tbl extends Model {
             tableName:'draft_bill_detail_tbl'
         })
     }
+
+    static associate (models) {
+        this.invoices = this.hasOne(models.helios_invoices_hdr_tbl,({
+            sourceKey:'fk_tms_reference_no',
+            foreignKey:'tms_reference_no',
+            as:'invoice'
+        }))
+    }
 }
 
 module.exports = draft_bill_details_tbl

@@ -385,6 +385,33 @@ router.get('/ic-vendor',async(req,res)=>{
     }
 })
 
+router.get('/vendor',async(req,res)=>{
+    try{
+        const data = await vendor.getAllVendor({
+            filters:{
+                vendor_status: 'ACTIVE'
+            }
+        })
+
+        res.status(200).json({
+            data:data.map(i => {
+                return {
+                    label:i.vendor_id+'-'+i.vendor_description,
+                    value:i.vendor_id
+                }
+            })
+        })
+
+
+    }
+    catch(e){
+        console.log(e)
+        res.status(500).json({
+            message:`${e}`
+        })   
+    }
+} )
+
 router.get('/roles',async(req,res)=>{
     try{    
         let data 

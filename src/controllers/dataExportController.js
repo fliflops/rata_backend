@@ -74,31 +74,35 @@ exports.exportDraftBill = async(req,res,next) => {
                     {
                         model: models.draft_bill_details_tbl,
                         required: false,
-                        as:'details'
+                        as:'details',
+                        include:[{
+                            model: models.helios_invoices_hdr_tbl,
+                            as:'invoice'
+                        }]
                     }
                 ]
             }
         })
 
         const headerLabel = {
-            draft_bill_no: 'Draft Bill No.',	
-            customer:'Customer',	
-            contract_type: 'Contract Type',	
-            draft_bill_date: 'Draft Bil Date',
-            delivery_date: 'Delivery Date',
-            contract_id:'Contract ID',
-            tariff_id: 'Tariff ID',
-            trip_no: 'Trip No.',
-            vendor: 'Vendor',
-            location: 'Location',
-            rate: 'Contracted Rate',
-            min_rate: 'Contracted Min. Rate',
-            vehicle_type: 'Vehicle Type',
-            stc_from: 'Ship From',
-            stc_to: 'Ship To',
+            draft_bill_no:      'Draft Bill No.',	
+            customer:           'Customer',	
+            contract_type:      'Contract Type',	
+            draft_bill_date:    'Draft Bil Date',
+            delivery_date:      'Delivery Date',
+            contract_id:        'Contract ID',
+            tariff_id:          'Tariff ID',
+            trip_no:            'Trip No.',
+            vendor:             'Vendor',
+            location:           'Location',
+            rate:               'Contracted Rate',
+            min_rate:           'Contracted Min. Rate',
+            vehicle_type:       'Vehicle Type',
+            stc_from:           'Ship From',
+            stc_to:             'Ship To',
             min_billable_value: 'Min. Billable Value',
             max_billable_value: 'Max. Billable Value',
-            min_billable_unit: 'Min. Billable Unit',	
+            min_billable_unit:  'Min. Billable Unit',	
             total_charges: 'Total Charges',
             status: 'Status',
             condition: 'Condition',
@@ -117,7 +121,14 @@ exports.exportDraftBill = async(req,res,next) => {
                 ...header
             })
 
-            db_details = db_details.concat(details)
+            db_details = db_details.concat(details.map(item =>{
+                const {invoice,...itms} = item;
+
+                return {
+                    ...itms,
+                    planned_vehicle_type: invoice.planned_vehicle_type
+                }
+            }))
         })
 
 
@@ -164,19 +175,18 @@ exports.exportRevenueLeak = async(req,res,next) => {
         })
 
         getRevenueLeaks.map(item => {
-            const {helios_invoices_hdr_tbl,tranport_rev_leak_dtl_tbls,...header} = item;
-            
+            const {helios_invoices_hdr_tbl,tranport_rev_leak_dtl_tbls,created_by,updated_by,...header} = item;
+            const {is_billable,is_processed_sell,is_processed_buy,...invoices_header} = helios_invoices_hdr_tbl;
             headers.push({
-                draft_bill_type: header.draft_bill_type,
-                class_of_store: header.class_of_store,
-                revenue_leak_reason: header.revenue_leak_reason,
-                is_draft_bill: header.is_draft_bill === 1 ? 'true' : 'false',
-                ...helios_invoices_hdr_tbl,
+                ...header,
+                ...invoices_header,
+                is_draft_bill:  header.is_draft_bill === 1 ? 'true' : 'false',
+                tms_reference_no: header.tms_reference_no
             })
-
             details = details.concat(tranport_rev_leak_dtl_tbls)
-
         })
+
+        console.log(headers.filter(item => item.fk_tms_reference_no === 'BR001881244'))
 
         const xlsx = await dataExportService.generateExcel({
             headers,

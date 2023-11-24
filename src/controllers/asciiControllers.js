@@ -278,7 +278,7 @@ exports.transportController = async(req,res,next) => {
         }   
 
         const errors = await asciiService.generateErrors(result.errors)
-
+        //draftBill.filter(item => !result.success.map(suc => suc[type === 'SELL' ? 'SO_CODE' : 'CR_CODE']).includes(item.draft_bill_no))
         const logHeader = await asciiService.createTransmittalLogHeader(draftBill.map(item => ({
             draft_bill_no: item.draft_bill_no,
             created_by: req.processor.id
@@ -295,7 +295,7 @@ exports.transportController = async(req,res,next) => {
             })
         }),stx)
 
-        await stx.commit();
+       await stx.commit();
         
         const xlsx = await asciiService.generateResult({
             success:result.success,
@@ -393,7 +393,7 @@ exports.getPaginatedTransportDraftBill = async (req,res,next) => {
         const data = await asciiService.getDraftBills({
             ...req.query
         })
-
+        
         res.status(200).json({
             data:       data.rows,
             rows:       data.count,
