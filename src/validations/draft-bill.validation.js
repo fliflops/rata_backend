@@ -10,5 +10,6 @@ module.exports = Joi.object({
     draft_bill_type:Joi.string().empty(''),
     customer:Joi.string().empty(''),
     delivery_date:Joi.string().empty(''),
-    status:Joi.string().empty('')
+    status:Joi.string().empty(''),
+    vendor:Joi.string().empty('')
 }) 
