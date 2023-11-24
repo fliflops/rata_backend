@@ -19,6 +19,7 @@ exports.createDraftBillBuy = async(req,res,next) => {
                     {
                         model: models.ship_point_tbl, 
                         as:'ship_point_from',
+                        required:false,
                         where:{
                             is_active: 1
                         }
@@ -26,12 +27,14 @@ exports.createDraftBillBuy = async(req,res,next) => {
                     {
                         model: models.ship_point_tbl, 
                         as:'ship_point_to',
+                        required:false,
                         where:{
                             is_active: 1
                         }
                     },
                     {
                         model: models.vendor_tbl,
+                        required: false,
                         where:{
                             vendor_status: 'ACTIVE'
                         }
@@ -86,10 +89,10 @@ exports.createDraftBillSell = async(req,res,next) => {
             },
             options:{
                 include:[
-                   {model: models.helios_invoices_dtl_tbl},
-                   {model: models.vendor_tbl},
-                   {model: models.ship_point_tbl, as:'ship_point_from'},
-                   {model: models.ship_point_tbl, as:'ship_point_to'}
+                   {model: models.helios_invoices_dtl_tbl, required:false},
+                   {model: models.vendor_tbl,required:false},
+                   {model: models.ship_point_tbl, as:'ship_point_from',required:false},
+                   {model: models.ship_point_tbl, as:'ship_point_to',required:false}
                 ]
             }
         })
@@ -180,7 +183,11 @@ exports.getDraftBill = async(req,res,next) => {
                     {
                         model:models.draft_bill_details_tbl,
                         required: false,
-                        as:'details'
+                        as:'details',
+                        include:[{
+                            model: models.helios_invoices_hdr_tbl,
+                            as:'invoice'
+                        }]
                     }
                 ],
                 distinct: true
@@ -188,7 +195,18 @@ exports.getDraftBill = async(req,res,next) => {
         })
 
         res.status(200).json({
-            data:rows,
+            data:rows.map(item => {
+                const {details,...header} = item;
+                return {
+                    ...header,
+                    details: details.map((dtl) => {
+                        return{
+                            ...dtl,
+                            planned_vehicle_type: dtl.invoice.planned_vehicle_type
+                        }
+                    }),
+                }
+            }),
             rows:count,
             pageCount: Math.ceil(count/totalPage)
         })

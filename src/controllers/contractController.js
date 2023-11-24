@@ -45,37 +45,11 @@ exports.getContracts = async(req,res,next) => {
 
 exports.getContractTariff = async(req,res,next) => {
     try{
-        const {
-            contract_id,
-            page,
-            totalPage,
-            search,
-            ...filters
-        } = req.query;
-        
-
-        const globalFilter = useGlobalFilter.defaultFilter({
-            model:models.contract_tariff_dtl.rawAttributes,
-            filters:{
-                search
-            }
-        })
-        
-        const {count,rows} = await models.contract_tariff_dtl.paginated({
-            filters:{
-                contract_id,
-                ...globalFilter,
-                ...filters,
-            },
-            order: [],
-            page,
-            totalPage
-        })
-
+        const {rows,count,pageCount} = await contractService.getContractDetails(req.query)
         res.status(200).json({
             data:rows,
             rows:count,
-            pageCount: Math.ceil(count/totalPage)
+            pageCount
         })
 
     }
