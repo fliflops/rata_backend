@@ -223,7 +223,7 @@ exports.generateErrors = async(errors) => {
                 field_value:item.FIELD_VALUE,
                 response_code:item.RESPONSE_CODE,
                 message:item.MESSAGE,
-                result_type:'DETAILS'
+                result_type:'HEADER'
             })
         })
     })
