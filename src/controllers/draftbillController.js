@@ -188,6 +188,10 @@ exports.getDraftBill = async(req,res,next) => {
                             model: models.helios_invoices_hdr_tbl,
                             as:'invoice'
                         }]
+                    },
+                    {
+                        model:models.service_type_tbl,
+                        required:false
                     }
                 ],
                 distinct: true
@@ -196,9 +200,11 @@ exports.getDraftBill = async(req,res,next) => {
 
         res.status(200).json({
             data:rows.map(item => {
-                const {details,...header} = item;
+                const {details,service_type_tbl,...header} = item;
+
                 return {
                     ...header,
+                    ascii_service_type: service_type_tbl?.ascii_service_type,
                     details: details.map((dtl) => {
                         return{
                             ...dtl,

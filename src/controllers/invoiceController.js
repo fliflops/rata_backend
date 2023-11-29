@@ -36,13 +36,22 @@ exports.getInvoices = async(req,res,next) => {
                 ...where,
                 ...globalFilter
             },
+            include: [{
+                model: models.service_type_tbl,
+                required:false
+            }],
             order:[['createdAt','DESC']],
             page,
             totalPage
         })
-
+    
         res.status(200).json({
-            data:rows,
+            data:rows.map(({service_type_tbl,...invoices}) => {
+                return {
+                    ...invoices,
+                    ascii_service_type: service_type_tbl?.ascii_service_type
+                }
+            }),
             rows:count,
             pageCount: Math.ceil(count/totalPage)
         })

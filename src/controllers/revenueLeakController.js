@@ -24,6 +24,9 @@ exports.getRevenueLeaks = async(req,res,next) => {
                     [Sequelize.Op.between]: filters.rdd.split(',')
                 }
             }
+            if(key === 'revenue_leak_reason'){
+                return where[key] = filters[key]
+            }
             else{
                 return where[`$helios_invoices_hdr_tbl.${key}$`] = filters[key]
             }
@@ -50,7 +53,11 @@ exports.getRevenueLeaks = async(req,res,next) => {
                 include: [
                     {
                         model:models.helios_invoices_hdr_tbl,
-                        require:false
+                        required:false,
+                        include: [{
+                            model: models.service_type_tbl,
+                            required:false
+                        }]
                     }
                 ],
             }
@@ -61,6 +68,7 @@ exports.getRevenueLeaks = async(req,res,next) => {
                 return {
                     ...header,
                     ...helios_invoices_hdr_tbl,
+                    ascii_service_type: helios_invoices_hdr_tbl.service_type_tbl?.ascii_service_type,
                     tms_reference_no: header.tms_reference_no
                 }
             })
