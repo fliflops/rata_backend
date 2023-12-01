@@ -183,7 +183,7 @@ exports.transportController = async(req,res,next) => {
                 ]
             },
             where:{
-                delivery_date: date,
+                trip_date: date,
                 location: location,
                 contract_type: type,
                 status: 'DRAFT_BILL',
@@ -348,7 +348,7 @@ exports.getSo = async (req,res,next) => {
                 ]
             },
             where:{
-                delivery_date: date,
+                trip_date: date,
                 location: location,
                 contract_type: type,
                 status:'DRAFT_BILL'
@@ -457,8 +457,6 @@ exports.getTransmittalLogDetail = async(req,res,next) => {
             rows:      data.count,
             pageCount: data.pageCount
         })
-
-    
     }
     catch(e){
         next(e)

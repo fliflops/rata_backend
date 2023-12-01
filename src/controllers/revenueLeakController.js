@@ -105,7 +105,7 @@ exports.getRevenueLeaksDetails = async(req,res,next) => {
 
 exports.transportReplanBuy = async(req,res,next) => {
     try{
-        const {rdd} = req.query;
+        const {trip_date} = req.query;
 
         const invoices = await models.transport_rev_leak_hdr_tbl.getData({
             options:{
@@ -130,7 +130,7 @@ exports.transportReplanBuy = async(req,res,next) => {
             },
             where:{
                 draft_bill_type:'BUY',
-                rdd:rdd,
+                trip_date,
                 is_draft_bill:0
             }
         })
@@ -155,7 +155,7 @@ exports.transportReplanBuy = async(req,res,next) => {
 
         const draft_bill = await replanBuy({
             invoices,
-            rdd
+            trip_date
         })
 
         res.status(200).json({

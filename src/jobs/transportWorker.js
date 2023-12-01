@@ -127,7 +127,7 @@ exports.transportSell = () => {
 
             const invoices = await models.helios_invoices_hdr_tbl.getData({
                 where:{
-                    rdd: date,
+                    trip_date: date,
                     is_processed_sell: 0
                 },
                 options:{
@@ -163,7 +163,7 @@ exports.transportSell = () => {
           
             const {data,revenue_leak} = await draftBillService.sell({
                 invoices,
-                rdd: date,
+                trip_date: date,
                 job_id: job.id
             })
 
@@ -248,7 +248,7 @@ exports.transportBuy = () => {
 
             const invoices = await (models.helios_invoices_hdr_tbl.getData({
                 where:{
-                    rdd: date,
+                    trip_date: date,
                     is_processed_buy: 0
                 },
                 options:{
@@ -303,7 +303,7 @@ exports.transportBuy = () => {
     
             await draftBillService.buy({
                 invoices,
-                rdd: date,
+                trip_date: date,
                 job_id: job.id
             })
     
