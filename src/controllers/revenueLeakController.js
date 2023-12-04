@@ -172,7 +172,7 @@ exports.transportReplanBuy = async(req,res,next) => {
 
 exports.transportReplanSell = async(req,res,next) => {
     try{
-        const {rdd} = req.query;
+        const {trip_date} = req.query;
 
         const invoices = await models.transport_rev_leak_hdr_tbl.getData({
             options:{
@@ -193,7 +193,7 @@ exports.transportReplanSell = async(req,res,next) => {
             },
             where:{
                 draft_bill_type:'SELL',
-                rdd:rdd,
+                trip_date,
                 is_draft_bill:0
             }
         })
@@ -207,20 +207,19 @@ exports.transportReplanSell = async(req,res,next) => {
 
                 return {
                     ...helios_invoices_hdr_tbl,
-                    tms_reference_no: headers.tms_reference_no,
+                    tms_reference_no:    headers.tms_reference_no,
                     fk_tms_reference_no: headers.fk_tms_reference_no,
-                    class_of_store: headers.class_of_store,
-                    draft_bill_type: headers.draft_bill_type,
+                    class_of_store:      headers.class_of_store,
+                    draft_bill_type:     headers.draft_bill_type,
                     revenue_leak_reason: headers.revenue_leak_reason,
                     details: tranport_rev_leak_dtl_tbls
-
                 }
             })
         })
 
         const draft_bill = await replanSell({
             invoices,
-            rdd
+            trip_date
         })
 
         res.status(200).json({
