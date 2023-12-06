@@ -90,9 +90,29 @@ exports.createDraftBillSell = async(req,res,next) => {
             options:{
                 include:[
                    {model: models.helios_invoices_dtl_tbl, required:false},
-                   {model: models.vendor_tbl,required:false},
-                   {model: models.ship_point_tbl, as:'ship_point_from',required:false},
-                   {model: models.ship_point_tbl, as:'ship_point_to',required:false}
+                   {
+                        model: models.vendor_tbl,
+                        required:false,
+                        where:{
+                            vendor_status: 'ACTIVE'
+                        }
+                    },
+                    {
+                        model: models.ship_point_tbl, 
+                        as:'ship_point_from',
+                        required:false,
+                        where:{
+                            is_active: 1
+                        }
+                    },
+                    {
+                        model: models.ship_point_tbl, 
+                        as:'ship_point_to',
+                        required:false,
+                        where:{
+                            is_active: 1
+                        }
+                    }
                 ]
             }
         })
@@ -103,7 +123,6 @@ exports.createDraftBillSell = async(req,res,next) => {
         })
     
         res.status(200).json({
-            // invoices    
             data,
             revenue_leak
         })

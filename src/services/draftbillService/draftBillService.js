@@ -875,7 +875,6 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
             const actual_cbm        = _.sumBy(details, item => isNaN(Number(item.actual_cbm)) ? 0 :     Number(item.actual_cbm))
             const return_qty        = _.sumBy(details, item => isNaN(Number(item.return_qty)) ? 0 :     Number(item.return_qty))
 
-            
             let aggCondition = {
                 condition:null,
                 formula:null,
@@ -967,7 +966,6 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
                     }
                 ],
             }
-            
             //revenue_leak
             if(!aggCondition.formula){
                 revenue_leak = revenue_leak.concat(getRevenueLeakNoFormula({invoices,draft_bill_details:draft_bill.draft_bill_details}))
@@ -977,8 +975,7 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
             }
             else{
                 data.push(draft_bill)
-            }
-            
+            }  
         })
 
         return {
@@ -993,16 +990,24 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
 
 const assignDraftBillNo = async({draft_bill}) => {
     try{
-        let count = await models.draft_bill_hdr_tbl.getData({
-            where: {
-                draft_bill_date: moment().format('YYYY-MM-DD')
-                // [Op.and] :  [
-                //     Sequelize.where(Sequelize.fn('date',Sequelize.col('createdAt')),'=',moment().format('YYYY-MM-DD'))
-                // ]
-            }
-        })
-        .then(result => parseInt(result.length))
+        // let count = await models.draft_bill_hdr_tbl.getData({
+        //     where: {
+        //         draft_bill_date: moment().format('YYYY-MM-DD')
+        //         // [Op.and] :  [
+        //         //     Sequelize.where(Sequelize.fn('date',Sequelize.col('createdAt')),'=',moment().format('YYYY-MM-DD'))
+        //         // ]
+        //     }
+        // })
+        // .then(result => parseInt(result.length))
 
+        let count = await models.draft_bill_hdr_tbl.max('draft_bill_no', {
+            where:{
+                draft_bill_date: moment().format('YYYY-MM-DD')
+            }
+        }).then(result => {
+            return Number(String(result).substring(7))
+        })
+      
         const generateDraftBillNo = ({count}) => {
             try {
                 return `R${moment().format('MMDDYY')}${String(count).padStart(5,"00000")}`    
@@ -1271,7 +1276,6 @@ const sell = async ({
         //7. compute normal draft bill without agg
         const withoutAgg = await draftBillWithoutAgg({invoices: data.data,contract_type:'SELL'})
 
-
         draft_bill = draft_bill.concat(withAgg.data,withoutAgg.data)
         draft_bill = await assignDraftBillNo({draft_bill})
 
@@ -1413,18 +1417,18 @@ const replanSell = async({invoices,trip_date}) => {
                 tms_reference_no: item.tms_reference_no,
                 is_draft_bill: 1
             }
-        })
+        });
         
         await createRevenueLeak({
             draft_bill,
             revenue_leak,
             invoices:data
-        })
+        });
 
         return {
             draft_bill,
             revenue_leak,
-            data
+            //data
         }
     }
     catch(e){

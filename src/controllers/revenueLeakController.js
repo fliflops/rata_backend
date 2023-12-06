@@ -113,15 +113,36 @@ exports.transportReplanBuy = async(req,res,next) => {
                     {
                         model:models.helios_invoices_hdr_tbl,
                         include:[
-                            {model: models.ship_point_tbl, as:'ship_point_from',required:false},
-                            {model: models.ship_point_tbl, as:'ship_point_to',required:false},
-                            {model: models.vendor_tbl,required:false},
+                            {
+                                model: models.ship_point_tbl,
+                                where:{
+                                    is_active: 1
+                                },
+                                as:'ship_point_from',
+                                required:false
+                            },
+                            {
+                                model: models.ship_point_tbl, 
+                                where:{
+                                    is_active: 1
+                                },
+                                as:'ship_point_to',
+                                required:false
+                            },
+                            {
+                                model: models.vendor_tbl,
+                                required:false,
+                                where:{
+                                    vendor_status: 'ACTIVE'
+                                }
+                            },
                             {
                                 model: models.vendor_group_dtl_tbl,
                                 required: false,
                                 where:Sequelize.where(Sequelize.col('helios_invoices_hdr_tbl.vendor_group_dtl_tbl.location'),Sequelize.col('helios_invoices_hdr_tbl.location'))
                             },
-                        ]
+                        ],
+                        required:false
                     },
                     {
                         model: models.tranport_rev_leak_dtl_tbl
@@ -180,9 +201,29 @@ exports.transportReplanSell = async(req,res,next) => {
                     {
                         model:models.helios_invoices_hdr_tbl,
                         include:[
-                            {model: models.vendor_tbl,required:false},
-                            {model: models.ship_point_tbl, as:'ship_point_from',required:false},
-                            {model: models.ship_point_tbl, as:'ship_point_to',required:false}
+                            {
+                                model: models.vendor_tbl,
+                                where:{
+                                    vendor_status: 'ACTIVE'
+                                },
+                                required:false
+                            },
+                            {
+                                model: models.ship_point_tbl, 
+                                as:'ship_point_from',
+                                where: {
+                                    is_active: 1
+                                },
+                                required:false
+                            },
+                            {
+                                model: models.ship_point_tbl, 
+                                where: {
+                                    is_active: 1
+                                },
+                                as:'ship_point_to',
+                                required:false
+                            }
                         ]
                     },
                     {
@@ -223,9 +264,10 @@ exports.transportReplanSell = async(req,res,next) => {
         })
 
         res.status(200).json({
-            draft_bill: draft_bill.draft_bill.length,
-            revenue_leak: draft_bill.revenue_leak.length,
-            invoices: draft_bill.data.length
+            draft_bill
+            // draft_bill: draft_bill.draft_bill.length,
+            // revenue_leak: draft_bill.revenue_leak.length,
+            // invoices: draft_bill.data.length
         })
     }
     catch(e){
