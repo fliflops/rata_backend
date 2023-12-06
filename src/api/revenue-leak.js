@@ -9,10 +9,10 @@ router.route('/:br_no')
 .get(authorize, controller.getRevenueLeaksDetails)
 
 router.route('/transport/sell')
-.post(authorize,controller.transportReplanSell)
+.post(controller.transportReplanSell)
 
 router.route('/transport/buy')
-.post(authorize,controller.transportReplanBuy)
+.post(controller.transportReplanBuy)
 
 
 module.exports = router;

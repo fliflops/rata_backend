@@ -264,10 +264,9 @@ exports.transportReplanSell = async(req,res,next) => {
         })
 
         res.status(200).json({
-            draft_bill
-            // draft_bill: draft_bill.draft_bill.length,
-            // revenue_leak: draft_bill.revenue_leak.length,
-            // invoices: draft_bill.data.length
+            draft_bill:     draft_bill.draft_bill.length,
+            revenue_leak:   draft_bill.revenue_leak.length,
+            invoices:       draft_bill.data.length
         })
     }
     catch(e){

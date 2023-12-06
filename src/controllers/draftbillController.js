@@ -7,10 +7,10 @@ const moment = require('moment');
 exports.createDraftBillBuy = async(req,res,next) => {
     try{
 
-        const {rdd} = req.query;
+        const {trip_date} = req.query;
         const invoices = await (models.helios_invoices_hdr_tbl.getData({
             where:{
-                rdd,
+                trip_date,
                 is_processed_buy: 0
             },
             options:{
@@ -65,7 +65,7 @@ exports.createDraftBillBuy = async(req,res,next) => {
 
         const {data,revenue_leak} = await draftBillService.buy({
             invoices,
-            rdd
+            trip_date
         })
 
         res.status(200).json({
