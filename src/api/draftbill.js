@@ -10,7 +10,7 @@ router.route('/sell')
 .post(controller.createDraftBillSell)
 
 router.route('/buy')
-.post(controller.createDraftBillBuy)
+.post(authorize,controller.createDraftBillBuy)
 
 router.route('/wms')
 .get(authorize,controller.getWMSDraftBill)

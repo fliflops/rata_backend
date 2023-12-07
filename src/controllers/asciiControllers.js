@@ -148,7 +148,6 @@ exports.transportController = async(req,res,next) => {
         let data;
         let result;
         
-
         const draftBill = await models.draft_bill_hdr_tbl.getData({
             options:{
                 include:[
@@ -383,9 +382,7 @@ exports.getSo = async (req,res,next) => {
     }
     catch(e){
         next(e)
-    }
-    
-   
+    }  
 }
 
 exports.getPaginatedTransportDraftBill = async (req,res,next) => {

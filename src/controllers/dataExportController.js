@@ -12,7 +12,7 @@ exports.exportInvoice = async(req,res,next) => {
 
         const getInvoices = await models.helios_invoices_hdr_tbl.getData({
             where:{
-                rdd: {
+                trip_date: {
                     [Op.between]: [from,to]
                 }
             },
@@ -75,10 +75,18 @@ exports.exportDraftBill = async(req,res,next) => {
                         model: models.draft_bill_details_tbl,
                         required: false,
                         as:'details',
-                        include:[{
-                            model: models.helios_invoices_hdr_tbl,
-                            as:'invoice'
-                        }]
+                        include:[
+                            {
+                                model: models.helios_invoices_hdr_tbl,
+                                as:'invoice',
+                                include: [
+                                    {
+                                        model: models.principal_tbl,
+                                        required:false
+                                    }
+                                ]
+                            }
+                        ]
                     }
                 ]
             }
@@ -89,7 +97,7 @@ exports.exportDraftBill = async(req,res,next) => {
             customer:           'Customer',	
             contract_type:      'Contract Type',	
             draft_bill_date:    'Draft Bil Date',
-            delivery_date:      'Delivery Date',
+            // delivery_date:      'Delivery Date',
             contract_id:        'Contract ID',
             tariff_id:          'Tariff ID',
             trip_no:            'Trip No.',
@@ -103,9 +111,9 @@ exports.exportDraftBill = async(req,res,next) => {
             min_billable_value: 'Min. Billable Value',
             max_billable_value: 'Max. Billable Value',
             min_billable_unit:  'Min. Billable Unit',	
-            total_charges: 'Total Charges',
-            status: 'Status',
-            condition: 'Condition',
+            total_charges:      'Total Charges',
+            status:             'Status',
+            condition:          'Condition',
             formula: 'Formula',
             service_type: 'Service Type',
             sub_service_type: 'Sub Service Type',
@@ -123,14 +131,15 @@ exports.exportDraftBill = async(req,res,next) => {
 
             db_details = db_details.concat(details.map(item =>{
                 const {invoice,...itms} = item;
+                const principal_code = invoice?.principal_tbl?.principal_code;
 
                 return {
                     ...itms,
-                    planned_vehicle_type: invoice.planned_vehicle_type
+                    planned_vehicle_type: invoice.planned_vehicle_type,
+                    principal_code
                 }
             }))
         })
-
 
         const xlsx = await dataExportService.generateExcel({
             headers: [headerLabel].concat(headers),
@@ -156,7 +165,7 @@ exports.exportRevenueLeak = async(req,res,next) => {
         let details = [];
         const getRevenueLeaks = await models.transport_rev_leak_hdr_tbl.getData({
             where:{
-                rdd: {
+                trip_date: {
                     [Op.between] : [from,to]
                 }
             },

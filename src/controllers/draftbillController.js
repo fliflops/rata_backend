@@ -149,13 +149,13 @@ exports.getDraftBill = async(req,res,next) => {
             if(key === 'draft_bill_type'){
                 return where[key] = filters[key]   
             }
-            if(key === 'delivery_date'){
-                const dates = filters.delivery_date.split(',')
+            if(key === 'trip_date'){
+                const dates = filters.trip_date.split(',')
                 const from = moment(dates[0]).isValid() ? dates[0] : null;
                 const to = moment(dates[1]).isValid() ? dates[1] : null;
                 
                 if (from && to) {
-                    return where.delivery_date = {
+                    return where.trip_date = {
                         [Sequelize.Op.and]: {
                             [Sequelize.Op.gte] : from,
                             [Sequelize.Op.lte] : to
