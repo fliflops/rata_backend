@@ -24,6 +24,11 @@ exports.getRevenueLeaks = async(req,res,next) => {
                     [Sequelize.Op.between]: filters.rdd.split(',')
                 }
             }
+            if(key === 'trip_date'){
+                return where.trip_date = {
+                    [Sequelize.Op.between]: filters.trip_date.split(',')
+                }
+            }
             else{
                 return where[`$helios_invoices_hdr_tbl.${key}$`] = filters[key]
             }
