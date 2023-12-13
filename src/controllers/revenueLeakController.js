@@ -24,6 +24,11 @@ exports.getRevenueLeaks = async(req,res,next) => {
                     [Sequelize.Op.between]: filters.rdd.split(',')
                 }
             }
+            if(key === 'trip_date'){
+                return where.trip_date = {
+                    [Sequelize.Op.between]: filters.trip_date.split(',')
+                }
+            }
             else{
                 return where[`$helios_invoices_hdr_tbl.${key}$`] = filters[key]
             }
@@ -105,7 +110,7 @@ exports.getRevenueLeaksDetails = async(req,res,next) => {
 
 exports.transportReplanBuy = async(req,res,next) => {
     try{
-        const {rdd} = req.query;
+        const {trip_date} = req.query;
 
         const invoices = await models.transport_rev_leak_hdr_tbl.getData({
             options:{
@@ -113,15 +118,36 @@ exports.transportReplanBuy = async(req,res,next) => {
                     {
                         model:models.helios_invoices_hdr_tbl,
                         include:[
-                            {model: models.ship_point_tbl, as:'ship_point_from',required:false},
-                            {model: models.ship_point_tbl, as:'ship_point_to',required:false},
-                            {model: models.vendor_tbl,required:false},
+                            {
+                                model: models.ship_point_tbl,
+                                where:{
+                                    is_active: 1
+                                },
+                                as:'ship_point_from',
+                                required:false
+                            },
+                            {
+                                model: models.ship_point_tbl, 
+                                where:{
+                                    is_active: 1
+                                },
+                                as:'ship_point_to',
+                                required:false
+                            },
+                            {
+                                model: models.vendor_tbl,
+                                required:false,
+                                where:{
+                                    vendor_status: 'ACTIVE'
+                                }
+                            },
                             {
                                 model: models.vendor_group_dtl_tbl,
                                 required: false,
                                 where:Sequelize.where(Sequelize.col('helios_invoices_hdr_tbl.vendor_group_dtl_tbl.location'),Sequelize.col('helios_invoices_hdr_tbl.location'))
                             },
-                        ]
+                        ],
+                        required:false
                     },
                     {
                         model: models.tranport_rev_leak_dtl_tbl
@@ -130,7 +156,7 @@ exports.transportReplanBuy = async(req,res,next) => {
             },
             where:{
                 draft_bill_type:'BUY',
-                rdd:rdd,
+                trip_date,
                 is_draft_bill:0
             }
         })
@@ -155,7 +181,7 @@ exports.transportReplanBuy = async(req,res,next) => {
 
         const draft_bill = await replanBuy({
             invoices,
-            rdd
+            trip_date
         })
 
         res.status(200).json({
@@ -172,7 +198,7 @@ exports.transportReplanBuy = async(req,res,next) => {
 
 exports.transportReplanSell = async(req,res,next) => {
     try{
-        const {rdd} = req.query;
+        const {trip_date} = req.query;
 
         const invoices = await models.transport_rev_leak_hdr_tbl.getData({
             options:{
@@ -180,9 +206,29 @@ exports.transportReplanSell = async(req,res,next) => {
                     {
                         model:models.helios_invoices_hdr_tbl,
                         include:[
-                            {model: models.vendor_tbl,required:false},
-                            {model: models.ship_point_tbl, as:'ship_point_from',required:false},
-                            {model: models.ship_point_tbl, as:'ship_point_to',required:false}
+                            {
+                                model: models.vendor_tbl,
+                                where:{
+                                    vendor_status: 'ACTIVE'
+                                },
+                                required:false
+                            },
+                            {
+                                model: models.ship_point_tbl, 
+                                as:'ship_point_from',
+                                where: {
+                                    is_active: 1
+                                },
+                                required:false
+                            },
+                            {
+                                model: models.ship_point_tbl, 
+                                where: {
+                                    is_active: 1
+                                },
+                                as:'ship_point_to',
+                                required:false
+                            }
                         ]
                     },
                     {
@@ -193,7 +239,7 @@ exports.transportReplanSell = async(req,res,next) => {
             },
             where:{
                 draft_bill_type:'SELL',
-                rdd:rdd,
+                trip_date,
                 is_draft_bill:0
             }
         })
@@ -207,26 +253,25 @@ exports.transportReplanSell = async(req,res,next) => {
 
                 return {
                     ...helios_invoices_hdr_tbl,
-                    tms_reference_no: headers.tms_reference_no,
+                    tms_reference_no:    headers.tms_reference_no,
                     fk_tms_reference_no: headers.fk_tms_reference_no,
-                    class_of_store: headers.class_of_store,
-                    draft_bill_type: headers.draft_bill_type,
+                    class_of_store:      headers.class_of_store,
+                    draft_bill_type:     headers.draft_bill_type,
                     revenue_leak_reason: headers.revenue_leak_reason,
                     details: tranport_rev_leak_dtl_tbls
-
                 }
             })
         })
 
         const draft_bill = await replanSell({
             invoices,
-            rdd
+            trip_date
         })
 
         res.status(200).json({
-            draft_bill: draft_bill.draft_bill.length,
-            revenue_leak: draft_bill.revenue_leak.length,
-            invoices: draft_bill.data.length
+            draft_bill:     draft_bill.draft_bill.length,
+            revenue_leak:   draft_bill.revenue_leak.length,
+            invoices:       draft_bill.data.length
         })
     }
     catch(e){

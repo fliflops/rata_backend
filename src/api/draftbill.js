@@ -7,7 +7,7 @@ router.route('/')
 .get(authorize,validator('draft-bill'),controller.getDraftBill)
 
 router.route('/sell')
-.post(authorize,controller.createDraftBillSell)
+.post(controller.createDraftBillSell)
 
 router.route('/buy')
 .post(authorize,controller.createDraftBillBuy)

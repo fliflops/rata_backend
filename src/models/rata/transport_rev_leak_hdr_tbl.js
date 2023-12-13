@@ -20,6 +20,9 @@ class transport_rev_leak_hdr_tbl extends Model {
             rdd: {
                 type: DataTypes.DATEONLY
             },
+            trip_date: {
+                type: DataTypes.DATEONLY
+            },
             job_id: {
                 type: DataTypes.STRING
             },
