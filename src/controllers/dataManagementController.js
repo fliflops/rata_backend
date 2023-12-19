@@ -455,7 +455,8 @@ exports.updateAlgorithm = async(req,res,next) => {
                 id
             },
             data:{
-                ...data
+                ...data,
+                modified_by: req.processor.id
             }
         })
 

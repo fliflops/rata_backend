@@ -1128,7 +1128,7 @@ const createDraftBill = async({draft_bill, revenue_leak,invoices, contract_type,
     }
 }
 
-const createRevenueLeak = async({draft_bill, revenue_leak, invoices, type}) => {
+const createRevenueLeak = async({draft_bill, revenue_leak, invoices, type, user=null}) => {
     try{
         return await sequelize.transaction(async t => {
             await models.draft_bill_hdr_tbl.bulkCreateData({
@@ -1146,7 +1146,8 @@ const createRevenueLeak = async({draft_bill, revenue_leak, invoices, type}) => {
 
             await models.transport_rev_leak_hdr_tbl.updateData({
                 data:{
-                    is_draft_bill: 1
+                    is_draft_bill: 1,
+                    updated_by: user
                 },
                 where:{
                     tms_reference_no: invoices.map(item => item.tms_reference_no),
@@ -1333,7 +1334,7 @@ const sell = async ({
     }
 }
 
-const replanBuy = async({invoices,trip_date}) => {
+const replanBuy = async({invoices,trip_date, user=null}) => {
     try{
         let data;
         let revenue_leak = [];
@@ -1390,7 +1391,8 @@ const replanBuy = async({invoices,trip_date}) => {
             draft_bill,
             revenue_leak,
             invoices:data,
-            type:'BUY'
+            type:'BUY',
+            user
         })
 
         return {
@@ -1404,7 +1406,7 @@ const replanBuy = async({invoices,trip_date}) => {
     }
 }
 
-const replanSell = async({invoices,trip_date}) => {
+const replanSell = async({invoices,trip_date, user=null}) => {
     try{
         let data;
         let revenue_leak = [];
@@ -1456,7 +1458,8 @@ const replanSell = async({invoices,trip_date}) => {
             draft_bill,
             revenue_leak,
             invoices:data,
-            type:'SELL'
+            type:'SELL',
+            user
         });
 
         return {

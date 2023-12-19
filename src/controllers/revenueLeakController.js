@@ -181,7 +181,8 @@ exports.transportReplanBuy = async(req,res,next) => {
 
         const draft_bill = await replanBuy({
             invoices,
-            trip_date
+            trip_date,
+            user:req.processor.id
         })
 
         res.status(200).json({
@@ -265,7 +266,8 @@ exports.transportReplanSell = async(req,res,next) => {
 
         const draft_bill = await replanSell({
             invoices,
-            trip_date
+            trip_date,
+            user: req.processor.id
         })
 
         res.status(200).json({
