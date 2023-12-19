@@ -1172,7 +1172,7 @@ const createRevenueLeak = async({draft_bill, revenue_leak, invoices, type, user=
     }
 }
 
-const tripValidation = async(draft_bill=[], revenue_leak=[], invoices=[]) => {
+const tripValidation = async(draft_bill=[], revenue_leak=[], invoices=[], isRevLeak = false) => {
     let leak_invoice = [];
     const leak_trip = draft_bill.filter(db => revenue_leak.filter(rl => rl.revenue_leak_reason !== 'NOT BILLABLE').map(rl => rl.trip_no).includes(db.trip_no))
 
@@ -1189,7 +1189,7 @@ const tripValidation = async(draft_bill=[], revenue_leak=[], invoices=[]) => {
                 job_id: invoice.job_id,
                 is_draft_bill: 0,
                 trip_date: invoice.trip_date,
-                details: invoice.helios_invoices_dtl_tbls.filter(i => i.class_of_store === dtl.class_of_store)
+                details: isRevLeak ? invoice.tranport_rev_leak_dtl_tbls : invoice.helios_invoices_dtl_tbls.filter(i => i.class_of_store === dtl.class_of_store)
             }
         }))
     })
@@ -1244,7 +1244,7 @@ const buy = async ({
         //draft_bill = await assignDraftBillNo({draft_bill})
         revenue_leak = revenue_leak.concat(withAgg.revenue_leak,withoutAgg.revenue_leak, ic.revenue_leak)
 
-        data = await tripValidation(draft_bill, revenue_leak, invoices);
+        data = await tripValidation(draft_bill, revenue_leak, invoices, false);
         draft_bill = await assignDraftBillNo({draft_bill:data.draft_bill});
         revenue_leak = revenue_leak.concat(data.revenue_leak);
 
@@ -1375,7 +1375,7 @@ const replanBuy = async({invoices,trip_date, user=null}) => {
         // draft_bill = await assignDraftBillNo({draft_bill})
         revenue_leak = revenue_leak.concat(withAgg.revenue_leak,withoutAgg.revenue_leak)
 
-        data = await tripValidation(draft_bill, revenue_leak, invoices);
+        data = await tripValidation(draft_bill, revenue_leak, invoices, true);
         draft_bill = await assignDraftBillNo({draft_bill:data.draft_bill})
         revenue_leak = revenue_leak.concat(data.revenue_leak);
 
