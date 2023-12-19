@@ -1174,7 +1174,7 @@ const createRevenueLeak = async({draft_bill, revenue_leak, invoices, type, user=
 
 const tripValidation = async(draft_bill=[], revenue_leak=[], invoices=[]) => {
     let leak_invoice = [];
-    const leak_trip = draft_bill.filter(db => revenue_leak.map(rl => rl.trip_no).includes(db.trip_no))
+    const leak_trip = draft_bill.filter(db => revenue_leak.filter(rl => rl.revenue_leak_reason !== 'NOT BILLABLE').map(rl => rl.trip_no).includes(db.trip_no))
 
     leak_trip.map(item => {
         leak_invoice = leak_invoice.concat(item.draft_bill_details.map(dtl => {
@@ -1372,9 +1372,12 @@ const replanBuy = async({invoices,trip_date, user=null}) => {
         const withoutAgg =  await draftBillWithoutAgg({invoices: data.data, contract_type:'BUY'})
 
         draft_bill = draft_bill.concat(ic.data,withAgg.data,withoutAgg.data)
-        draft_bill = await assignDraftBillNo({draft_bill})
-
+        // draft_bill = await assignDraftBillNo({draft_bill})
         revenue_leak = revenue_leak.concat(withAgg.revenue_leak,withoutAgg.revenue_leak)
+
+        data = await tripValidation(draft_bill, revenue_leak, invoices);
+        draft_bill = await assignDraftBillNo({draft_bill:data.draft_bill})
+        revenue_leak = revenue_leak.concat(data.revenue_leak);
 
         //get invoices with draft bill
         data = invoices.filter(item => {
