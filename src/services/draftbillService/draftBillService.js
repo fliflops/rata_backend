@@ -990,16 +990,6 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
 
 const assignDraftBillNo = async({draft_bill}) => {
     try{
-        // let count = await models.draft_bill_hdr_tbl.getData({
-        //     where: {
-        //         draft_bill_date: moment().format('YYYY-MM-DD')
-        //         // [Op.and] :  [
-        //         //     Sequelize.where(Sequelize.fn('date',Sequelize.col('createdAt')),'=',moment().format('YYYY-MM-DD'))
-        //         // ]
-        //     }
-        // })
-        // .then(result => parseInt(result.length))
-
         let count = await models.draft_bill_hdr_tbl.max('draft_bill_no', {
             where:{
                 draft_bill_date: moment().format('YYYY-MM-DD')
@@ -1128,7 +1118,7 @@ const createDraftBill = async({draft_bill, revenue_leak,invoices, contract_type,
     }
 }
 
-const createRevenueLeak = async({draft_bill, revenue_leak, invoices, type}) => {
+const createRevenueLeak = async({draft_bill, revenue_leak, invoices, type, user=null}) => {
     try{
         return await sequelize.transaction(async t => {
             await models.draft_bill_hdr_tbl.bulkCreateData({
@@ -1146,7 +1136,8 @@ const createRevenueLeak = async({draft_bill, revenue_leak, invoices, type}) => {
 
             await models.transport_rev_leak_hdr_tbl.updateData({
                 data:{
-                    is_draft_bill: 1
+                    is_draft_bill: 1,
+                    updated_by: user
                 },
                 where:{
                     tms_reference_no: invoices.map(item => item.tms_reference_no),
@@ -1168,6 +1159,34 @@ const createRevenueLeak = async({draft_bill, revenue_leak, invoices, type}) => {
     }
     catch(e){
         throw e
+    }
+}
+
+const tripValidation = async(draft_bill=[], revenue_leak=[], invoices=[], isRevLeak = false) => {
+    let leak_invoice = [];
+    const leak_trip = draft_bill.filter(db => revenue_leak.filter(rl => rl.revenue_leak_reason !== 'NOT BILLABLE').map(rl => rl.trip_no).includes(db.trip_no))
+
+    leak_trip.map(item => {
+        leak_invoice = leak_invoice.concat(item.draft_bill_details.map(dtl => {
+            const invoice = invoices.find(i => i.tms_reference_no === dtl.fk_tms_reference_no)
+            return {
+                tms_reference_no: dtl.tms_reference_no,
+                fk_tms_reference_no: dtl.fk_tms_reference_no,
+                class_of_store: dtl.class_of_store,
+                draft_bill_type: 'BUY',
+                rdd: dtl.delivery_date,
+                revenue_leak_reason: 'TRANSACTION ERROR',
+                job_id: invoice.job_id,
+                is_draft_bill: 0,
+                trip_date: invoice.trip_date,
+                details: isRevLeak ? invoice.tranport_rev_leak_dtl_tbls : invoice.helios_invoices_dtl_tbls.filter(i => i.class_of_store === dtl.class_of_store)
+            }
+        }))
+    })
+    
+    return {
+        revenue_leak: leak_invoice,
+        draft_bill: draft_bill.filter(item => !leak_trip.map(l => l.trip_no).includes(item.trip_no)),
     }
 }
 
@@ -1212,9 +1231,12 @@ const buy = async ({
         const withoutAgg =  await draftBillWithoutAgg({invoices: data.data, contract_type:'BUY'})
 
         draft_bill = draft_bill.concat(ic.data,withAgg.data,withoutAgg.data)
-        draft_bill = await assignDraftBillNo({draft_bill})
-
+        //draft_bill = await assignDraftBillNo({draft_bill})
         revenue_leak = revenue_leak.concat(withAgg.revenue_leak,withoutAgg.revenue_leak, ic.revenue_leak)
+
+        data = await tripValidation(draft_bill, revenue_leak, invoices, false);
+        draft_bill = await assignDraftBillNo({draft_bill:data.draft_bill});
+        revenue_leak = revenue_leak.concat(data.revenue_leak);
 
         /*insert to db*/
         await createDraftBill({
@@ -1302,7 +1324,7 @@ const sell = async ({
     }
 }
 
-const replanBuy = async({invoices,trip_date}) => {
+const replanBuy = async({invoices,trip_date, user=null}) => {
     try{
         let data;
         let revenue_leak = [];
@@ -1340,9 +1362,12 @@ const replanBuy = async({invoices,trip_date}) => {
         const withoutAgg =  await draftBillWithoutAgg({invoices: data.data, contract_type:'BUY'})
 
         draft_bill = draft_bill.concat(ic.data,withAgg.data,withoutAgg.data)
-        draft_bill = await assignDraftBillNo({draft_bill})
-
+        // draft_bill = await assignDraftBillNo({draft_bill})
         revenue_leak = revenue_leak.concat(withAgg.revenue_leak,withoutAgg.revenue_leak)
+
+        data = await tripValidation(draft_bill, revenue_leak, invoices, true);
+        draft_bill = await assignDraftBillNo({draft_bill:data.draft_bill})
+        revenue_leak = revenue_leak.concat(data.revenue_leak);
 
         //get invoices with draft bill
         data = invoices.filter(item => {
@@ -1359,7 +1384,8 @@ const replanBuy = async({invoices,trip_date}) => {
             draft_bill,
             revenue_leak,
             invoices:data,
-            type:'BUY'
+            type:'BUY',
+            user
         })
 
         return {
@@ -1373,7 +1399,7 @@ const replanBuy = async({invoices,trip_date}) => {
     }
 }
 
-const replanSell = async({invoices,trip_date}) => {
+const replanSell = async({invoices,trip_date, user=null}) => {
     try{
         let data;
         let revenue_leak = [];
@@ -1425,7 +1451,8 @@ const replanSell = async({invoices,trip_date}) => {
             draft_bill,
             revenue_leak,
             invoices:data,
-            type:'SELL'
+            type:'SELL',
+            user
         });
 
         return {

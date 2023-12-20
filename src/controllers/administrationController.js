@@ -187,7 +187,8 @@ exports.activateRole = async(req,res,next) => {
                 role_id: id
             },
             data:{
-                role_status: status
+                role_status: status,
+                modified_by: req.processor.id
             }
         })
 
@@ -317,7 +318,8 @@ exports.updateUser = async(req,res,next) => {
             case 'role' : {
                 await models.user_tbl.updateData({
                     data:{
-                        user_role_id: data.role_id
+                        user_role_id: data.role_id,
+                        updated_by: req.processor.id
                     },
                     where:{
                         id
