@@ -990,16 +990,6 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
 
 const assignDraftBillNo = async({draft_bill}) => {
     try{
-        // let count = await models.draft_bill_hdr_tbl.getData({
-        //     where: {
-        //         draft_bill_date: moment().format('YYYY-MM-DD')
-        //         // [Op.and] :  [
-        //         //     Sequelize.where(Sequelize.fn('date',Sequelize.col('createdAt')),'=',moment().format('YYYY-MM-DD'))
-        //         // ]
-        //     }
-        // })
-        // .then(result => parseInt(result.length))
-
         let count = await models.draft_bill_hdr_tbl.max('draft_bill_no', {
             where:{
                 draft_bill_date: moment().format('YYYY-MM-DD')
@@ -1184,7 +1174,7 @@ const tripValidation = async(draft_bill=[], revenue_leak=[], invoices=[], isRevL
                 fk_tms_reference_no: dtl.fk_tms_reference_no,
                 class_of_store: dtl.class_of_store,
                 draft_bill_type: 'BUY',
-                rdd: dtl.rdd,
+                rdd: dtl.delivery_date,
                 revenue_leak_reason: 'TRANSACTION ERROR',
                 job_id: invoice.job_id,
                 is_draft_bill: 0,
