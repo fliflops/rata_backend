@@ -661,7 +661,7 @@ exports.uploadVendor=async(req,res,next)=>{
                     vg_vendor_id: vendorGroupDetails.vg_vendor_id,
                     reason:'Vendor mapping exists!'
                 })
-            }
+            }  
         }
         
         await vendor.bulkCreateTransaction({
