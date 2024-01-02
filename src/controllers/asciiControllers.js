@@ -148,7 +148,6 @@ exports.transportController = async(req,res,next) => {
         let data;
         let result;
         
-
         const draftBill = await models.draft_bill_hdr_tbl.getData({
             options:{
                 include:[
@@ -183,7 +182,7 @@ exports.transportController = async(req,res,next) => {
                 ]
             },
             where:{
-                delivery_date: date,
+                trip_date: date,
                 location: location,
                 contract_type: type,
                 status: 'DRAFT_BILL',
@@ -231,8 +230,13 @@ exports.transportController = async(req,res,next) => {
             })
 
             await asciiService.updateDraftBill(
-                {status:'DRAFT_BILL_POSTED'},
-                {draft_bill_no:result.success.map(item => item.SO_CODE),},
+                {
+                    status:'DRAFT_BILL_POSTED',
+                    updated_by: req.processor.id
+                },
+                {
+                    draft_bill_no:result.success.map(item => item.SO_CODE)
+                },
                 stx
             )
         }
@@ -348,7 +352,7 @@ exports.getSo = async (req,res,next) => {
                 ]
             },
             where:{
-                delivery_date: date,
+                trip_date: date,
                 location: location,
                 contract_type: type,
                 status:'DRAFT_BILL'
@@ -383,9 +387,7 @@ exports.getSo = async (req,res,next) => {
     }
     catch(e){
         next(e)
-    }
-    
-   
+    }  
 }
 
 exports.getPaginatedTransportDraftBill = async (req,res,next) => {
@@ -457,8 +459,6 @@ exports.getTransmittalLogDetail = async(req,res,next) => {
             rows:      data.count,
             pageCount: data.pageCount
         })
-
-    
     }
     catch(e){
         next(e)
