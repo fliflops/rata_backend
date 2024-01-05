@@ -72,7 +72,8 @@ exports.updateScheduler = async(req,res,next) => {
                 id
             },
             data:{
-                ...data
+                ...data,
+                updated_by: req.processor.id
             }
         })
 
@@ -211,7 +212,8 @@ exports.putEmail = async(req,res,next) => {
                 email
             },
             data: {
-                ...data
+                ...data,
+                updated_by: req.processor.id
             }
         })
 

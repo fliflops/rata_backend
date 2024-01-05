@@ -33,12 +33,19 @@ class principal_tbl extends Model {
             modified_date:{
                 allowNull:false,
                 type: Sequelize.DATE
+            },
+            created_by:{
+                type: DataTypes.STRING
+            },
+            modified_by:{
+                type:DataTypes.STRING
             }
         },
         {
             sequelize,
             freezeTableName:true,
-            timestamps : false,
+            createdAt: 'created_date',
+            updatedAt: 'modified_date',
             tableName:'principal_tbl'
         })
     }
