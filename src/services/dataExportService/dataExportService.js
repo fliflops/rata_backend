@@ -103,7 +103,7 @@ exports.exportTransmittal = async(query) => {
             'Principal':                draft_bill.customer,
             'Vendor':                   draft_bill.vendor,
             'TMS Service Type':         draft_bill.service_type,	
-            'Trip Number':              draft_bill.trip_plan,	
+            'Trip Number':              draft_bill.trip_no,	
             'MGV':                      draft_bill.min_billable_value,	
             'MBU':                      draft_bill.min_billable_unit,	
             'Actual Quantity':          draft_bill.actual_qty,	
