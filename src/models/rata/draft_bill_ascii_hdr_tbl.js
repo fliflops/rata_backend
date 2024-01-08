@@ -37,6 +37,11 @@ class draft_bill_ascii_hdr_tbl extends Model {
             foreignKey:'id',
             sourceKey:'created_by'
         })
+
+        this.details = this.hasMany(models.draft_bill_ascii_dtl_tbl,{
+            foreignKey:'fk_id',
+            sourceKey:'id'
+        })
     }
 }
 

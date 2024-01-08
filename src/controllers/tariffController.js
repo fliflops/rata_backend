@@ -91,7 +91,7 @@ exports.putTariffIC = async(req,res,next) => {
         await models.tariff_ic_algo_tbl.updateData({
             data:{
                 ...body,
-                updated_by:req.processor.id
+                modified_by:req.processor.id
             },
             where:{
                 id

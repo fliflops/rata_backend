@@ -84,8 +84,8 @@ exports.postRoleAccess = async(req,res,next) => {
                     ...header,
                     role_id: id,
                     is_header: isHeader,
-                    createdBy: req.processor.id,
-                    updatedBy: req.processor.id
+                    created_by: req.processor.id,
+                    //updatedBy: req.processor.id
                 }
             }),
             options: {
@@ -122,8 +122,8 @@ exports.postRole = async(req,res,next) => {
             data:{
                 ...data,
                 role_status: 'INACTIVE',
-                createdBy: req.processor.id, 
-                updatedBy: req.processor.id
+                created_by: req.processor.id, 
+                //updatedBy: req.processor.id
             }
         })
 

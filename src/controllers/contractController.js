@@ -152,7 +152,7 @@ exports.updateContractValidity = async(req,res,next) => {
         await contractService.updateContract({
             ...data,
             contract_id,
-            updated_by: user
+            modified_by: user
         },transaction);
 
         await contractService.createContractHistory({
