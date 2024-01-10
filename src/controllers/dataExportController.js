@@ -10,6 +10,42 @@ exports.exportInvoice = async(req,res,next) => {
         const headers= []
         let details = []
 
+        const headerLabel = {
+            tms_reference_no: 'TMS Reference No',	
+            trip_no:'Trip No',	
+            trip_date:'Trip Date',	
+            location: 'Location',	
+            trip_status: 'Trip Status',	
+            trucker_id: 'Trucker ID',	
+            vehicle_type: 'Vehicle Type',	
+            vehicle_id: 'Vehicle ID',	
+            planned_trucker: 'Planned Trucker',	
+            planned_vehicle_type: 'Planned Vehicle Type',	
+            planned_vehicle_id:'Planned Vehicle ID',	
+            service_type: 'TMS Service Type',
+            ascii_service_type: 'Ascii Service Type',	
+            sub_service_type: 'Sub Service Type',	
+            invoice_no: 'Invoice No',	
+            rdd:'RDD',	
+            dr_no:'DR No',
+            shipment_manifest: 'Shipment Manifest',	
+            principal_code: 'Principal Code',	
+            stc_from: 'STC From',	
+            stc_to: 'STC To',	
+            br_status: 'BR Status',	
+            delivery_status: 'Delivery Status',	
+            rud_status: 'RUD Status',	
+            reason_code:'Reason Code',	
+            redel_remarks: 'Redel Remarks',	
+            is_billable: 'Is Billable?',	
+            is_processed_sell: 'Is Processed Sell?',	
+            is_processed_buy: 'Is Processed Buy?',	
+            cleared_date: 'Cleared Date',	
+            job_id: 'Job ID',	
+            createdAt: 'Created At',	
+            updatedAt: 'Updated At'
+        }
+
         const getInvoices = await models.helios_invoices_hdr_tbl.getData({
             where:{
                 trip_date: {
@@ -21,23 +57,28 @@ exports.exportInvoice = async(req,res,next) => {
                     {
                         model: models.helios_invoices_dtl_tbl,
                         required: false
+                    },
+                    {
+                        model: models.service_type_tbl,
+                        required: false
                     }
                 ]
             }
         })
 
         getInvoices.map(item => {
-            const {helios_invoices_dtl_tbls,...header} = item;
+            const {helios_invoices_dtl_tbls,service_type_tbl,...header} = item;
        
             headers.push({
-                ...header
+                ...header,
+                ascii_service_type: service_type_tbl?.ascii_service_type
             })
 
             details = details.concat(helios_invoices_dtl_tbls)
         })
 
         const xlsx = await dataExportService.generateExcel({
-            headers,
+            headers: [headerLabel].concat(headers),
             details
         })
 
@@ -45,7 +86,6 @@ exports.exportInvoice = async(req,res,next) => {
         res.set('Content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');    
 
         res.send(xlsx)
-     
     }
     catch(e){
         next(e)
@@ -87,6 +127,10 @@ exports.exportDraftBill = async(req,res,next) => {
                                 ]
                             }
                         ]
+                    },
+                    {
+                        model: models.service_type_tbl,
+                        required: false
                     }
                 ]
             }
@@ -115,7 +159,8 @@ exports.exportDraftBill = async(req,res,next) => {
             status:             'Status',
             condition:          'Condition',
             formula:            'Formula',
-            service_type:       'Service Type',
+            service_type:       'TMS Service Type',
+            ascii_service_type: 'Ascii Service Type',
             sub_service_type:   'Sub Service Type',
             job_id:             'Job ID',
             createdAt:          'Created Date',
@@ -123,10 +168,11 @@ exports.exportDraftBill = async(req,res,next) => {
         };
 
         getDraftBills.map(item => {
-            const {details,created_by,updated_by,...header} = item
+            const {details,created_by,updated_by,service_type_tbl,...header} = item
 
             headers.push({
-                ...header
+                ...header,
+                ascii_service_type: service_type_tbl?.ascii_service_type
             })
 
             db_details = db_details.concat(details.map(item =>{
@@ -178,27 +224,67 @@ exports.exportRevenueLeak = async(req,res,next) => {
                     {
                         model:models.tranport_rev_leak_dtl_tbl,
                         required: false
+                    },
+                    {
+                        model: models.service_type_tbl,
+                        required: false
                     }
                 ]
             }
         })
 
+        const headerLabel = {
+            tms_reference_no:'TMS Reference No.',	
+            draft_bill_type:'Draft Bill Type',	
+            class_of_store:'Class of Store',	
+            fk_tms_reference_no:'FK TMS Reference No',	
+            rdd	:'RDD',
+            trip_date:'Trip Date',
+            revenue_leak_reason: 'Revenue Leak Reason',	
+            is_draft_bill:'Is Draft Bill?',	
+            createdAt:'Created Date',	
+            updatedAt:'Updated Date',
+            trip_no:'Trip No',	
+            location:'Location',	
+            trip_status:'Trip Status',	
+            trucker_id:'Trucker ID',	
+            vehicle_type:'Vehicle Type',	
+            vehicle_id:'Vehicle ID',	
+            planned_trucker:'Planned Trucker',	
+            planned_vehicle_type:'Planned Vehicle Type',	
+            planned_vehicle_id:'Planned Vehicle ID',	
+            service_type:'TMS Service Type',
+            ascii_service_type: 'Ascii Service Type',
+            sub_service_type:'Sub Service Type',	
+            invoice_no:'Invoice No',	
+            dr_no:'DR No',	
+            shipment_manifest:'Shipment Manifest',	
+            principal_code:'Principal Code',	
+            stc_from:'STC From',	
+            stc_to:'STC To',	
+            br_status:'BR Status',	
+            delivery_status:'Delivery Status',	
+            rud_status:'RUD Status',	
+            reason_code:'Reason Code',	
+            redel_remarks:'Redel Remarks',	
+            cleared_date:'Cleared Date',
+        };
+
         getRevenueLeaks.map(item => {
-            const {helios_invoices_hdr_tbl,tranport_rev_leak_dtl_tbls,created_by,updated_by,...header} = item;
-            const {is_billable,is_processed_sell,is_processed_buy,...invoices_header} = helios_invoices_hdr_tbl;
+            const {helios_invoices_hdr_tbl,tranport_rev_leak_dtl_tbls,created_by,updated_by,job_id,...header} = item;
+            const {is_billable,is_processed_sell,is_processed_buy,service_type_tbl,...invoices_header} = helios_invoices_hdr_tbl;
             headers.push({
                 ...header,
                 ...invoices_header,
                 is_draft_bill:  header.is_draft_bill === 1 ? 'true' : 'false',
-                tms_reference_no: header.tms_reference_no
+                tms_reference_no: header.tms_reference_no,
+                ascii_service_type: service_type_tbl?.ascii_service_type
             })
             details = details.concat(tranport_rev_leak_dtl_tbls)
         })
 
-        console.log(headers.filter(item => item.fk_tms_reference_no === 'BR001881244'))
-
         const xlsx = await dataExportService.generateExcel({
-            headers,
+            headers: [headerLabel].concat(headers),
             details
         })
 
