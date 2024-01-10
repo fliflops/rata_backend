@@ -178,6 +178,11 @@ class  helios_invoices_hdr_tbl extends Model {
             sourceKey:'trucker_id'
         })
 
+        this.service_type = this.hasOne(models.service_type_tbl,{
+            foreignKey:'service_type_code',
+            sourceKey:'service_type'
+        })
+    
         this.principal = this.hasOne(models.principal_tbl,{
             foreignKey:'principal_code',
             sourceKey:'principal_code'

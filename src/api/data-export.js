@@ -3,6 +3,7 @@ const transportRouter = require('express').Router();
 const dataRouter = require('express').Router();
 const controller =require('../controllers/dataExportController');
 const {authorize} = require('../middleware/auth');
+const validator = require('../middleware/query-validator.middlerware');
 
 //transport export route
 transportRouter.route('/invoice')
@@ -19,6 +20,9 @@ transportRouter.route('/contract')
 
 transportRouter.route('/tariff')
 .post(authorize,controller.exportTariff)
+
+transportRouter.route('/transmittal')
+.post(authorize,validator('export-transmittal'),controller.exportTransmittal)
 
 //data-management export routes
 dataRouter.post('/geography',   authorize,controller.exportGeography)

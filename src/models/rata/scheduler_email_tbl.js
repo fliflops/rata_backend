@@ -14,10 +14,10 @@ class scheduler_email_tbl extends Model {
             status:{
                 type: DataTypes.STRING
             },
-            updatedAt: DataTypes.STRING,
+            updatedAt: DataTypes.DATE,
             updated_by: DataTypes.STRING,
-            createdAt:Sequelize.DATE,
-            updatedAt:Sequelize.DATE
+            createdAt:DataTypes.DATE,
+            created_by:DataTypes.STRING
         },
         {
             sequelize,

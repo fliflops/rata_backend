@@ -114,12 +114,12 @@ exports.exportDraftBill = async(req,res,next) => {
             total_charges:      'Total Charges',
             status:             'Status',
             condition:          'Condition',
-            formula: 'Formula',
-            service_type: 'Service Type',
-            sub_service_type: 'Sub Service Type',
-            job_id: 'Job ID',
-            createdAt: 'Created Date',
-            updatedAt: 'Updated Date'
+            formula:            'Formula',
+            service_type:       'Service Type',
+            sub_service_type:   'Sub Service Type',
+            job_id:             'Job ID',
+            createdAt:          'Created Date',
+            updatedAt:          'Updated Date'
         };
 
         getDraftBills.map(item => {
@@ -442,6 +442,24 @@ exports.exportAlgorithm = async(req,res,next) => {
         })
 
         res.set('Content-disposition',  `algorithm.xlsx`);
+        res.set('Content-type',         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');    
+
+        res.send(xlsx)
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.exportTransmittal = async(req,res,next) => {
+    try{
+        
+        const data = await dataExportService.exportTransmittal(req.query)
+        const xlsx = await dataExportService.generateExcel({
+            data
+        })
+
+        res.set('Content-disposition',  `transmittal.xlsx`)
         res.set('Content-type',         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');    
 
         res.send(xlsx)
