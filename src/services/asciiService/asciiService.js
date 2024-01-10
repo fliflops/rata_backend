@@ -345,18 +345,19 @@ exports.getDraftBills = async(query) => {
 
             let actual_quantity = 0;
 
-            if(data.min_billable_unit === 'CBM') {
-                actual_quantity = _.sumBy(details, item => Number(item.actual_cbm)).toFixed(2)
-            }
-            else{
-                actual_quantity = _.sumBy(details, item => Number(item.actual_qty)).toFixed(2)
-            }
+            // if(data.min_billable_unit === 'CBM') {
+            //     actual_quantity = _.sumBy(details, item => Number(item.actual_cbm)).toFixed(2)
+            // }
+            // else{
+            //     actual_quantity = _.sumBy(details, item => Number(item.actual_qty)).toFixed(2)
+            // }
 
             return {
                 ...data,
                 transmittal_count: attempts.length,
                 last_transmitted_by: user ? `${user?.first_name} ${user?.last_name}` : null,
-                actual_quantity
+                actual_quantity: _.sumBy(details, item => Number(item.actual_qty)).toFixed(2),
+                actual_cbm: _.sumBy(details, item => Number(item.actual_cbm)).toFixed(2)
             }
         }),
         pageCount: Math.ceil(count/totalPage)

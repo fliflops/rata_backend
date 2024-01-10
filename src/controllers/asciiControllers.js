@@ -291,15 +291,22 @@ exports.transportController = async(req,res,next) => {
        
         await asciiService.createTransmittalLogDtl(errors.map(item => {
             const header = logHeader.find(db => db.draft_bill_no === item.ref_code);
-
+            // console.log(item)
             return ({
-                ...item,
+                // ...item,
                 draft_bill_code: item.ref_code,
-                fk_id: header.id
+                fk_id: header.id,
+                result_type: item.result_type,
+                field_name: item.field_name,
+                field_value:item.field_value,
+                message: item.message,
+                response_code: item.response_code
             })
         }),stx)
 
-       await stx.commit();
+        // console.log(errors)
+
+        await stx.commit();
         
         const xlsx = await asciiService.generateResult({
             success:result.success,
