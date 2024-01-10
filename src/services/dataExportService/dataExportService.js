@@ -60,6 +60,14 @@ exports.exportTransmittal = async(query) => {
             ],
             [
                 Sequelize.literal(`(
+                    Select COUNT(createdAt)
+                    from draft_bill_ascii_hdr_tbl
+                    where draft_bill_ascii_hdr_tbl.draft_bill_no = draft_bill_hdr_tbl.draft_bill_no
+                )`),
+                'transmittal_count'
+            ],
+            [
+                Sequelize.literal(`(
                     Select MIN(createdAt)
                     from draft_bill_ascii_hdr_tbl as attempts
                     where attempts.draft_bill_no = draft_bill_hdr_tbl.draft_bill_no
@@ -71,7 +79,14 @@ exports.exportTransmittal = async(query) => {
                     Select SUM(actual_qty) from draft_bill_detail_tbl
                     where draft_bill_detail_tbl.draft_bill_no = draft_bill_hdr_tbl.draft_bill_no
                 )`),'actual_qty'
-            ]
+            ],
+            [
+                Sequelize.literal(`(
+                    Select SUM(actual_cbm) from draft_bill_detail_tbl
+                    where draft_bill_detail_tbl.draft_bill_no = draft_bill_hdr_tbl.draft_bill_no
+                )`),'actual_cbm'
+            ],
+
 
         ].concat(Object.keys(models.draft_bill_hdr_tbl.getAttributes()).map(field => field)),
         where:{
@@ -94,12 +109,14 @@ exports.exportTransmittal = async(query) => {
     }))
     .then(result => result.map(item => {
         const {attempts,...draft_bill} = item;
+        if (attempts?.draft_bill_ascii_dtl_tbls)
         exportData = exportData.concat(attempts.draft_bill_ascii_dtl_tbls.map(e => ({
             'Draft Bill Number':        draft_bill.draft_bill_no, 	
             'Contract Type':            draft_bill.contract_type,	
             'Location':                 draft_bill.location,	
             'Draft Bill Date':          draft_bill.draft_bill_date,	
             'Trip Date':                draft_bill.trip_date,	
+            'Trip No':                  draft_bill.trip_no,
             'Principal':                draft_bill.customer,
             'Vendor':                   draft_bill.vendor,
             'TMS Service Type':         draft_bill.service_type,	
@@ -107,6 +124,7 @@ exports.exportTransmittal = async(query) => {
             'MGV':                      draft_bill.min_billable_value,	
             'MBU':                      draft_bill.min_billable_unit,	
             'Actual Quantity':          draft_bill.actual_qty,	
+            'Actual CBM':               draft_bill.actual_cbm,
             'Rate':                     draft_bill.rate,	
             'Total Charges':            draft_bill.total_charges,
             'Status':                   draft_bill.status,	
@@ -118,7 +136,8 @@ exports.exportTransmittal = async(query) => {
             'Fiel Value':               e.field_value,
             'Response Code':            e.response_code,
             'Message':                  e.message,
-            'Age from Draft Bill Creation': moment().diff(draft_bill.draft_bill_date,'days')
+            'Age from Draft Bill Creation': moment().diff(draft_bill.draft_bill_date,'days'),
+            'No of Retransmit':         draft_bill.transmittal_count
         })))
 
         return item
