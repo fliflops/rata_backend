@@ -60,8 +60,6 @@ exports.getInvoices = async(req,res,next) => {
         
         const data = await invoiceService.getPaginatedInvoice(req.query);
 
-        console.log(data.rows)
-
         res.status(200).json({
             data: data.rows,
             rows:data.count,

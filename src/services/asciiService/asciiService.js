@@ -195,14 +195,14 @@ exports.generateResult = async({
 }
 
 exports.generateErrors = async(errors) => {
-    let data = [];
+    let errorResult = [];
 
     Object.keys(errors).map(item => {
         const details = errors[item].DETAILS
         details.map(item => {
             Object.keys(item).map(key => {
                 item[key].map(data => {
-                    data.push({
+                    errorResult.push({
                         ref_code:data.REF_CODE,
                         field_name:data.FIELD_NAME,
                         field_value:data.FIELD_VALUE,
@@ -217,7 +217,7 @@ exports.generateErrors = async(errors) => {
 
     errors.map(item => {
         item.HEADER.map(item => {
-            data.push({
+            errorResult.push({
                 ref_code:item.REF_CODE,
                 field_name:item.FIELD_NAME,
                 field_value:item.FIELD_VALUE,
@@ -228,7 +228,7 @@ exports.generateErrors = async(errors) => {
         })
     })
 
-    return data
+    return errorResult
 }
 
 exports.getDraftBills = async(query) => {
