@@ -137,7 +137,7 @@ exports.exportTransmittal = async(query) => {
             'Response Code':            e.response_code,
             'Message':                  e.message,
             'Age from Draft Bill Creation': moment().diff(draft_bill.draft_bill_date,'days'),
-            'No of Retransmit':         draft_bill.transmittal_count
+            'No of Transmittal':         draft_bill.transmittal_count
         })))
 
         return item
