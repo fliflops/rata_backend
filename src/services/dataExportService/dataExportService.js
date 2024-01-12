@@ -133,7 +133,7 @@ exports.exportTransmittal = async(query) => {
             'Last Transmitted By':      attempts?.user_tbl ? `${attempts.user_tbl.first_name} ${attempts.user_tbl.last_name}` : null,
             'Result Type':              e.result_type,
             'Field Name':               e.field_name,
-            'Fiel Value':               e.field_value,
+            'Field Value':               e.field_value,
             'Response Code':            e.response_code,
             'Message':                  e.message,
             'Age from Draft Bill Creation': moment().diff(draft_bill.draft_bill_date,'days'),

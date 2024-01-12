@@ -219,16 +219,19 @@ exports.exportRevenueLeak = async(req,res,next) => {
                 include: [
                     {
                         model:models.helios_invoices_hdr_tbl,
-                        required:false
+                        required:false,
+                        include:[
+                            {
+                                model: models.service_type_tbl,
+                                required: false
+                            }
+                        ]
                     },
                     {
                         model:models.tranport_rev_leak_dtl_tbl,
                         required: false
                     },
-                    {
-                        model: models.service_type_tbl,
-                        required: false
-                    }
+                    
                 ]
             }
         })
