@@ -26,10 +26,12 @@ class tariff_sell_hdr_tbl extends Model {
                 type:DataTypes.STRING(50)
             },
             min_value:{
-                type:DataTypes.DECIMAL(18,9)
+                type:DataTypes.DECIMAL(18,9),
+                allowNull: true
             },
             max_value:{
-                type:DataTypes.DECIMAL(18,9)
+                type:DataTypes.DECIMAL(18,9),
+                allowNull: true
             },
             sub_service_type:{
                 type:DataTypes.STRING(50)
@@ -62,7 +64,7 @@ class tariff_sell_hdr_tbl extends Model {
                 type:DataTypes.STRING(50)
             },
             approved_date:{
-                type:DataTypes.STRING(50)
+                type:DataTypes.DATE
             },
             createdAt:Sequelize.DATE,
             updatedAt:Sequelize.DATE,
