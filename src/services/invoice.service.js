@@ -18,6 +18,12 @@ exports.getPaginatedInvoice = async(query) => {
                 [Sequelize.Op.between]: filters.rdd.split(',')
             }
         }
+        if(key === 'trip_date'){
+            return where.trip_date = {
+                [Sequelize.Op.between]: filters.trip_date.split(',')
+            }
+        }
+        
         return where[key] = filters[key]
     })
 

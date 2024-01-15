@@ -115,12 +115,11 @@ exports.updateContract = async(req,res,next) => {
 
 exports.updateContractTariff = async(req,res,next) => {
     try{
-        const {contract_id,tariff_id} = req.query;
+        const {id} = req.query;
         
         await models.contract_tariff_dtl.updateData({
             where:{
-                tariff_id,
-                contract_id
+                id
             },
             data:{
                 status:'INACTIVE',

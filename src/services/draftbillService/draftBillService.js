@@ -163,7 +163,7 @@ const getRevenueLeakNoFormula = ({invoices,draft_bill_details}) => {
 }
 
 const getInvalidTotalCharges = ({invoices,draft_bill_details, total_charges}) => {
-    const revenue_leak_reason = 'INVALID TOTAL CHARGES RESULT: '+total_charges;
+    const revenue_leak_reason = 'INVALID TOTAL CHARGES RESULT';
 
     return invoices.filter(item =>  draft_bill_details.map(dtl => dtl.tms_reference_no).includes(item.tms_reference_no))
     .map(item => {
