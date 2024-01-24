@@ -41,6 +41,8 @@ const wms_data_header_tbl           = require('./wms_data_header_tbl');
 const wms_draft_bill_hdr_tbl        = require('./wms_draft_bill_hdr_tbl');
 const wms_draft_bill_dtl_tbl        = require('./wms_draft_bill_dtl_tbl');
 
+const cost_alloc_setup_tbl          = require('./cost_alloc_setup_tbl');
+
 const sequelize = new Sequelize({
     ...dbConfig
 })
@@ -55,7 +57,8 @@ const models = {
     service_type_tbl:               require('./service_type_tbl').init(sequelize),
     location_tbl:                   require('./location_tbl').init(sequelize),
     quick_code_tbl:                 require('./quick_code_tbl').init(sequelize),
-
+    cost_alloc_setup_tbl:           cost_alloc_setup_tbl.init(sequelize),
+    
     helios_invoices_hdr_tbl:        helios_invoices_hdr_tbl.init(sequelize),
     helios_invoices_dtl_tbl:        helios_invoices_dtl_tbl.init(sequelize),
 
