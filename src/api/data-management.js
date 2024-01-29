@@ -2,7 +2,8 @@ const router = require('express').Router();
 const controllers = require('../controllers/dataManagementController');
 const costAllocControllers = require('../controllers/costAllocController');
 const {authorize} = require('../middleware/auth');
-const bodyValidator = require('../middleware/body-validator.middleware')
+const bodyValidator = require('../middleware/body-validator.middleware');
+const vehicleTypeController = require('../controllers/vehicleTypesController');
 
 router.route('/vendors')
 .get(authorize,controllers.getVendor)
@@ -33,5 +34,9 @@ router.route('/cost-allocation')
 .post(authorize, bodyValidator('cost-alloc-create'),costAllocControllers.createCostAlloc)
 .get(authorize, costAllocControllers.getPaginated)
 .put(authorize, costAllocControllers.updateCostAlloc)
+
+router.route('/vehicle-type')
+.post(vehicleTypeController.syncVehicleType)
+.get(vehicleTypeController.getPaginated)
 
 module.exports = router;

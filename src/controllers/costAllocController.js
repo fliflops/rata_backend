@@ -5,8 +5,6 @@ exports.createCostAlloc = async(req,res,next) => {
     try{
         const data = req.body;
 
-        console.log(data)
-
         const isExist = await costAllocService.isCostAllocExists({
             service_type: data.service_type,
             draft_bill_type: data.draft_bill_type
@@ -58,6 +56,22 @@ exports.updateCostAlloc = async(req,res,next) => {
         })
 
         res.status(200).end();
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.getPaginatedDetails = async(req,res,next) => {
+    try{
+        const query = req.query;
+        const data = await costAllocService.getPaginatedCostAllocDetails(query)
+        res.status(200).json({
+            data: data.rows,
+            rows:data.count,
+            pageCount: data.pageCount
+        })
+
     }
     catch(e){
         next(e)

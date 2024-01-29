@@ -55,3 +55,32 @@ exports.getPaginatedCostAlloc = async(query) => {
         pageCount: Math.ceil(count/totalPage)
     }
 }
+
+exports.getPaginatedCostAllocDetails = async(query) => {
+    const {page,totalPage,search,draft_bill_no,...filters} = query;
+
+    const globalFilter = useGlobalFilter.defaultFilter({
+        model: models.draft_bill_cost_alloc_tbl.getAttributes(),
+        filters:{
+            search
+        }
+    })
+
+    const {count, rows} = await models.draft_bill_cost_alloc_tbl.findAndCountAll({
+        where:{
+            ...globalFilter,
+            draft_bill_no
+        },
+        order:[['createdAt','DESC']],
+        offset: parseInt(page) * parseInt(totalPage),
+        limit: parseInt(totalPage),
+
+    })
+    .then(result => JSON.parse(JSON.stringify(result)))
+
+    return {
+        count,
+        rows,
+        pageCount: Math.ceil(count/totalPage)
+    }
+}

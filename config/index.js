@@ -80,6 +80,31 @@ const redisConfig = {
     port: process.env.REDIS_PORT
 }
 
+const kronosConfig = {
+    host:       process.env.KRONOS_DB_HOST,
+    username:   process.env.KRONOS_DB_USER,
+    password:   process.env.KRONOS_DB_PASSWORD,
+    dialect:    'mysql',
+    database:   process.env.KRONOS_DB,
+    // logging: false,
+    pool:{
+        max: 10,
+        min: 1,
+        idle: 2000000,
+        acquire: 2000000
+    },
+    dialectOptions: {
+		//useUTC: false, //for reading from database
+		dateStrings: true,
+		typeCast: true
+	},
+	timezone: '+08:00' /**for writing to database**/,
+    // define:{
+    //     version:true
+    // }
+
+}
+
 module.exports = {
     dbConfig,
     podConfig,
@@ -88,6 +113,7 @@ module.exports = {
     redis,
     ioredis,
     redisIndex, 
+    kronosConfig,
     ...vars,
 
 }

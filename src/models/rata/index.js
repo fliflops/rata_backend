@@ -25,7 +25,7 @@ const draft_bill_hdr_tbl            = require("./draft_bill_hdr_tbl");
 const draft_bill_details_tbl        = require('./draft_bill_details_tbl');
 const draft_bill_ascii_hdr_tbl      = require('./draft_bill_ascii_hdr_tbl');
 const draft_bill_ascii_dtl_tbl      = require('./draft_bill_ascii_dtl_tbl');
-
+const draft_bill_cost_alloc_tbl     = require('./draft_bill_cost_alloc_tbl');
 // v1 draft bill details
 const draft_bill_invoice_tbl        = require('./draft_bill_invoice_tbl');
 
@@ -42,6 +42,8 @@ const wms_draft_bill_hdr_tbl        = require('./wms_draft_bill_hdr_tbl');
 const wms_draft_bill_dtl_tbl        = require('./wms_draft_bill_dtl_tbl');
 
 const cost_alloc_setup_tbl          = require('./cost_alloc_setup_tbl');
+const vehicle_types_tbl          = require('./vehicle_types_tbl');
+
 
 const sequelize = new Sequelize({
     ...dbConfig
@@ -58,7 +60,8 @@ const models = {
     location_tbl:                   require('./location_tbl').init(sequelize),
     quick_code_tbl:                 require('./quick_code_tbl').init(sequelize),
     cost_alloc_setup_tbl:           cost_alloc_setup_tbl.init(sequelize),
-    
+    vehicle_types_tbl:              vehicle_types_tbl.init(sequelize),
+
     helios_invoices_hdr_tbl:        helios_invoices_hdr_tbl.init(sequelize),
     helios_invoices_dtl_tbl:        helios_invoices_dtl_tbl.init(sequelize),
 
@@ -81,7 +84,8 @@ const models = {
     draft_bill_details_tbl:         draft_bill_details_tbl.init(sequelize),
     draft_bill_ascii_hdr_tbl:       draft_bill_ascii_hdr_tbl.init(sequelize),
     draft_bill_ascii_dtl_tbl:       draft_bill_ascii_dtl_tbl.init(sequelize),
-    
+    draft_bill_cost_alloc_tbl:      draft_bill_cost_alloc_tbl.init(sequelize),
+
     transport_rev_leak_hdr_tbl:     transport_rev_leak_hdr_tbl.init(sequelize),
     tranport_rev_leak_dtl_tbl:      tranport_rev_leak_dtl_tbl.init(sequelize),
 
