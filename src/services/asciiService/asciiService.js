@@ -5,6 +5,7 @@ const models = require('../../models/rata');
 
 const useGlobalFilter = require('../../helpers/filters');
 const moment = require('moment');
+const costAllocationService = require('../costalloc.service');
 
 const {Sequelize} = models;
 
@@ -96,24 +97,52 @@ exports.asciiSalesOrder = async (data) => {
 
 exports.asciiConfirmationReceipt = async(data) => {
     try{
+        const hasCostAlloc = await models.cost_alloc_setup_tbl.findAll({
+            where:{
+                is_active: 1
+            }
+        }).then(result => JSON.parse(JSON.stringify(result)))
 
         return data.map(header => {
-            const details = header.details
+            const isCostAlloc = hasCostAlloc.find(item => item.draft_bill_type === 'BUY' && header.service_type === item.service_type)
+            const details = header.details;
+            const cost_allocaction_details = header.cost_allocation_details;
             const amount = Number(header.total_charges);
-            
-            const CONFIRMATION_RECEIPT_DETAIL = [{
-                COMPANY_CODE:       '00001',
-                CR_CODE:            header.draft_bill_no,
-                ITEM_CODE:          header.ascii_item_code,
-                LINE_NO:            1,
-                SERVICE_TYPE_CODE:  header.ascii_service_type,
-                PRINCIPAL_CODE:     header.ascii_principal_code,
-                LOCATION_CODE:      header.ascii_loc_code,
-                UM_CODE:            details[0].vehicle_type,
-                QUANTITY:           1,
-                UNIT_PRICE:         amount,//_.round(header.total_charges,2),
-                EXTENDED_AMT:       amount//_.round(header.total_charges,2)
-            }]
+
+            let CONFIRMATION_RECEIPT_DETAIL = [];
+
+            if (isCostAlloc) {
+                CONFIRMATION_RECEIPT_DETAIL=cost_allocaction_details.map((item,i) => {
+                    return {
+                        COMPANY_CODE:       '00001',
+                        CR_CODE:            header.draft_bill_no,
+                        ITEM_CODE:          header.ascii_item_code,
+                        LINE_NO:            i + 1,
+                        SERVICE_TYPE_CODE:  header.ascii_service_type,
+                        PRINCIPAL_CODE:     header.ascii_principal_code,
+                        LOCATION_CODE:      header.ascii_loc_code,
+                        QUANTITY:           item.allocation,
+                        UNIT_PRICE:         item.allocated_cost,
+                        EXTENDED_AMT:       amount
+                    }
+                })
+            }
+            else {
+                CONFIRMATION_RECEIPT_DETAIL = [{
+                    COMPANY_CODE:       '00001',
+                    CR_CODE:            header.draft_bill_no,
+                    ITEM_CODE:          header.ascii_item_code,
+                    LINE_NO:            1,
+                    SERVICE_TYPE_CODE:  header.ascii_service_type,
+                    PRINCIPAL_CODE:     header.ascii_principal_code,
+                    LOCATION_CODE:      header.ascii_loc_code,
+                    UM_CODE:            details[0].vehicle_type,
+                    QUANTITY:           1,
+                    UNIT_PRICE:         amount,
+                    EXTENDED_AMT:       amount
+                }]
+            }
+          
 
             return {
                 COMPANY_CODE:       '00001',
@@ -127,7 +156,7 @@ exports.asciiConfirmationReceipt = async(data) => {
                 PARTICULAR:         details.map(i => i.invoice_no).join(','),
                 REF_SI_NO:          'n/a',
                 REF_CROSS:          header.contract_id,
-                CR_AMT:             amount,//_.round(header.total_charges,2),
+                CR_AMT:             amount,
                 CONFIRMATION_RECEIPT_DETAIL
             }
         })

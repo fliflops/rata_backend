@@ -355,6 +355,11 @@ exports.getSo = async (req,res,next) => {
                     {
                         model: models.draft_bill_details_tbl,
                         as:'details'
+                    },
+                    {
+                        model: models.draft_bill_cost_alloc_tbl,
+                        required: false,
+                        as: 'cost_allocation_details'
                     }
                 ]
             },

@@ -202,6 +202,12 @@ class draft_bill_hdr_tbl extends Model {
             foreignKey:'draft_bill_no',
             as:'attempts'
         })
+
+        this.cost_allocation = this.hasMany(models.draft_bill_cost_alloc_tbl,{
+            sourceKey: 'draft_bill_no',
+            foreignKey:'draft_bill_no',
+            as:'cost_allocation_details'
+        })
     }
  }
 

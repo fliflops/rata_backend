@@ -49,6 +49,13 @@ class draft_bill_cost_alloc_tbl extends Model {
             tableName:'draft_bill_cost_alloc_tbl'
         })
     }
+
+    static associate(models) {
+        this.hasOne(models.draft_bill_hdr_tbl,{
+            sourceKey:'draft_bill_no',
+            foreignKey:'draft_bill_no'
+        })
+    }
 }
 
 module.exports=draft_bill_cost_alloc_tbl

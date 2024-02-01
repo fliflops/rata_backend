@@ -1,4 +1,4 @@
-const { Sequelize, sequelize } = require('../models/rata');
+const { Sequelize } = require('../models/rata');
 const models = require('../models/rata');
 const draftBillService = require('../services/draftbillService');
 const useGlobalFilter = require('../helpers/filters');
@@ -6,7 +6,6 @@ const moment = require('moment');
 
 exports.createDraftBillBuy = async(req,res,next) => {
     try{
-
         const {trip_date} = req.query;
         const invoices = await (models.helios_invoices_hdr_tbl.getData({
             where:{

@@ -19,9 +19,7 @@ exports.createCostAlloc = async(req,res,next) => {
             created_by: req.processor.id
         })
 
-
         res.status(200).end();
-
     }
     catch(e){
         next(e)
