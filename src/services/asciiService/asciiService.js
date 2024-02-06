@@ -121,9 +121,9 @@ exports.asciiConfirmationReceipt = async(data) => {
                         SERVICE_TYPE_CODE:  header.ascii_service_type,
                         PRINCIPAL_CODE:     header.ascii_principal_code,
                         LOCATION_CODE:      header.ascii_loc_code,
-                        QUANTITY:           item.allocation,
-                        UNIT_PRICE:         item.allocated_cost,
-                        EXTENDED_AMT:       amount
+                        QUANTITY:           Number(item.allocation) / 100,
+                        UNIT_PRICE:         amount,
+                        EXTENDED_AMT:       Number(item.allocated_cost),
                     }
                 })
             }
