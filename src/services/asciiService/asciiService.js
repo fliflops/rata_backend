@@ -110,7 +110,6 @@ exports.asciiConfirmationReceipt = async(data) => {
             const amount = Number(header.total_charges);
 
             let CONFIRMATION_RECEIPT_DETAIL = [];
-            // console.log(cost_allocaction_details)
 
             if (isCostAlloc) {
                 CONFIRMATION_RECEIPT_DETAIL=cost_allocaction_details.map((item,i) => {

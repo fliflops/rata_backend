@@ -177,12 +177,15 @@ exports.transportController = async(req,res,next) => {
                     },
                     {
                         model: models.draft_bill_cost_alloc_tbl,
-                        as:'cost_allocation_details'
+                        as:'cost_allocation_details',
+                        required: false,
+                        include:[
+                            {
+                                model:models.principal_tbl,
+                                required: false
+                            }
+                        ]
                     }
-                    // {
-                    //     model: models.tariff_sell_hdr_tbl,
-                    //     as:'tariff'
-                    // }
                 ]
             },
             where:{
