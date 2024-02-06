@@ -112,7 +112,11 @@ exports.asciiConfirmationReceipt = async(data) => {
             let CONFIRMATION_RECEIPT_DETAIL = [];
 
             if (isCostAlloc) {
-                CONFIRMATION_RECEIPT_DETAIL=cost_allocaction_details.map((item,i) => {
+                const woDefault = cost_allocaction_details.filter(item => item.principal_code !== '000')
+                const defaultPrincipal = cost_allocaction_details.filter(item => item.principal_code === '000')
+                const defaultPrice = round(amount - _.sum(woDefault.map(a => a.allocated_cost)),2)
+
+                CONFIRMATION_RECEIPT_DETAIL=woDefault.map((item,i) => {
                     return {
                         COMPANY_CODE:       '00001',
                         CR_CODE:            header.draft_bill_no,
@@ -127,6 +131,23 @@ exports.asciiConfirmationReceipt = async(data) => {
                         EXTENDED_AMT:       Number(item.allocated_cost),
                     }
                 })
+
+                CONFIRMATION_RECEIPT_DETAIL = CONFIRMATION_RECEIPT_DETAIL.concat(defaultPrincipal.map(item => {
+                    return {
+                        COMPANY_CODE:       '00001',
+                        CR_CODE:            header.draft_bill_no,
+                        ITEM_CODE:          header.ascii_item_code,
+                        LINE_NO:            woDefault.length + 1,
+                        SERVICE_TYPE_CODE:  header.ascii_service_type,
+                        PRINCIPAL_CODE:     item.principal_tbl?.ascii_principal_code ?? null,
+                        LOCATION_CODE:      header.ascii_loc_code,
+                        QUANTITY:           1,
+                        UM_CODE:            details[0].vehicle_type,
+                        UNIT_PRICE:         defaultPrice,
+                        EXTENDED_AMT:       defaultPrice,
+                    }
+                }))
+    
             }
             else {
                 CONFIRMATION_RECEIPT_DETAIL = [{
