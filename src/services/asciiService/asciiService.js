@@ -110,6 +110,7 @@ exports.asciiConfirmationReceipt = async(data) => {
             const amount = Number(header.total_charges);
 
             let CONFIRMATION_RECEIPT_DETAIL = [];
+            // console.log(cost_allocaction_details)
 
             if (isCostAlloc) {
                 CONFIRMATION_RECEIPT_DETAIL=cost_allocaction_details.map((item,i) => {
@@ -118,11 +119,12 @@ exports.asciiConfirmationReceipt = async(data) => {
                         CR_CODE:            header.draft_bill_no,
                         ITEM_CODE:          header.ascii_item_code,
                         LINE_NO:            i + 1,
-                        SERVICE_TYPE_CODE:  header.ascii_service_type,
-                        PRINCIPAL_CODE:     header.ascii_principal_code,
+                        SERVICE_TYPE_CODE:  item.ascii_service_type,
+                        PRINCIPAL_CODE:     item.principal_tbl?.ascii_principal_code,
                         LOCATION_CODE:      header.ascii_loc_code,
-                        QUANTITY:           Number(item.allocation) / 100,
-                        UNIT_PRICE:         amount,
+                        QUANTITY:           1,
+                        UM_CODE:            details[0].vehicle_type,
+                        UNIT_PRICE:         Number(item.allocated_cost),
                         EXTENDED_AMT:       Number(item.allocated_cost),
                     }
                 })
@@ -143,7 +145,6 @@ exports.asciiConfirmationReceipt = async(data) => {
                 }]
             }
           
-
             return {
                 COMPANY_CODE:       '00001',
                 CR_CODE:            header.draft_bill_no,
@@ -176,8 +177,8 @@ exports.generateResult = async({
 
         const wb = xlsx.utils.book_new();
 
-        let error_details = []
-        let error_header = []
+        let error_details = [];
+        let error_header = [];
 
         Object.keys(errors).map(item => {
             const details = errors[item].DETAILS

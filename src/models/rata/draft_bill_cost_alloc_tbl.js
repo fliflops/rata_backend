@@ -55,6 +55,11 @@ class draft_bill_cost_alloc_tbl extends Model {
             sourceKey:'draft_bill_no',
             foreignKey:'draft_bill_no'
         })
+
+        this.hasOne(models.principal_tbl,{
+            sourceKey:'principal_code',
+            foreignKey:'principal_code'
+        })
     }
 }
 
