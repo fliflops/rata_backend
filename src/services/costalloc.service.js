@@ -170,7 +170,7 @@ exports.draftBillCostAlloc = async(draft_bills=[]) => {
                             trip_no:            draft_bill.trip_no,
                             service_type:       draft_bill.service_type,
                             vendor_id:          draft_bill.vendor_id,
-                            principal_code:     '0000',
+                            principal_code:     '000',
                             vehicle_type:       draft_bill.vehicle_type,
                             vehicle_capacity:   vehicleType?.overall_volume,
                             vendor_id:          draft_bill.vendor,

@@ -175,6 +175,10 @@ exports.transportController = async(req,res,next) => {
                         model: models.draft_bill_details_tbl,
                         as:'details'
                     },
+                    {
+                        model: models.draft_bill_cost_alloc_tbl,
+                        as:'cost_allocation_details'
+                    }
                     // {
                     //     model: models.tariff_sell_hdr_tbl,
                     //     as:'tariff'
@@ -303,8 +307,6 @@ exports.transportController = async(req,res,next) => {
                 response_code: item.response_code
             })
         }),stx)
-
-        // console.log(errors)
 
         await stx.commit();
         
