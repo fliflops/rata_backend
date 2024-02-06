@@ -116,7 +116,7 @@ exports.draftBillCostAlloc = async(draft_bills=[]) => {
         if(isCostAlloc) {
             Object.keys(_.groupBy(draft_bill.details,'principal_code')).map(principal => {
                 const detail         = draft_bill.details.filter(item => principal === item.principal_code);
-                const total_cbm      = _.round(_.sum(detail.map(item => Number(item.actual_cbm))),2);
+                const total_cbm      = round(_.sum(detail.map(item => Number(item.actual_cbm))),2);
                 const total_cost     = draft_bill.total_charges;
                
                 cost_allocation_details.push({
@@ -138,8 +138,8 @@ exports.draftBillCostAlloc = async(draft_bills=[]) => {
             const totalCBM = _.sum(cost_allocation_details.map(item => item.total_cbm));
             if(totalCBM > vehicleType.overall_volume){
                 cost_allocation_details     = cost_allocation_details.map(item => {
-                    const allocation        = _.round((item.total_cbm / totalCBM) * 100, 2)
-                    const allocated_cost    = _.round((item.total_cbm / totalCBM) * item.total_cost, 2)
+                    const allocation        = round(round((item.total_cbm / totalCBM),2) * 100, 2)
+                    const allocated_cost    = round(round((item.total_cbm / totalCBM),2) * item.total_cost, 2)
                     return {
                         ...item,
                         allocation,
@@ -149,8 +149,8 @@ exports.draftBillCostAlloc = async(draft_bills=[]) => {
             }
             else{
                 cost_allocation_details     = cost_allocation_details.map(item => {
-                    const allocation        = _.round((item.total_cbm / item.vehicle_capacity) * 100, 2)
-                    const allocated_cost    = _.round((item.total_cbm / item.vehicle_capacity) * item.total_cost, 2)
+                    const allocation        = round((item.total_cbm / item.vehicle_capacity) * 100, 2)
+                    const allocated_cost    = round(round(item.total_cbm / item.vehicle_capacity, 2) * item.total_cost, 2)
                     return {
                         ...item,
                         allocation,
@@ -160,8 +160,8 @@ exports.draftBillCostAlloc = async(draft_bills=[]) => {
 
                 //computation for default principal
                 const total_cbm  = vehicleType?.overall_volume - totalCBM;
-                const allocation = _.round((total_cbm / vehicleType?.overall_volume * 100), 2);
-                const allocated_cost = _.round((total_cbm / vehicleType?.overall_volume) * draft_bill.total_charges);
+                const allocation = round(round((total_cbm / vehicleType?.overall_volume) * 100, 2), 2);
+                const allocated_cost = round(round(total_cbm / vehicleType?.overall_volume,2) * draft_bill.total_charges);
                 cost_allocation_details = cost_allocation_details.concat([
                         {
                             draft_bill_no:      draft_bill.draft_bill_no,
