@@ -136,7 +136,7 @@ exports.draftBillCostAlloc = async(draft_bills=[]) => {
             //CHECKING OF UTILIZATION SIZE
             //total utilization size of cost allocation details
             const totalCBM = _.sum(cost_allocation_details.map(item => item.total_cbm));
-            if(totalCBM > vehicleType.overall_volume){
+            if(totalCBM >= vehicleType.overall_volume){
                 cost_allocation_details     = cost_allocation_details.map(item => {
                     const allocation        = round((item.total_cbm / totalCBM) * 100, 2)
                     const allocated_cost    = round((item.total_cbm / totalCBM) * item.total_cost, 2)
