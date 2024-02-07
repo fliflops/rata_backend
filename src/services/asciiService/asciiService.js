@@ -114,8 +114,8 @@ exports.asciiConfirmationReceipt = async(data) => {
             if (isCostAlloc) {
                 const woDefault = cost_allocaction_details.filter(item => item.principal_code !== '000')
                 const defaultPrincipal = cost_allocaction_details.filter(item => item.principal_code === '000')
-                const defaultPrice = round(amount - _.sum(woDefault.map(a => a.allocated_cost)),2)
-
+                const defaultPrice = round(amount - _.sum(woDefault.map(a => Number(a.allocated_cost))),2)
+                
                 CONFIRMATION_RECEIPT_DETAIL=woDefault.map((item,i) => {
                     return {
                         COMPANY_CODE:       '00001',
