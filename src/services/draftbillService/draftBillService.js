@@ -1140,7 +1140,7 @@ const createRevenueLeak = async({draft_bill, revenue_leak, invoices, type, user=
                             as:'details'
                         },
                         {
-                            model: models.cost_alloc_setup_tbl,
+                            model: models.draft_bill_cost_alloc_tbl,
                             as: 'cost_allocation_details'
                         }
                     ]
