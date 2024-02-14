@@ -620,10 +620,21 @@ exports.uploadVendor=async(req,res,next)=>{
                 return value.vendor_id === vendor.vendor_id
             })
 
+            const isICFlagInvalid = ![1,0,true,false].includes(vendor.is_ic) 
+        
             if(isExist){
                 vendor_header.push({
                     vendor_id: vendor.vendor_id,
                     reason:'Vendor already exists!'
+                })
+
+                continue;
+            }
+
+            if(isICFlagInvalid){
+                vendor_header.push({
+                    vendor_id: vendor.vendor_id,
+                    reason:'Incorrect IC flag'
                 })
 
                 continue;
@@ -661,7 +672,7 @@ exports.uploadVendor=async(req,res,next)=>{
                     vg_vendor_id: vendorGroupDetails.vg_vendor_id,
                     reason:'Vendor mapping exists!'
                 })
-            }
+            }  
         }
         
         await vendor.bulkCreateTransaction({

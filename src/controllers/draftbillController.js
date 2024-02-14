@@ -7,10 +7,10 @@ const moment = require('moment');
 exports.createDraftBillBuy = async(req,res,next) => {
     try{
 
-        const {rdd} = req.query;
+        const {trip_date} = req.query;
         const invoices = await (models.helios_invoices_hdr_tbl.getData({
             where:{
-                rdd,
+                trip_date,
                 is_processed_buy: 0
             },
             options:{
@@ -65,7 +65,7 @@ exports.createDraftBillBuy = async(req,res,next) => {
 
         const {data,revenue_leak} = await draftBillService.buy({
             invoices,
-            rdd
+            trip_date
         })
 
         res.status(200).json({
@@ -81,25 +81,45 @@ exports.createDraftBillBuy = async(req,res,next) => {
 
 exports.createDraftBillSell = async(req,res,next) => {
     try{
-        const {rdd} = req.query;
+        const {trip_date} = req.query;
         const invoices = await models.helios_invoices_hdr_tbl.getData({
             where:{
-                rdd,
+                trip_date,
                 is_processed_sell: 0
             },
             options:{
                 include:[
                    {model: models.helios_invoices_dtl_tbl, required:false},
-                   {model: models.vendor_tbl,required:false},
-                   {model: models.ship_point_tbl, as:'ship_point_from',required:false},
-                   {model: models.ship_point_tbl, as:'ship_point_to',required:false}
+                   {
+                        model: models.vendor_tbl,
+                        required:false,
+                        where:{
+                            vendor_status: 'ACTIVE'
+                        }
+                    },
+                    {
+                        model: models.ship_point_tbl, 
+                        as:'ship_point_from',
+                        required:false,
+                        where:{
+                            is_active: 1
+                        }
+                    },
+                    {
+                        model: models.ship_point_tbl, 
+                        as:'ship_point_to',
+                        required:false,
+                        where:{
+                            is_active: 1
+                        }
+                    }
                 ]
             }
         })
       
         const {data,revenue_leak} = await draftBillService.sell({
             invoices,
-            rdd
+            trip_date
         })
     
         res.status(200).json({
@@ -129,13 +149,13 @@ exports.getDraftBill = async(req,res,next) => {
             if(key === 'draft_bill_type'){
                 return where[key] = filters[key]   
             }
-            if(key === 'delivery_date'){
-                const dates = filters.delivery_date.split(',')
+            if(key === 'trip_date'){
+                const dates = filters.trip_date.split(',')
                 const from = moment(dates[0]).isValid() ? dates[0] : null;
                 const to = moment(dates[1]).isValid() ? dates[1] : null;
                 
                 if (from && to) {
-                    return where.delivery_date = {
+                    return where.trip_date = {
                         [Sequelize.Op.and]: {
                             [Sequelize.Op.gte] : from,
                             [Sequelize.Op.lte] : to
@@ -188,6 +208,10 @@ exports.getDraftBill = async(req,res,next) => {
                             model: models.helios_invoices_hdr_tbl,
                             as:'invoice'
                         }]
+                    },
+                    {
+                        model:models.service_type_tbl,
+                        required:false
                     }
                 ],
                 distinct: true
@@ -196,9 +220,11 @@ exports.getDraftBill = async(req,res,next) => {
 
         res.status(200).json({
             data:rows.map(item => {
-                const {details,...header} = item;
+                const {details,service_type_tbl,...header} = item;
+
                 return {
                     ...header,
+                    ascii_service_type: service_type_tbl?.ascii_service_type,
                     details: details.map((dtl) => {
                         return{
                             ...dtl,

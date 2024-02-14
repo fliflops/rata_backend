@@ -52,6 +52,10 @@ class contract_tariff_dtl extends Model {
             //allowNull:false,
             type: DataTypes.STRING(50)
            },
+           cancelled_by:{
+            //allowNull:false,
+            type: DataTypes.STRING(50)
+           },
            createdAt:Sequelize.DATE,
            updatedAt:Sequelize.DATE, 
         },

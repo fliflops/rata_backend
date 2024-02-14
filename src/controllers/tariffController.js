@@ -1,5 +1,6 @@
 const models = require('../models/rata');
 const useGlobalFilter = require('../helpers/filters');
+const moment = require('moment');
 
 const {sequelize} = models;
 exports.getTariffIC = async (req,res,next) => {
@@ -91,7 +92,7 @@ exports.putTariffIC = async(req,res,next) => {
         await models.tariff_ic_algo_tbl.updateData({
             data:{
                 ...body,
-                updated_by:req.processor.id
+                modified_by:req.processor.id
             },
             where:{
                 id
@@ -109,12 +110,8 @@ exports.putTariffIC = async(req,res,next) => {
 }
 
 exports.updateTariff = async(req,res,next) => {
+    const stx = await models.sequelize.transaction();
     try{
-        const {
-            tariff_header,
-            tariff_ic
-        } = req.body;
-
         const {
             tariff_id
         } = req.params
@@ -145,31 +142,86 @@ exports.updateTariff = async(req,res,next) => {
                 message:'Invalid Tariff Status'
             })
         }
+  
+        await models.tariff_sell_hdr_tbl.update({
+            ...req.body,
+            modified_by: req.processor.id
+        },
+        {
+            where:{
+                tariff_id
+            },
+            transaction: stx
+        })
 
-        await sequelize.transaction(async t => {
-            await models.tariff_sell_hdr_tbl.updateData({
-                data:{
-                    ...tariff_header
-                },
-                where:{
-                    tariff_id: tariff_id
-                },
-                options:{
-                    transaction: t
-                }
-            })
+        await stx.commit();
+        res.end();
+    }
+    catch(e){
+        next(e)
+    }
+}
 
-            if(tariff.ic_data.length === 0) {
-                await models.tariff_ic_algo_tbl.bulkCreateData({
-                    data: tariff_ic,
-                    options:{
-                        transaction: t,
-                        ignoreDuplicates:true
+exports.approveTariff = async(req,res,next) => {
+    const stx = await models.sequelize.transaction();
+    try{
+        const {
+            tariff_id
+        } = req.params;
+
+        const {ic_data,...data} = req.body;
+
+        const tariff = await models.tariff_sell_hdr_tbl.getOneData({
+            options: {
+                include: [
+                    {
+                        model: models.tariff_ic_algo_tbl,
+                        required:false,
+                        as:'ic_data'
                     }
-                })
+                ]
+            },
+            where:{
+                tariff_id
             }
         })
 
+        if(!tariff) {
+            return res.status(400).json({
+                message:'Tariff does not exists!'
+            })
+        }
+
+        if(tariff.tariff_status !== 'DRAFT') {
+            return res.status(400).json({
+                message:'Invalid Tariff Status'
+            })
+        }
+     
+
+        await models.tariff_sell_hdr_tbl.update({
+            ...data,
+            approved_by: req.processor.id,
+            approved_date: moment().format('YYYY-MM-DD HH:mm:ss')
+        },
+        {
+            where:{
+                tariff_id
+            },
+            transaction: stx
+        })
+
+
+        if(tariff.ic_data.length === 0) {
+            await models.tariff_ic_algo_tbl.bulkCreate(ic_data,{
+                ignoreDuplicates:true,
+                transaction: stx,
+                updateOnDuplicate:['updatedAt','updated_by','algo_status']
+            })
+        }
+
+        await stx.commit();
+        
         res.end();
     }
     catch(e){

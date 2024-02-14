@@ -148,7 +148,6 @@ exports.transportController = async(req,res,next) => {
         let data;
         let result;
         
-
         const draftBill = await models.draft_bill_hdr_tbl.getData({
             options:{
                 include:[
@@ -183,7 +182,7 @@ exports.transportController = async(req,res,next) => {
                 ]
             },
             where:{
-                delivery_date: date,
+                trip_date: date,
                 location: location,
                 contract_type: type,
                 status: 'DRAFT_BILL',
@@ -231,8 +230,13 @@ exports.transportController = async(req,res,next) => {
             })
 
             await asciiService.updateDraftBill(
-                {status:'DRAFT_BILL_POSTED'},
-                {draft_bill_no:result.success.map(item => item.SO_CODE),},
+                {
+                    status:'DRAFT_BILL_POSTED',
+                    updated_by: req.processor.id
+                },
+                {
+                    draft_bill_no:result.success.map(item => item.SO_CODE)
+                },
                 stx
             )
         }
@@ -287,15 +291,22 @@ exports.transportController = async(req,res,next) => {
        
         await asciiService.createTransmittalLogDtl(errors.map(item => {
             const header = logHeader.find(db => db.draft_bill_no === item.ref_code);
-
+            // console.log(item)
             return ({
-                ...item,
+                // ...item,
                 draft_bill_code: item.ref_code,
-                fk_id: header.id
+                fk_id: header.id,
+                result_type: item.result_type,
+                field_name: item.field_name,
+                field_value:item.field_value,
+                message: item.message,
+                response_code: item.response_code
             })
         }),stx)
 
-       await stx.commit();
+        // console.log(errors)
+
+        await stx.commit();
         
         const xlsx = await asciiService.generateResult({
             success:result.success,
@@ -348,7 +359,7 @@ exports.getSo = async (req,res,next) => {
                 ]
             },
             where:{
-                delivery_date: date,
+                trip_date: date,
                 location: location,
                 contract_type: type,
                 status:'DRAFT_BILL'
@@ -383,9 +394,7 @@ exports.getSo = async (req,res,next) => {
     }
     catch(e){
         next(e)
-    }
-    
-   
+    }  
 }
 
 exports.getPaginatedTransportDraftBill = async (req,res,next) => {
@@ -457,8 +466,6 @@ exports.getTransmittalLogDetail = async(req,res,next) => {
             rows:      data.count,
             pageCount: data.pageCount
         })
-
-    
     }
     catch(e){
         next(e)

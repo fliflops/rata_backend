@@ -151,7 +151,6 @@ class  helios_invoices_hdr_tbl extends Model {
         })
     }
     
-
     static associate(models) {
         this.details = this.hasMany(models.helios_invoices_dtl_tbl,{
             foreignKey:'br_no',
@@ -178,8 +177,17 @@ class  helios_invoices_hdr_tbl extends Model {
             foreignKey:'vg_vendor_id',
             sourceKey:'trucker_id'
         })
-    }
 
+        this.service_type = this.hasOne(models.service_type_tbl,{
+            foreignKey:'service_type_code',
+            sourceKey:'service_type'
+        })
+    
+        this.principal = this.hasOne(models.principal_tbl,{
+            foreignKey:'principal_code',
+            sourceKey:'principal_code'
+        })
+    }
 
 }
 

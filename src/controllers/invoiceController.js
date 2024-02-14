@@ -1,50 +1,69 @@
 const models = require('../models/rata');
 const useGlobalFilter = require('../helpers/filters');
 const {helios} = require('../../services');
-
+const invoiceService = require('../services/invoice.service');
 const {Sequelize}= models;
 
 exports.getInvoices = async(req,res,next) => {
     try{
-        const {
-            page,
-            totalPage,
-            search,
-            ...filters
-        } = req.query;
+        // const {
+        //     page,
+        //     totalPage,
+        //     search,
+        //     ...filters
+        // } = req.query;
 
-        const where = {};
+        // const where = {};
 
-        Object.keys(filters).map(key => {
-            if(key === 'rdd'){
-                return where.rdd = {
-                    [Sequelize.Op.between]: filters.rdd.split(',')
-                }
-            }
-            return where[key] = filters[key]
-        })
+        // Object.keys(filters).map(key => {
+        //     if(key === 'rdd'){
+        //         return where.rdd = {
+        //             [Sequelize.Op.between]: filters.rdd.split(',')
+        //         }
+        //     }
+        //     return where[key] = filters[key]
+        // })
 
-        const globalFilter = useGlobalFilter.defaultFilter({
-            model: models.helios_invoices_hdr_tbl.rawAttributes,
-            filters:{
-                search
-            }
-        })
+        // const globalFilter = useGlobalFilter.defaultFilter({
+        //     model: models.helios_invoices_hdr_tbl.rawAttributes,
+        //     filters:{
+        //         search
+        //     }
+        // })
 
-        const {count,rows} = await models.helios_invoices_hdr_tbl.paginated({
-            filters:{
-                ...where,
-                ...globalFilter
-            },
-            order:[['createdAt','DESC']],
-            page,
-            totalPage
-        })
+        // const {count,rows} = await models.helios_invoices_hdr_tbl.paginated({
+        //     filters:{
+        //         ...where,
+        //         ...globalFilter
+        //     },
+        //     include: [{
+        //         model: models.service_type_tbl,
+        //         required:false
+        //     }],
+        //     order:[['createdAt','DESC']],
+        //     page,
+        //     totalPage
+        // })
+    
+        // // console.log(rows)
+        // res.status(200).json({
+        //     data:rows.map(({service_type_tbl,...invoices}) => {
+        //         return {
+        //             ...invoices,
+        //             ascii_service_type: service_type_tbl?.ascii_service_type
+        //         }
+        //     }),
+        //     rows:count,
+        //     pageCount: Math.ceil(count/totalPage)
+        // })
+
+        
+        const data = await invoiceService.getPaginatedInvoice(req.query);
 
         res.status(200).json({
-            data:rows,
-            rows:count,
-            pageCount: Math.ceil(count/totalPage)
+            data: data.rows,
+            rows:data.count,
+            pageCount: data.pageCount
         })
 
     }

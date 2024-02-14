@@ -20,6 +20,10 @@ class draft_bill_hdr_tbl extends Model {
                 allowNull:false,
                 type: DataTypes.STRING(50)
             },
+            trip_date:{
+                allowNull:false,
+                type: DataTypes.STRING(50)
+            },
             delivery_date:{
                 allowNull:false,
                 type: DataTypes.DATEONLY

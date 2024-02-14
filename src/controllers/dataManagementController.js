@@ -300,7 +300,7 @@ exports.updateShipPoint = async(req,res,next) => {
         await shipPointService.updateShipPoint({
             ...data,
             stc_code: id,
-            updated_by: req.processor.id
+            modified_by: req.processor.id
         })
 
         res.end()
@@ -455,7 +455,8 @@ exports.updateAlgorithm = async(req,res,next) => {
                 id
             },
             data:{
-                ...data
+                ...data,
+                modified_by: req.processor.id
             }
         })
 

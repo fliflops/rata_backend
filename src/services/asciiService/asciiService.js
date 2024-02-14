@@ -195,14 +195,14 @@ exports.generateResult = async({
 }
 
 exports.generateErrors = async(errors) => {
-    let data = [];
+    let errorResult = [];
 
     Object.keys(errors).map(item => {
         const details = errors[item].DETAILS
         details.map(item => {
             Object.keys(item).map(key => {
                 item[key].map(data => {
-                    data.push({
+                    errorResult.push({
                         ref_code:data.REF_CODE,
                         field_name:data.FIELD_NAME,
                         field_value:data.FIELD_VALUE,
@@ -217,7 +217,7 @@ exports.generateErrors = async(errors) => {
 
     errors.map(item => {
         item.HEADER.map(item => {
-            data.push({
+            errorResult.push({
                 ref_code:item.REF_CODE,
                 field_name:item.FIELD_NAME,
                 field_value:item.FIELD_VALUE,
@@ -228,7 +228,7 @@ exports.generateErrors = async(errors) => {
         })
     })
 
-    return data
+    return errorResult
 }
 
 exports.getDraftBills = async(query) => {
@@ -245,13 +245,13 @@ exports.getDraftBills = async(query) => {
         if(key === 'draft_bill_type'){
             return where[key] = filters[key]   
         }
-        if(key === 'delivery_date'){
-            const dates = filters.delivery_date.split(',')
+        if(key === 'trip_date'){
+            const dates = filters.trip_date.split(',')
             const from = moment(dates[0]).isValid() ? dates[0] : null;
             const to = moment(dates[1]).isValid() ? dates[1] : null;
             
             if (from && to) {
-                return where.delivery_date = {
+                return where.trip_date = {
                     [Sequelize.Op.and]: {
                         [Sequelize.Op.gte] : from,
                         [Sequelize.Op.lte] : to
@@ -345,18 +345,19 @@ exports.getDraftBills = async(query) => {
 
             let actual_quantity = 0;
 
-            if(data.min_billable_unit === 'CBM') {
-                actual_quantity = _.sumBy(details, item => Number(item.actual_cbm)).toFixed(2)
-            }
-            else{
-                actual_quantity = _.sumBy(details, item => Number(item.actual_qty)).toFixed(2)
-            }
+            // if(data.min_billable_unit === 'CBM') {
+            //     actual_quantity = _.sumBy(details, item => Number(item.actual_cbm)).toFixed(2)
+            // }
+            // else{
+            //     actual_quantity = _.sumBy(details, item => Number(item.actual_qty)).toFixed(2)
+            // }
 
             return {
                 ...data,
                 transmittal_count: attempts.length,
                 last_transmitted_by: user ? `${user?.first_name} ${user?.last_name}` : null,
-                actual_quantity
+                actual_quantity: _.sumBy(details, item => Number(item.actual_qty)).toFixed(2),
+                actual_cbm: _.sumBy(details, item => Number(item.actual_cbm)).toFixed(2)
             }
         }),
         pageCount: Math.ceil(count/totalPage)
