@@ -1,7 +1,8 @@
 const models  = require('../models');
 const {podDB,scmdb} = require('../database');
 const {redis,redisIndex} = require('../config')
-const jobs = require('../src/jobs')
+const jobs = require('../src/jobs');
+const kronos = require('../src/models/kronos');
 
 module.exports = async() => {
     try{
@@ -28,6 +29,9 @@ module.exports = async() => {
             console.log('Connected to SCMDB')
         })       
         
+        await kronos.sequelize.authenticate().then(() => {
+            console.log('Connected to Kronos DB')
+        })
     }
     catch(e){
         console.log(e)

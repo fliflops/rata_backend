@@ -1,4 +1,4 @@
-const { Sequelize, sequelize } = require('../models/rata');
+const { Sequelize } = require('../models/rata');
 const models = require('../models/rata');
 const draftBillService = require('../services/draftbillService');
 const useGlobalFilter = require('../helpers/filters');
@@ -6,7 +6,6 @@ const moment = require('moment');
 
 exports.createDraftBillBuy = async(req,res,next) => {
     try{
-
         const {trip_date} = req.query;
         const invoices = await (models.helios_invoices_hdr_tbl.getData({
             where:{
@@ -15,7 +14,9 @@ exports.createDraftBillBuy = async(req,res,next) => {
             },
             options:{
                 include:[
-                    {model: models.helios_invoices_dtl_tbl},
+                    {
+                        model: models.helios_invoices_dtl_tbl
+                    },
                     {
                         model: models.ship_point_tbl, 
                         as:'ship_point_from',
@@ -226,9 +227,11 @@ exports.getDraftBill = async(req,res,next) => {
                     ...header,
                     ascii_service_type: service_type_tbl?.ascii_service_type,
                     details: details.map((dtl) => {
+                        const principal_code = dtl.invoice?.principal_code;
                         return{
                             ...dtl,
-                            planned_vehicle_type: dtl.invoice.planned_vehicle_type
+                            planned_vehicle_type: dtl.invoice.planned_vehicle_type,
+                            principal_code
                         }
                     }),
                 }
