@@ -14,7 +14,9 @@ exports.createDraftBillBuy = async(req,res,next) => {
             },
             options:{
                 include:[
-                    {model: models.helios_invoices_dtl_tbl},
+                    {
+                        model: models.helios_invoices_dtl_tbl
+                    },
                     {
                         model: models.ship_point_tbl, 
                         as:'ship_point_from',
@@ -225,9 +227,12 @@ exports.getDraftBill = async(req,res,next) => {
                     ...header,
                     ascii_service_type: service_type_tbl?.ascii_service_type,
                     details: details.map((dtl) => {
+                        const principal_code = dtl.invoice?.principal_code;
+                        console.log(dtl)
                         return{
                             ...dtl,
-                            planned_vehicle_type: dtl.invoice.planned_vehicle_type
+                            planned_vehicle_type: dtl.invoice.planned_vehicle_type,
+                            principal_code
                         }
                     }),
                 }

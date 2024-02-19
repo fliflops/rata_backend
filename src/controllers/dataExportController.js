@@ -194,6 +194,7 @@ exports.exportDraftBill = async(req,res,next) => {
             cost_alloc_details = cost_alloc_details.concat(cost_allocation_details.map(item => {
                 return {
                     ...item,
+                    location: header.location,
                     contract_type:header.contract_type,
                     vehicle_type: header.vehicle_type,
                 }
