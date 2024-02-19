@@ -88,6 +88,7 @@ exports.getPaginatedCostAllocDetails = async(query) => {
             const {draft_bill_hdr_tbl,...header} = item;
             return {
                 ...header,
+                location: draft_bill_hdr_tbl.location,
                 vehicle_type: draft_bill_hdr_tbl.vehicle_type
             }
         }),

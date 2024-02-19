@@ -228,7 +228,6 @@ exports.getDraftBill = async(req,res,next) => {
                     ascii_service_type: service_type_tbl?.ascii_service_type,
                     details: details.map((dtl) => {
                         const principal_code = dtl.invoice?.principal_code;
-                        console.log(dtl)
                         return{
                             ...dtl,
                             planned_vehicle_type: dtl.invoice.planned_vehicle_type,
