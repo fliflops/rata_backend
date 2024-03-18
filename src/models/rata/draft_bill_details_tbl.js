@@ -121,6 +121,11 @@ class draft_bill_details_tbl extends Model {
             foreignKey:'tms_reference_no',
             as:'invoice'
         }))
+
+        this.draft_bill = this.hasOne(models.draft_bill_hdr_tbl,{
+            sourceKey:'draft_bill_no',
+            foreignKey:'draft_bill_no'
+        })
     }
 }
 

@@ -20,6 +20,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "env-cmd": "^10.1.0",
+    "exceljs": "^4.4.0",
     "express": "^4.17.1",
     "express-session": "^1.17.2",
     "express-validation": "^4.1.0",
@@ -42,6 +43,6 @@
     "sequelize": "^6.6.4",
     "tedious": "^11.0.9",
     "uuid": "^9.0.0",
-    "xlsx": "^0.17.4"
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.19.3/xlsx-0.19.3.tgz"
   }
 }

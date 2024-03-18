@@ -97,7 +97,11 @@ const models = {
     geo_city_tbl:                   require('./geo_city_tbl').init(sequelize),
     geo_province_tbl:               require('./geo_province_tbl').init(sequelize),
     geo_region_tbl:                 require('./geo_region_tbl').init(sequelize),
-    geo_country_tbl:                require('./geo_country_tbl').init(sequelize)
+    geo_country_tbl:                require('./geo_country_tbl').init(sequelize),
+
+    report_schedule_tbl:            require('./report_schedule_tbl').init(sequelize),
+    report_tbl:                     require('./report_tbl').init(sequelize)
+
 }
 
 //associations

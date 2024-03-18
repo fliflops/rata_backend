@@ -9,5 +9,8 @@ module.exports = {
     WMS_DATA_SYNC:          new Bull('rata:wmsautosync',connection),
     RATA_DRAFT_BILL_WMS:    new Bull('rata:warehouse_draft_bill',connection),
     RATA_DRAFT_BILL_SELL:   new Bull('rata:transport_draft_bill_sell', connection),
-    RATA_DRAFT_BILL_BUY:    new Bull('rata:transport_draft_bill_buy', connection)
+    RATA_DRAFT_BILL_BUY:    new Bull('rata:transport_draft_bill_buy', connection),
+
+    REPORT_CROSSDOCK:       new Bull('rata:reports:crossdock-secondary', connection),
+    REPORT_P2P:             new Bull('rata:reports:p2p', connection)
 }
