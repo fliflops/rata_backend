@@ -150,6 +150,7 @@ exports.getDraftBill = async(filters={}) => {
                 invoice_date:       moment(item.delivery_date).subtract(2,'days').format('YYYY-MM-DD'),
                 trip_date:          draftBill.trip_date,
                 dr_no:              item.dr_no,
+                so_no:              String(item.dr_no).search('|') ?  String(item.dr_no).slice(String(item.dr_no).indexOf('|') + 1) : '',
                 invoice_no:         item.invoice_no,
                 shipment_manifest:  item.shipment_manifest,
                 trip_plan:          item.trip_plan,
@@ -659,16 +660,16 @@ exports.p2p = async({data=[], filePath=null}) => {
             key:'trip_date'
         },
         {
-            header:'DR Number',
+            header:'Sales Order No',
+            key:'so_no'
+        },
+        {
+            header:'Delivery Order No',
             key:'dr_no'
         },
         {
-            header:'SI Number',
+            header:'Sales Invoice No',
             key:'invoice_no'
-        },
-        {
-            header:'FO Reference',
-            key:'shipment_manifest'
         },
         {
             header:'Trip Number',
@@ -1029,8 +1030,8 @@ exports.generateFilter = () => {
     }
     else if(today.date() <= 23){
         filter = {
-            from: today.subtract(32,'days').format('YYYY-MM-DD HH:mm:ss'), 
-            to: today.subtract(2,'days').format('YYYY-MM-DD HH:mm:ss')
+            from: today.subtract(33,'days').format('YYYY-MM-DD HH:mm:ss'), 
+            to: today.subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
         }
     }
     else{
