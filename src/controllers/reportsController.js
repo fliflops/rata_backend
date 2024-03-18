@@ -4,13 +4,17 @@ const path = require('path');
 const {REPORT_P2P, REPORT_CROSSDOCK} = require('../jobs/queues/queues')
 const Queue = require('../jobs/queues/queues');
 const redis = require('../../config').redis;
+const {v4:uuidv4} = require('uuid');
+
 
 exports.createPreBillingReport = async(req,res,next) => {
     try{
      
-
-      
-                // await REPORT_CROSSDOCK.add()
+        await REPORT_CROSSDOCK.add(null, {
+            jobId:uuidv4(),
+            removeOnFail:true,
+            removeOnComplete:true
+        })
         res.end();
     }
     catch(e){
@@ -20,8 +24,8 @@ exports.createPreBillingReport = async(req,res,next) => {
 
 exports.createP2PReport = async(req,res,next) => {
     try{
-        // await REPORT_P2P.add()
-        // res.end();
+        await REPORT_P2P.add()
+        res.end();
     }
     catch(e){
         next(e)

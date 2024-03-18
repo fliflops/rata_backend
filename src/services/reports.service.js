@@ -114,10 +114,7 @@ exports.getDraftBill = async(filters={}) => {
                     ...filters,
                     is_transmitted:1,
                     status:'DRAFT_BILL_POSTED',
-                    
-                },
-                sequelize.where(sequelize.fn('date',sequelize.col('draft_bill_hdr_tbl.updatedAt')), '>=' , '2024-02-16'),
-                sequelize.where(sequelize.fn('date',sequelize.col('draft_bill_hdr_tbl.updatedAt')), '<=' , '2024-02-16')
+                }
             ]
         },
         limit: 100
@@ -221,7 +218,8 @@ exports.getDraftBill = async(filters={}) => {
 
 exports.crossDockSecondary = async({
     filePath=null,
-    data=[]
+    data=[],
+    dates={}
 }) => {
     const workbook = new excelJs.Workbook();
     const ws = await workbook.addWorksheet('Crossdock Secondary');
@@ -230,22 +228,29 @@ exports.crossDockSecondary = async({
     ws.getCell('A6').value = 'Billed by:'
     ws.getCell('B6').value = 'Kerry Logistikus Philippines, Inc.'
 
-    ws.getCell('AQ6').value = 'Billed to:'
+    ws.getCell('AK6').value = 'Billed to:'
+    ws.getCell('AL6').value = 'Mondelez Philippines, Inc.'
    
     
     ws.getCell('A7').value = 'Address:'
     ws.getCell('B7').value = '268 C. Raymundo Ave., Maybunga, Pasig City'
-    ws.getCell('AQ7').value = 'Address:'
+    ws.getCell('AK7').value = 'Address:'
+    ws.getCell('AL7').value = 'MANUFACTURING 8378 DR.A SANTOS AVE,. PARANAQUE CITY'
 
     ws.getCell('A8').value = 'Email Add:'
     ws.getCell('B8').value = 'customer.experience@logistikus.com'
-
+    
     ws.getCell('A10').value = 'Contact No:'
-    ws.getCell('B10').value = '009-883-590-000'
+    ws.getCell('B10').value = '+632 232-4550'
+    
+    ws.getCell('A11').value = 'TIN:'
+    ws.getCell('B11').value = '009-883-590-000'
 
     ws.getCell('A13').value = 'Invoice No:'
 
     ws.getCell('A15').value = 'Period Covered:'
+    ws.getCell('B15').value = `${moment(dates.from).format('YYYY-MM-DD')} to ${moment(dates.to).format('YYYY-MM-DD')}`
+    
 
     ws.mergeCells('A17:BB17')
     ws.getCell('A17').value = 'PRE-BILLING SUMMARY FOR SECONDARY CROSSDOCK';
@@ -549,7 +554,7 @@ exports.crossDockSecondary = async({
             horizontal:'right'
         }
     }
-    ws.getCell('BB'+String(lastRow+13)).value = 'Reported Printed By:'
+    ws.getCell('BB'+String(lastRow+13)).value = 'Reported Printed By: RATA'+moment().format('MMDDYYYYHHmmsss')
     ws.getCell('BB'+String(lastRow+13)).style = {
         alignment:{
             horizontal:'right'
@@ -607,7 +612,7 @@ exports.crossDockSecondary = async({
     return await workbook.xlsx.writeFile(filePath);
 }
 
-exports.p2p = async({data=[], filePath=null}) => {
+exports.p2p = async({data=[], filePath=null, dates={}}) => {
     const workbook = new excelJs.Workbook();
     const ws = workbook.addWorksheet('P2P');
     const totals = await getTotals(data);
@@ -625,12 +630,16 @@ exports.p2p = async({data=[], filePath=null}) => {
     ws.getCell('B8').value = 'customer.experience@logistikus.com'
 
     ws.getCell('A10').value = 'Contact No:'
-    ws.getCell('B10').value = '009-883-590-000'
+    ws.getCell('B10').value = '+632 232-4550'
+    
+    ws.getCell('A11').value = 'TIN:'
+    ws.getCell('B11').value = '009-883-590-000'
 
     ws.getCell('A13').value = 'Invoice No:'
 
     ws.getCell('A15').value = 'Period Covered:'
-
+    ws.getCell('B15').value = `${moment(dates.from).format('YYYY-MM-DD')} to ${moment(dates.to).format('YYYY-MM-DD')}`
+    
     ws.mergeCells('A17:AO17')
     ws.getCell('A17').value = 'PRE-BILLING SUMMARY FOR MONDELEZ POINT TO POINT';
     ws.getCell('A17').alignment =  { vertical: 'middle', horizontal: 'center' };
@@ -876,6 +885,31 @@ exports.p2p = async({data=[], filePath=null}) => {
     ws.getCell('AO'+String(lastRow+8)).value = totals.net_vat_inc
     ws.getCell('AO'+String(lastRow+8)).numFmt= '#,##0.00'
 
+    ws.getCell('AO'+String(lastRow+12)).value = 'Report Generation Date: '+moment().format('YYYY-MM-DD hh:mm:ss A')
+    ws.getCell('AO'+String(lastRow+12)).style = {
+        alignment:{
+            horizontal:'right'
+        }
+    }
+    ws.getCell('AO'+String(lastRow+13)).value = 'Reported Printed By: RATA'+moment().format('MMDDYYYYHHmmsss')
+    ws.getCell('AO'+String(lastRow+13)).style = {
+        alignment:{
+            horizontal:'right'
+        }
+    }
+    ws.getCell('AO'+String(lastRow+14)).value = 'Printed via: RATA - Rating and Billing'
+    ws.getCell('AO'+String(lastRow+14)).style = {
+        alignment:{
+            horizontal:'right'
+        }
+    }
+    ws.getCell('AO'+String(lastRow+15)).value = 'Source Systems: RATA and ASCII'
+    ws.getCell('AO'+String(lastRow+15)).style = {
+        alignment:{
+            horizontal:'right'
+        }
+    }
+
     ws.eachRow({includeEmpty:true}, (row,Number) => {
         if(Number >= 18 && Number <= lastRow+1) {
             row.eachCell({includeEmpty:true}, (cell, colNumber) => {
@@ -1018,26 +1052,26 @@ exports.generateFilter = () => {
 
     if(today.date() <= 10){
         filter = {
-            from: today.subtract(33,'days').format('YYYY-MM-DD HH:mm:ss'), 
-            to: today.subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
+            from: moment().subtract(33,'days').format('YYYY-MM-DD HH:mm:ss'), 
+            to: moment().subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
         }
     }
     else if(today.date() <= 17){
         filter = {
-            from: today.subtract(33,'days').format('YYYY-MM-DD HH:mm:ss'), 
-            to: today.subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
+            from: moment().subtract(33,'days').format('YYYY-MM-DD HH:mm:ss'), 
+            to: moment().subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
         }
     }
     else if(today.date() <= 23){
         filter = {
-            from: today.subtract(33,'days').format('YYYY-MM-DD HH:mm:ss'), 
-            to: today.subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
+            from: moment().subtract(33,'days').format('YYYY-MM-DD HH:mm:ss'), 
+            to: moment().subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
         }
     }
     else{
         filter = {
-            from: today.subtract(33,'days').format('YYYY-MM-DD HH:mm:ss'), 
-            to: today.subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
+            from: moment().subtract(33,'days').format('YYYY-MM-DD HH:mm:ss'), 
+            to: moment().subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
         }
     }
     return filter

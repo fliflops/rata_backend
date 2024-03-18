@@ -8,6 +8,7 @@ module.exports = () => {
     REPORT_CROSSDOCK.process(async (job, done) => {
         try{
             const filters = reportService.generateFilter();
+            console.log(filters)
 
             const report = await reportService.findReport({
                 report_name: 'crossdock_secondary'
@@ -58,6 +59,7 @@ module.exports = () => {
     })
 
     REPORT_CROSSDOCK.on('failed', async(job,err) => {
+        console.log(err)
         await reportService.updateReportLog({
             filter:{
                 id: job.id,
