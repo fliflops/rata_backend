@@ -302,7 +302,7 @@ exports.crossDockSecondary = async({
         },
         {
             header:'Principal',
-            key: 'customer'
+            key: 'principal'
         },
         {
             header:'Warehouse Location',
@@ -686,7 +686,7 @@ exports.p2p = async({data=[], filePath=null, dates={}}) => {
         },
         {
             header:'Principal',
-            key: 'customer'
+            key: 'principal'
         },
         {
             header:'Warehouse Location',
