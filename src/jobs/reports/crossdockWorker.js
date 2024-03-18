@@ -24,7 +24,7 @@ module.exports = () => {
             const filePath = path.join(root,'/assets/reports/pre-billing/',fileName);
             
             const draftBills = await reportService.getDraftBill({
-                transmittal_date:{
+                updatedAt:{
                     [sequelize.Op.between]: [filters.from,filters.to]
                 }
             });

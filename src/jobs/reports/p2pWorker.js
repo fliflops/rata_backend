@@ -2,6 +2,7 @@ const {REPORT_P2P} = require('../queues/queues');
 const reportService = require('../../services/reports.service');
 const moment = require('moment');
 const path = require('path');
+const sequelize = require('sequelize');
 
 module.exports = () => {
     REPORT_P2P.process(async (job, done) => {
