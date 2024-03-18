@@ -5,17 +5,27 @@ const {REPORT_P2P, REPORT_CROSSDOCK} = require('../jobs/queues/queues')
 const Queue = require('../jobs/queues/queues');
 const redis = require('../../config').redis;
 const {v4:uuidv4} = require('uuid');
-
+const sequelize = require('sequelize')
 
 exports.createPreBillingReport = async(req,res,next) => {
     try{
      
-        await REPORT_CROSSDOCK.add(null, {
-            jobId:uuidv4(),
-            removeOnFail:true,
-            removeOnComplete:true
+        // await REPORT_CROSSDOCK.add(null, {
+        //     jobId:uuidv4(),
+        //     removeOnFail:true,
+        //     removeOnComplete:true
+        // })
+        // res.end();
+
+        const filter = await reportService.generateFilter()
+        console.log(filter)
+        const draftBill = await reportService.getDraftBill({
+            updatedAt: {
+                [sequelize.Op.between]:[filter.from,filter.to]
+            }
         })
-        res.end();
+
+        res.status(200).json(draftBill);
     }
     catch(e){
         next(e)

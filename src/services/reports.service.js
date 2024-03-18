@@ -146,8 +146,8 @@ exports.getDraftBill = async(filters={}) => {
                 delivery_date:      item.delivery_date,
                 invoice_date:       moment(item.delivery_date).subtract(2,'days').format('YYYY-MM-DD'),
                 trip_date:          draftBill.trip_date,
-                dr_no:              item.dr_no,
-                so_no:              String(item.dr_no).search('|') ?  String(item.dr_no).slice(String(item.dr_no).indexOf('|') + 1) : '',
+                dr_no:              String(item.dr_no).indexOf('|') !== -1 ? String(item.dr_no).slice(0,String(item.dr_no).indexOf('|')) : item.dr_no,
+                so_no:              String(item.dr_no).indexOf('|') !== -1 ? String(item.dr_no).slice(String(item.dr_no).indexOf('|') + 1) : '',
                 invoice_no:         item.invoice_no,
                 shipment_manifest:  item.shipment_manifest,
                 trip_plan:          item.trip_plan,
@@ -213,7 +213,7 @@ exports.getDraftBill = async(filters={}) => {
         }
     })
     
-    return _.orderBy(reportData,['customer_name'],'asc')
+    return _.orderBy(reportData,['group_key'],'asc')
 }
 
 exports.crossDockSecondary = async({
@@ -229,13 +229,13 @@ exports.crossDockSecondary = async({
     ws.getCell('B6').value = 'Kerry Logistikus Philippines, Inc.'
 
     ws.getCell('AK6').value = 'Billed to:'
-    ws.getCell('AL6').value = 'Mondelez Philippines, Inc.'
+    ws.getCell('AL6').value = ''
    
     
     ws.getCell('A7').value = 'Address:'
     ws.getCell('B7').value = '268 C. Raymundo Ave., Maybunga, Pasig City'
     ws.getCell('AK7').value = 'Address:'
-    ws.getCell('AL7').value = 'MANUFACTURING 8378 DR.A SANTOS AVE,. PARANAQUE CITY'
+    ws.getCell('AL7').value = ''
 
     ws.getCell('A8').value = 'Email Add:'
     ws.getCell('B8').value = 'customer.experience@logistikus.com'
@@ -620,11 +620,13 @@ exports.p2p = async({data=[], filePath=null, dates={}}) => {
     ws.getCell('A6').value = 'Billed by:'
     ws.getCell('B6').value = 'Kerry Logistikus Philippines, Inc.'
 
-    ws.getCell('AQ6').value = 'Billed to:'
-   
+    ws.getCell('AK6').value = 'Billed to:'
+    ws.getCell('AK6').value = 'Mondelez Philippines, Inc.'
+    
     ws.getCell('A7').value = 'Address:'
     ws.getCell('B7').value = '268 C. Raymundo Ave., Maybunga, Pasig City'
-    ws.getCell('AQ7').value = 'Address:'
+    ws.getCell('AK7').value = 'Address:'
+    ws.getCell('AL7').value = 'MANUFACTURING 8378 DR.A SANTOS AVE,. PARANAQUE CITY'
 
     ws.getCell('A8').value = 'Email Add:'
     ws.getCell('B8').value = 'customer.experience@logistikus.com'
