@@ -27,11 +27,13 @@ module.exports = () => {
                 customer: '10005',
                 updatedAt:{
                     [sequelize.Op.between]: [filters.from,filters.to]
-                }
+                },
+                
             });
             await reportService.p2p({
                 data: draftBills,
-                filePath
+                filePath,
+                dates:filters
             })
 
             job.progress('completed')

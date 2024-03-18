@@ -8,7 +8,7 @@ module.exports = () => {
     REPORT_CROSSDOCK.process(async (job, done) => {
         try{
             const filters = reportService.generateFilter();
-            console.log(filters)
+            
 
             const report = await reportService.findReport({
                 report_name: 'crossdock_secondary'
@@ -31,6 +31,7 @@ module.exports = () => {
             });
             await reportService.crossDockSecondary({
                 data: draftBills,
+                dates:filters,
                 filePath
             })
 
