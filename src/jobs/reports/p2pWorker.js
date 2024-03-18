@@ -25,7 +25,7 @@ module.exports = () => {
            
             const draftBills = await reportService.getDraftBill({
                 customer: '10005',
-                transmittal_date:{
+                updatedAt:{
                     [sequelize.Op.between]: [filters.from,filters.to]
                 }
             });
