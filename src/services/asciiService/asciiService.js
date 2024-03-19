@@ -478,6 +478,7 @@ exports.getSalesOrder = async({from,to}) => {
         ) b on a.SO_CODE = b.REF_CODE
         where a.STATUS in ('P','X','N')
         and a.ENCODED_BY = 'TMS_USER'
+        and a.ITEM_TYPE = 'S'
     `,{
         type: Sequelize.QueryTypes.SELECT,
         replacements:{
