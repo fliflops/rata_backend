@@ -1,12 +1,15 @@
 const _ = require('lodash')
 const xlsx = require('xlsx');
 const round = require('../../helpers/round');
+
 const models = require('../../models/rata');
+const asciiModel = require('../../models/logistikus_si')
 
 const useGlobalFilter = require('../../helpers/filters');
 const moment = require('moment');
 
 const {Sequelize} = models;
+
 
 exports.asciiSalesOrder = async (data) => {
     try{
@@ -457,3 +460,31 @@ exports.createTransmittalLogDtl=async(data=[], stx = null) => {
     })
 }
 
+exports.getSalesOrder = async({from,to}) => {
+    const data = await asciiModel.sequelize.query(`        
+        Select 
+        a.SO_CODE,
+        a.DT_ENCODED,
+        b.SI_CODE,
+        b.STATUS
+        from si_order_hdr a
+        left join (
+            Select distinct  
+            ax.SI_CODE,
+            ax.REF_CODE,
+            ax.STATUS
+            from 
+            si_invoice_dtl ax where ax.STATUS = 'N'
+        ) b on a.SO_CODE = b.REF_CODE
+        where a.STATUS in ('P','X','N')
+        and a.ENCODED_BY = 'TMS_USER'
+    `,{
+        type: Sequelize.QueryTypes.SELECT,
+        replacements:{
+            from,
+            to
+        }
+    })
+    
+    return data
+}

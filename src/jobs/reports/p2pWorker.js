@@ -25,10 +25,10 @@ module.exports = () => {
            
             const draftBills = await reportService.getDraftBill({
                 customer: '10005',
+                service_type:'2003',
                 updatedAt:{
                     [sequelize.Op.between]: [filters.from,filters.to]
-                },
-                
+                }
             });
             await reportService.p2p({
                 data: draftBills,

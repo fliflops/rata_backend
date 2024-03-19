@@ -1,10 +1,13 @@
-const excelJs = require('exceljs');
-const models = require('../models/rata')
+const excelJs   = require('exceljs');
+const models    = require('../models/rata')
 const sequelize = require('sequelize');
-const moment = require('moment');
-const _ = require('lodash');
-const round = require('../helpers/round');
-const {Op} = sequelize
+const moment    = require('moment');
+const _         = require('lodash');
+const round     = require('../helpers/round');
+const path      = require('path');
+const {Op}      = sequelize;
+
+
 
 const  borderStyles = {
     top: { style: "thin" },
@@ -25,32 +28,35 @@ const getColumnLetter = (index) => {
     }
 
     return columnName;
-}
+};
 
 const getSubTotals = async (invoice = []) => {
-    const grouped =  _.groupBy(invoice, 'group_key')
-    const totals = []
+    const grouped =  _.groupBy(invoice, 'group_key');
+    const totals = [];
 
     Object.keys(grouped).map(key => {
         const data = grouped[key];
+        const cbm_ambient   = _.sum(data.map(item => item.cbm_ambient))
+        const outer_cbm     = _.sum(data.map(item => item.outer_cbm)) 
         
-        // const freightCost = _sum(data.map(item => item.total_charges))
-
+        const charges_wo_mgv  = _.sum(data.map(item => item.ambient_charges)) + _.sum(data.map(item => item.cold_charges))
+        const charges_w_mgv   = data.utilization <= 100 ? (((cbm_ambient/(cbm_ambient + outer_cbm)) * data.min_value) * data.rate_ambient) + (((outer_cbm / (outer_cbm + cbm_ambient)) * data.min_value) * data.rate_cold) : charges_wo_mgv
         totals.push({
-            group_key: key,
+            group_key:              key,
             total_actual_qty_pc:    _.sum(data.map(item => item.actual_qty_pc)),
             total_actual_qty_cs:    _.sum(data.map(item => item.actual_qty_cs)),
             total_weight:           _.sum(data.map(item => item.actual_weight)),
             total_cbm_ambient:      _.sum(data.map(item => item.cbm_ambient)),
             total_cbm_cold:         _.sum(data.map(item => item.cbm_cold)),
+            total_actual_cbm:       _.sum(data.map(item => item.actual_cbm)),
             total_cbm:              _.sum(data.map(item => item.cbm_ambient)) + _.sum(data.map(item => item.outer_cbm)),
-            charges_wo_mgv:         _.sum(data.map(item => item.ambient_charges)) + _.sum(data.map(item => item.cold_charges)),
-            
+            charges_wo_mgv:         charges_wo_mgv,
+            charges_w_mgv:          charges_w_mgv,        
+            total_tons:             _.sum(data.map(item => Number(item.tons))),
         })
     })
 
     return totals
-
 }
 
 const getTotals = async(data = []) => {
@@ -85,6 +91,11 @@ exports.getDraftBill = async(filters={}) => {
     const data = await models.draft_bill_hdr_tbl.findAll({
         include:[
             {
+                model: models.tariff_sell_hdr_tbl,
+                required:false,
+                as:'tariff'
+            },
+            {
                 model:models.draft_bill_details_tbl,
                 as:'details',
                 include:[
@@ -102,6 +113,12 @@ exports.getDraftBill = async(filters={}) => {
                             },
                             {
                                 model: models.helios_invoices_dtl_tbl,
+                            },
+                            {
+                                model: models.service_type_tbl
+                            },
+                            {
+                                model: models.principal_tbl
                             }
                         ]
                     }
@@ -114,6 +131,7 @@ exports.getDraftBill = async(filters={}) => {
                     ...filters,
                     is_transmitted:1,
                     status:'DRAFT_BILL_POSTED',
+                    contract_type: 'SELL'
                 }
             ]
         },
@@ -121,7 +139,6 @@ exports.getDraftBill = async(filters={}) => {
     })
     .then(data => JSON.parse(JSON.stringify(data)))
 
-    
     data.forEach(({details,...draftBill}) => {
         reportData = reportData.concat(details.map(({invoice,...item}) => {
             const invoiceDetails = invoice.helios_invoices_dtl_tbls.filter(value => value.class_of_store === item.class_of_store)
@@ -140,7 +157,9 @@ exports.getDraftBill = async(filters={}) => {
             const ambient_charges = item.class_of_store === 'AMBIENT' ? Number(item.billing) : null;
             const cold_charges = item.class_of_store ==='COLD' ? Number(item.billing) : null;
             const tons =        Number(item.actual_weight / 100);
-            
+            const utilization   =  draftBill.tariff.min_value ? ((cbm_ambient + outer_cbm) / Number(draftBill.tariff.min_value)) * 100 : null
+           
+
             return {
                 draft_bill_no:      item.draft_bill_no,
                 delivery_date:      item.delivery_date,
@@ -151,9 +170,9 @@ exports.getDraftBill = async(filters={}) => {
                 invoice_no:         item.invoice_no,
                 shipment_manifest:  item.shipment_manifest,
                 trip_plan:          item.trip_plan,
-                principal:          invoice.principal_code,
+                principal:          invoice.principal_tbl.description,
                 location:           item.location,
-                service_type:       invoice.service_type,
+                service_type:       invoice.service_type_tbl.service_type_desc,
                 sub_service_type:   invoice.sub_service_type,
                 ship_from:          invoice.stc_from,
                 customer_code:      null,
@@ -183,8 +202,8 @@ exports.getDraftBill = async(filters={}) => {
                 rate_ambient,
                 rate_cold,
                 rate:               draftBill.rate,
-                min_value:          draftBill.min_billable_value,
-                mbu:                draftBill.min_billable_unit,
+                min_value:          draftBill.tariff.min_value ? Number(draftBill.tariff.min_value) : null,
+                mbu:                draftBill.tariff.min_billable_unit,
                 mgv_rate:           null,
                 charges_wo_mgv:     null,
                 ambient_charges,
@@ -196,9 +215,10 @@ exports.getDraftBill = async(filters={}) => {
                 other_charges:      null,
                 total_charges:      item.billing,
                 ftl_rate:           draftBill.rate,
-                utilization:        null,
+                truck_count:        1,
+                utilization,
                 tons:               isNaN(tons) ? null : tons,
-                group_key: `${draftBill.trip_date}-${invoice.principal_code}-${item.trip_plan}-${invoice.ship_point_to.stc_name}`
+                group_key:          `${draftBill.trip_date}-${invoice.principal_code}-${item.trip_plan}-${invoice.ship_point_to.stc_name}`
             }
         }))
     });
@@ -222,8 +242,16 @@ exports.crossDockSecondary = async({
     dates={}
 }) => {
     const workbook = new excelJs.Workbook();
+    const root = global.appRoot;
+    const kliLogo = workbook.addImage({
+        filename:path.join(root,'/assets/image/klilogo.png'),
+        extension:'png'
+    })
+
     const ws = await workbook.addWorksheet('Crossdock Secondary');
     const totals = await getTotals(data);
+   
+    ws.addImage(kliLogo, 'S2:V5')
 
     ws.getCell('A6').value = 'Billed by:'
     ws.getCell('B6').value = 'Kerry Logistikus Philippines, Inc.'
@@ -616,6 +644,14 @@ exports.p2p = async({data=[], filePath=null, dates={}}) => {
     const workbook = new excelJs.Workbook();
     const ws = workbook.addWorksheet('P2P');
     const totals = await getTotals(data);
+
+    const root = global.appRoot;
+    const kliLogo = workbook.addImage({
+        filename:path.join(root,'/assets/image/klilogo.png'),
+        extension:'png'
+    })
+
+    ws.addImage(kliLogo, 'V2:X5')
 
     ws.getCell('A6').value = 'Billed by:'
     ws.getCell('B6').value = 'Kerry Logistikus Philippines, Inc.'
@@ -1049,7 +1085,10 @@ exports.updateReportLog = async({filter,data}) => {
 }
 
 exports.generateFilter = () => {
-    let filter = {}
+    let filter = {
+        from:null,
+        to:null
+    }
     const today = moment();
 
     if(today.date() <= 10){

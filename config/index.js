@@ -80,11 +80,33 @@ const redisConfig = {
     port: process.env.REDIS_PORT
 }
 
+const asciiConfig = {
+    host:       process.env.ASCII_DB_HOST,
+    username:   process.env.ASCII_DB_USER_NAME,
+    password:   process.env.ASCII_DB_PASSWORD,
+    dialect:    'mysql',
+    database:   process.env.ASCII_DB,
+    // logging: false,
+    pool:{
+        max: 10,
+        min: 1,
+        idle: 2000000,
+        acquire: 2000000
+    },
+    dialectOptions: {
+		//useUTC: false, //for reading from database
+		dateStrings: true,
+		typeCast: true
+	},
+}
+
+
 module.exports = {
     dbConfig,
     podConfig,
     scmdbConfig,
     redisConfig,
+    asciiConfig,
     redis,
     ioredis,
     redisIndex, 

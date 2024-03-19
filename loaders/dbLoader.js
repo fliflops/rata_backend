@@ -1,5 +1,6 @@
 const models  = require('../models');
-const {podDB,scmdb} = require('../database');
+const asciiModels = require('../src/models/logistikus_si');
+const {podDB,scmdb,} = require('../database');
 const {redis,redisIndex} = require('../config')
 const jobs = require('../src/jobs')
 
@@ -28,6 +29,9 @@ module.exports = async() => {
             console.log('Connected to SCMDB')
         })       
         
+        await asciiModels.sequelize.authenticate().then(()=>{
+            console.log('Connected to ASCII')
+        })
     }
     catch(e){
         console.log(e)

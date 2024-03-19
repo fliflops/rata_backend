@@ -6,23 +6,33 @@ const Queue = require('../jobs/queues/queues');
 const redis = require('../../config').redis;
 const {v4:uuidv4} = require('uuid');
 const sequelize = require('sequelize')
+const asciiService = require('../services/asciiService');
 
 exports.createPreBillingReport = async(req,res,next) => {
     try{
+        const filter = await reportService.generateFilter();
+
+        // const data = await asciiService.getSalesOrder({
+        //     from: filters.from,
+        //     to:filters.to
+        // });
+        // res.status(200).json(data)
      
-        // await REPORT_CROSSDOCK.add(null, {
-        //     jobId:uuidv4(),
-        //     removeOnFail:true,
-        //     removeOnComplete:true
-        // })
+        await REPORT_CROSSDOCK.add(null, {
+            jobId:uuidv4(),
+            removeOnFail:true,
+            removeOnComplete:true
+        })
         // res.end();
 
-        const filter = await reportService.generateFilter()
-        console.log(filter)
+        // const filter = await reportService.generateFilter()
         const draftBill = await reportService.getDraftBill({
+            service_type:'2001',
             updatedAt: {
-                [sequelize.Op.between]:[filter.from,filter.to]
-            }
+                [sequelize.Op.between]:['2024-01-01 00:00:00', '2024-01-31 00:00:00']
+                //[sequelize.Op.between]:[filter.from,filter.to]
+            },
+           
         })
 
         res.status(200).json(draftBill);
@@ -34,8 +44,22 @@ exports.createPreBillingReport = async(req,res,next) => {
 
 exports.createP2PReport = async(req,res,next) => {
     try{
-        await REPORT_P2P.add()
-        res.end();
+       
+        const filters = await reportService.generateFilter();
+        const draftBills = await reportService.getDraftBill({
+            customer: '10005',
+            service_type:'2003',
+            updatedAt:{
+                [sequelize.Op.between]: [filters.from,filters.to]
+            },
+            
+        });
+        await REPORT_P2P.add(null, {
+            jobId:uuidv4(),
+            removeOnFail:true,
+            removeOnComplete:true
+        });
+        res.json(draftBills);
     }
     catch(e){
         next(e)
