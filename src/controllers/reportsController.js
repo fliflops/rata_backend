@@ -7,10 +7,10 @@ const redis = require('../../config').redis;
 const {v4:uuidv4} = require('uuid');
 const sequelize = require('sequelize')
 const asciiService = require('../services/asciiService');
-
+const _ = require('lodash')
 exports.createPreBillingReport = async(req,res,next) => {
     try{
-        const filter = await reportService.generateFilter();
+        // const filter = await reportService.generateFilter();
 
         // const data = await asciiService.getSalesOrder({
         //     from: filters.from,
@@ -32,10 +32,13 @@ exports.createPreBillingReport = async(req,res,next) => {
                 [sequelize.Op.between]:['2024-01-01 00:00:00', '2024-01-31 00:00:00']
                 //[sequelize.Op.between]:[filter.from,filter.to]
             },
-           
         })
 
-        res.status(200).json(draftBill);
+        const ascii = await asciiService.getSalesOrder(draftBill.map(item => item.draft_bill_no))
+
+        res.status(200).json({
+            data:draftBill.filter(item => ascii.map(a => a.SO_CODE).includes(item.draft_bill_no)),
+        });
     }
     catch(e){
         next(e)

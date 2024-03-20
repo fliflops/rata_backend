@@ -460,7 +460,7 @@ exports.createTransmittalLogDtl=async(data=[], stx = null) => {
     })
 }
 
-exports.getSalesOrder = async({from,to}) => {
+exports.getSalesOrder = async(draftBill) => {
     const data = await asciiModel.sequelize.query(`        
         Select 
         a.SO_CODE,
@@ -474,16 +474,17 @@ exports.getSalesOrder = async({from,to}) => {
             ax.REF_CODE,
             ax.STATUS
             from 
-            si_invoice_dtl ax where ax.STATUS = 'N'
+            si_invoice_dtl ax where ax.STATUS in ('N','P')
         ) b on a.SO_CODE = b.REF_CODE
-        where a.STATUS in ('P','X','N')
+        where a.STATUS in ('P','N')
+        and (b.STATUS = 'N' or b.status is null)
         and a.ENCODED_BY = 'TMS_USER'
         and a.ITEM_TYPE = 'S'
+        and a.SO_CODE in (:draftBill)
     `,{
         type: Sequelize.QueryTypes.SELECT,
         replacements:{
-            from,
-            to
+            draftBill
         }
     })
     

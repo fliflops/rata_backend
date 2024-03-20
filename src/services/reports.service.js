@@ -150,7 +150,7 @@ exports.getDraftBill = async(filters={}) => {
             const cbm_ambient =  item.class_of_store === 'AMBIENT' ? cbm : null;
             const cbm_cold =     item.class_of_store === 'COLD' ? cbm :null;
             const inner_cbm =    cbm_cold ? (cbm_cold / 0.16) : null;
-            const round_up =     inner_cbm ? round(inner_cbm,2) : null;
+            const round_up =     inner_cbm ? Math.ceil(inner_cbm) : null;
             const outer_cbm =    round_up ? (round_up * 0.18) : null;
             const rate_ambient = item.class_of_store === 'AMBIENT' ? draftBill.rate : null;
             const rate_cold =    item.class_of_store === 'COLD' ? draftBill.rate : null;

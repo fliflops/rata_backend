@@ -1,5 +1,7 @@
 const {REPORT_CROSSDOCK} = require('../queues/queues');
 const reportService = require('../../services/reports.service');
+const asciiService = require('../../services/asciiService')
+
 const moment = require('moment');
 const path = require('path');
 const sequelize = require('sequelize');
@@ -20,6 +22,7 @@ module.exports = () => {
                 report_status:'INPROGRESS',
             })
 
+            
             const root = global.appRoot;
             const fileName = moment().format('YYYYMMDDHHmmss')+'crossdock-secondary.xlsx';
             const filePath = path.join(root,'/assets/reports/pre-billing/',fileName);
@@ -31,8 +34,11 @@ module.exports = () => {
                     //[sequelize.Op.between]: [filters.from,filters.to]
                 }
             });
+
+            const ascii = await asciiService.getSalesOrder(draftBills.map(item => item.draft_bill_no))
+
             await reportService.crossDockSecondary({
-                data: draftBills,
+                data: draftBills.filter(item => ascii.map(a => a.SO_CODE).includes(item.draft_bill_no)),
                 dates:filters,
                 filePath
             })

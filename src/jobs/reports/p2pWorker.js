@@ -1,5 +1,6 @@
 const {REPORT_P2P} = require('../queues/queues');
 const reportService = require('../../services/reports.service');
+const asciiService = require('../../services/asciiService')
 const moment = require('moment');
 const path = require('path');
 const sequelize = require('sequelize');
@@ -30,8 +31,11 @@ module.exports = () => {
                     [sequelize.Op.between]: [filters.from,filters.to]
                 }
             });
+
+            const ascii = await asciiService.getSalesOrder(draftBills.map(item => item.draft_bill_no))
+
             await reportService.p2p({
-                data: draftBills,
+                data: draftBills.filter(item => ascii.map(a => a.SO_CODE).includes(item.draft_bill_no)),
                 filePath,
                 dates:filters
             })
