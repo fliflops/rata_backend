@@ -44,9 +44,9 @@ const getSubTotals = async (invoice = []) => {
         const outer_cbm     = _.sum(data.map(item => item.outer_cbm)) 
 
         const charges_wo_mgv  = _.sum(data.map(item => item.ambient_charges)) + _.sum(data.map(item => item.cold_charges))
-        const utilization     = (cbm_ambient + outer_cbm) / min_value
+        const utilization     = ((cbm_ambient + outer_cbm) / min_value) * 100
         const charges_w_mgv   = utilization <= 100 ? (((cbm_ambient/(cbm_ambient + outer_cbm)) * min_value) * rate_ambient) + (((outer_cbm / (outer_cbm + cbm_ambient)) * min_value) * rate_cold) : charges_wo_mgv
-        
+
         // console.log(data)
         totals.push({
             group_key:              key,
