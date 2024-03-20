@@ -35,12 +35,19 @@ const getSubTotals = async (invoice = []) => {
     const totals = [];
 
     Object.keys(grouped).map(key => {
+
         const data = grouped[key];
+        const min_value = data[0]?.min_value ?? null
+        const rate_ambient =  data[0]?.rate_ambient ? Number(data[0]?.rate_ambient) : null
+        const rate_cold = data[0]?.rate_cold ? Number(data[0]?.rate_cold) : null
         const cbm_ambient   = _.sum(data.map(item => item.cbm_ambient))
         const outer_cbm     = _.sum(data.map(item => item.outer_cbm)) 
-        
+
         const charges_wo_mgv  = _.sum(data.map(item => item.ambient_charges)) + _.sum(data.map(item => item.cold_charges))
-        const charges_w_mgv   = data.utilization <= 100 ? (((cbm_ambient/(cbm_ambient + outer_cbm)) * data.min_value) * data.rate_ambient) + (((outer_cbm / (outer_cbm + cbm_ambient)) * data.min_value) * data.rate_cold) : charges_wo_mgv
+        const utilization     = (cbm_ambient + outer_cbm) / min_value
+        const charges_w_mgv   = utilization <= 100 ? (((cbm_ambient/(cbm_ambient + outer_cbm)) * min_value) * rate_ambient) + (((outer_cbm / (outer_cbm + cbm_ambient)) * min_value) * rate_cold) : charges_wo_mgv
+        
+        // console.log(data)
         totals.push({
             group_key:              key,
             total_actual_qty_pc:    _.sum(data.map(item => item.actual_qty_pc)),
@@ -53,6 +60,7 @@ const getSubTotals = async (invoice = []) => {
             charges_wo_mgv:         charges_wo_mgv,
             charges_w_mgv:          charges_w_mgv,        
             total_tons:             _.sum(data.map(item => Number(item.tons))),
+            utilization
         })
     })
 
@@ -157,9 +165,7 @@ exports.getDraftBill = async(filters={}) => {
             const ambient_charges = item.class_of_store === 'AMBIENT' ? Number(item.billing) : null;
             const cold_charges = item.class_of_store ==='COLD' ? Number(item.billing) : null;
             const tons =        Number(item.actual_weight / 100);
-            const utilization   =  draftBill.tariff.min_value ? ((cbm_ambient + outer_cbm) / Number(draftBill.tariff.min_value)) * 100 : null
            
-
             return {
                 draft_bill_no:      item.draft_bill_no,
                 delivery_date:      item.delivery_date,
@@ -216,7 +222,7 @@ exports.getDraftBill = async(filters={}) => {
                 total_charges:      item.billing,
                 ftl_rate:           draftBill.rate,
                 truck_count:        1,
-                utilization,
+                utilization:        null,
                 tons:               isNaN(tons) ? null : tons,
                 group_key:          `${draftBill.trip_date}-${invoice.principal_code}-${item.trip_plan}-${invoice.ship_point_to.stc_name}`
             }
@@ -657,7 +663,7 @@ exports.p2p = async({data=[], filePath=null, dates={}}) => {
     ws.getCell('B6').value = 'Kerry Logistikus Philippines, Inc.'
 
     ws.getCell('AK6').value = 'Billed to:'
-    ws.getCell('AK6').value = 'Mondelez Philippines, Inc.'
+    ws.getCell('AL6').value = 'Mondelez Philippines, Inc.'
     
     ws.getCell('A7').value = 'Address:'
     ws.getCell('B7').value = '268 C. Raymundo Ave., Maybunga, Pasig City'
@@ -848,7 +854,7 @@ exports.p2p = async({data=[], filePath=null, dates={}}) => {
         },
         {
             header:'Total Charges',
-            key:'total_charges'
+            key:'total_draft_bill_charge'
         },
         {
             header:'KLI Remarks',
