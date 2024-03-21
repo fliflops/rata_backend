@@ -65,7 +65,7 @@ const getSubTotals = async (invoice = []) => {
             total_cbm_cold:         _.sum(data.map(item => item.cbm_cold)),
             total_actual_cbm:       _.sum(data.map(item => item.actual_cbm)),
             total_cbm:              _.sum(data.map(item => item.cbm_ambient)) + _.sum(data.map(item => item.outer_cbm)),
-            charges_wo_mgv:         charges_wo_mgv,
+            charges_wo_mgv:         round(charges_wo_mgv,2),
             charges_w_mgv:          charges_w_mgv,        
             total_tons:             _.sum(data.map(item => Number(item.tons))),
             utilization
@@ -168,8 +168,8 @@ exports.getDraftBill = async(filters={}) => {
             const inner_cbm =    cbm_cold ? (cbm_cold / 0.16) : null;
             const round_up =     inner_cbm ? Math.ceil(inner_cbm) : null;
             const outer_cbm =    round_up ? (round_up * 0.18) : null;
-            const rate_ambient = item.class_of_store === 'AMBIENT' ? draftBill.rate : null;
-            const rate_cold =    item.class_of_store === 'COLD' ? draftBill.rate : null;
+            const rate_ambient = item.class_of_store === 'AMBIENT' ? Number(draftBill.rate) : null;
+            const rate_cold =    item.class_of_store === 'COLD' ? Number(draftBill.rate) : null;
             const ambient_charges = item.class_of_store === 'AMBIENT' ? Number(item.billing) : null;
             const cold_charges = item.class_of_store ==='COLD' ? Number(item.billing) : null;
             const tons =        Number(item.actual_weight / 100);
@@ -215,20 +215,20 @@ exports.getDraftBill = async(filters={}) => {
                 total_cbm:          null,
                 rate_ambient,
                 rate_cold,
-                rate:               draftBill.rate,
+                rate:               Number(draftBill.rate),
                 min_value:          draftBill.tariff.min_value ? Number(draftBill.tariff.min_value) : null,
                 mbu:                draftBill.tariff.min_billable_unit,
                 mgv_rate:           null,
                 charges_wo_mgv:     null,
                 ambient_charges,
                 cold_charges,
-                draft_bill_charge:       item.billing,
-                total_draft_bill_charge: draftBill.total_charges,
+                draft_bill_charge:       Number(item.billing),
+                total_draft_bill_charge: Number(draftBill.total_charges),
                 additional_manos:   null,
                 demurrage:          null,
                 other_charges:      null,
-                total_charges:      item.billing,
-                ftl_rate:           draftBill.rate,
+                total_charges:      Number(item.billing),
+                ftl_rate:           Number(draftBill.rate),
                 truck_count:        1,
                 utilization:        null,
                 tons:               isNaN(tons) ? null : tons,
