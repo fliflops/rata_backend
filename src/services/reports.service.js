@@ -38,8 +38,8 @@ const getSubTotals = async (invoice = []) => {
 
         const data = grouped[key];
         const min_value = data[0]?.min_value ?? null
-        const rate_ambient  = Number(data.find(item => item.class_of_store === 'AMBIENT')?.rate_ambient) ?? null//data[0]?.rate_ambient ? Number(data[0]?.rate_ambient) : null
-        const rate_cold     = Number(data.find(item => item.class_of_store === 'COLD')?.rate_cold )?? null//data[0]?.rate_cold ? Number(data[0]?.rate_cold) : null
+        const rate_ambient  = Number(data.find(item => item.class_of_store === 'AMBIENT')?.rate_ambient) ?? 0//data[0]?.rate_ambient ? Number(data[0]?.rate_ambient) : null
+        const rate_cold     = Number(data.find(item => item.class_of_store === 'COLD')?.rate_cold )?? 0//data[0]?.rate_cold ? Number(data[0]?.rate_cold) : null
         const cbm_ambient   = _.sum(data.map(item => item.cbm_ambient))
         const outer_cbm     = _.sum(data.map(item => item.outer_cbm)) 
 
