@@ -38,16 +38,24 @@ const getSubTotals = async (invoice = []) => {
 
         const data = grouped[key];
         const min_value = data[0]?.min_value ?? null
-        const rate_ambient =  data[0]?.rate_ambient ? Number(data[0]?.rate_ambient) : null
-        const rate_cold = data[0]?.rate_cold ? Number(data[0]?.rate_cold) : null
+        const rate_ambient  = Number(data.find(item => item.class_of_store === 'AMBIENT')?.rate_ambient) ?? null//data[0]?.rate_ambient ? Number(data[0]?.rate_ambient) : null
+        const rate_cold     = Number(data.find(item => item.class_of_store === 'COLD')?.rate_cold )?? null//data[0]?.rate_cold ? Number(data[0]?.rate_cold) : null
         const cbm_ambient   = _.sum(data.map(item => item.cbm_ambient))
         const outer_cbm     = _.sum(data.map(item => item.outer_cbm)) 
 
         const charges_wo_mgv  = _.sum(data.map(item => item.ambient_charges)) + _.sum(data.map(item => item.cold_charges))
         const utilization     = ((cbm_ambient + outer_cbm) / min_value) * 100
         const charges_w_mgv   = utilization <= 100 ? (((cbm_ambient/(cbm_ambient + outer_cbm)) * min_value) * rate_ambient) + (((outer_cbm / (outer_cbm + cbm_ambient)) * min_value) * rate_cold) : charges_wo_mgv
-
-        // console.log(data)
+        // if(key === '2024-01-02-10005-TRP000219540-SAVEMORE MARKET M. ALVAREZ')
+        // console.log({
+        //     group_key: key,
+        //     min_value,
+        //     rate_ambient,
+        //     rate_cold,
+        //     cbm_ambient,
+        //     outer_cbm
+        // })
+      
         totals.push({
             group_key:              key,
             total_actual_qty_pc:    _.sum(data.map(item => item.actual_qty_pc)),
