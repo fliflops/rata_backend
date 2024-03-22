@@ -41,34 +41,31 @@ const getSubTotals = async (invoice = []) => {
         const rate_ambient  = Number(data.find(item => item.class_of_store === 'AMBIENT')?.rate_ambient ?? 0)//data[0]?.rate_ambient ? Number(data[0]?.rate_ambient) : null
         const rate_cold     = Number(data.find(item => item.class_of_store === 'COLD')?.rate_cold ?? 0 )//data[0]?.rate_cold ? Number(data[0]?.rate_cold) : null
         const cbm_ambient   = _.sum(data.map(item => item.cbm_ambient))
-        const outer_cbm     = _.sum(data.map(item => item.outer_cbm)) 
-
+        const total_cbm_cold =  _.sum(data.map(item => item.cbm_cold))
+        const inner_cbm     =   total_cbm_cold / 0.16//cbm_cold ? (cbm_cold / 0.16) : null;
+        const round_up =     inner_cbm ? Math.ceil(inner_cbm) : null;
+        const outer_cbm     = (round_up * 0.18)//_.sum(data.map(item => item.outer_cbm)) // //const outer_cbm =    round_up ? (round_up * 0.18) : null;
+        
         const charges_wo_mgv  = _.sum(data.map(item => item.ambient_charges)) + _.sum(data.map(item => item.cold_charges))
-        const utilization     = ((cbm_ambient + outer_cbm) / min_value) * 100
+        const utilization     = ((cbm_ambient + outer_cbm) / 0.6) * 100
         const charges_w_mgv   = utilization <= 100 ? (((cbm_ambient/(cbm_ambient + outer_cbm)) * min_value) * rate_ambient) + (((outer_cbm / (outer_cbm + cbm_ambient)) * min_value) * rate_cold) : charges_wo_mgv
-        // if(key === '2024-01-02-10005-TRP000219540-SAVEMORE MARKET M. ALVAREZ')
-        console.log({
-            group_key: key,
-            min_value,
-            rate_ambient,
-            rate_cold,
-            cbm_ambient,
-            outer_cbm
-        })
-      
+        
         totals.push({
             group_key:              key,
             total_actual_qty_pc:    _.sum(data.map(item => item.actual_qty_pc)),
             total_actual_qty_cs:    _.sum(data.map(item => item.actual_qty_cs)),
             total_weight:           _.sum(data.map(item => item.actual_weight)),
             total_cbm_ambient:      _.sum(data.map(item => item.cbm_ambient)),
-            total_cbm_cold:         _.sum(data.map(item => item.cbm_cold)),
+            total_cbm_cold,      
             total_actual_cbm:       _.sum(data.map(item => item.actual_cbm)),
             total_cbm:              _.sum(data.map(item => item.cbm_ambient)) + _.sum(data.map(item => item.outer_cbm)),
             charges_wo_mgv:         round(charges_wo_mgv,2),
             charges_w_mgv:          charges_w_mgv,        
             total_tons:             _.sum(data.map(item => Number(item.tons))),
-            utilization
+            utilization,
+            inner_cbm,
+            round_up,
+            outer_cbm
         })
     })
 
@@ -165,9 +162,9 @@ exports.getDraftBill = async(filters={}) => {
 
             const cbm_ambient =  item.class_of_store === 'AMBIENT' ? cbm : null;
             const cbm_cold =     item.class_of_store === 'COLD' ? cbm :null;
-            const inner_cbm =    cbm_cold ? (cbm_cold / 0.16) : null;
-            const round_up =     inner_cbm ? Math.ceil(inner_cbm) : null;
-            const outer_cbm =    round_up ? (round_up * 0.18) : null;
+            //const inner_cbm =    
+            //const round_up =     inner_cbm ? Math.ceil(inner_cbm) : null;
+            //const outer_cbm =    round_up ? (round_up * 0.18) : null;
             const rate_ambient = item.class_of_store === 'AMBIENT' ? Number(draftBill.rate) : null;
             const rate_cold =    item.class_of_store === 'COLD' ? Number(draftBill.rate) : null;
             const ambient_charges = item.class_of_store === 'AMBIENT' ? Number(item.billing) : null;
@@ -209,9 +206,9 @@ exports.getDraftBill = async(filters={}) => {
                 total_cbm_cold:     null,
                 actual_cbm:         cbm,
                 total_actual_cbm:   null,
-                inner_cbm,
-                round_up,
-                outer_cbm,
+                inner_cbm:          null,
+                round_up:           null,
+                outer_cbm:          null,
                 total_cbm:          null,
                 rate_ambient,
                 rate_cold,
@@ -243,7 +240,10 @@ exports.getDraftBill = async(filters={}) => {
         const subTotal = subTotals.find(i => item.group_key === i.group_key)
         return {
             ...item,
-            ...subTotal
+            ...subTotal,
+            inner_cbm: item.class_of_store === 'COLD' ? subTotal.inner_cbm : null,
+            round_up:   item.class_of_store === 'COLD' ? subTotal.round_up : null,
+            outer_cbm: item.class_of_store === 'COLD' ? subTotal.outer_cbm : null
         }
     })
     
@@ -525,7 +525,8 @@ exports.crossDockSecondary = async({
         },
         {
             header:'% Utilization Vs The Target 1 CBM',
-            key:'utilization'
+            key:'utilization',
+            
         }
     ];
 
@@ -536,11 +537,15 @@ exports.crossDockSecondary = async({
         ws.getColumn(getColumnLetter(index)).key = item.key
     })
 
+    ws.getColumn('BB').numFmt = '0.00%'
+
     data.forEach((item) => {
         ws.addRow({
-            ...item
+            ...item,
+            utilization: item.utilization/100
         })
     })
+
     const lastRow = (18+data.length)
     ws.getCell('A'+String(lastRow+3)).value = 'Prepared By:'
     ws.getCell('A'+String(lastRow+7)).value = 'Approved By:'
@@ -884,7 +889,7 @@ exports.p2p = async({data=[], filePath=null, dates={}}) => {
     data.forEach((item) => {
         ws.addRow({
             ...item,
-            kli_remarks: '',
+            kli_remarks:  '',
             kli_remarks_2:''
         })
     })
