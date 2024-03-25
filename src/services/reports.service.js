@@ -47,7 +47,7 @@ const getSubTotals = async (invoice = []) => {
         const outer_cbm     = (round_up * 0.18)//_.sum(data.map(item => item.outer_cbm)) // //const outer_cbm =    round_up ? (round_up * 0.18) : null;
         
         const charges_wo_mgv  = _.sum(data.map(item => item.ambient_charges)) + _.sum(data.map(item => item.cold_charges))
-        const utilization     = ((cbm_ambient + outer_cbm) / 0.6) * 100
+        const utilization     = ((cbm_ambient + outer_cbm) / min_value) * 100
         const charges_w_mgv   = utilization <= 100 ? (((cbm_ambient/(cbm_ambient + outer_cbm)) * min_value) * rate_ambient) + (((outer_cbm / (outer_cbm + cbm_ambient)) * min_value) * rate_cold) : charges_wo_mgv
         
         totals.push({
@@ -58,7 +58,7 @@ const getSubTotals = async (invoice = []) => {
             total_cbm_ambient:      _.sum(data.map(item => item.cbm_ambient)),
             total_cbm_cold,      
             total_actual_cbm:       _.sum(data.map(item => item.actual_cbm)),
-            total_cbm:              _.sum(data.map(item => item.cbm_ambient)) + _.sum(data.map(item => item.outer_cbm)),
+            total_cbm:              cbm_ambient + outer_cbm,
             charges_wo_mgv:         round(charges_wo_mgv,2),
             charges_w_mgv:          charges_w_mgv,        
             total_tons:             _.sum(data.map(item => Number(item.tons))),
