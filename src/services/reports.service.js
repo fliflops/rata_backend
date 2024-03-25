@@ -61,7 +61,7 @@ const getSubTotals = async (invoice = []) => {
             total_cbm:              cbm_ambient + outer_cbm,
             charges_wo_mgv:         round(charges_wo_mgv,2),
             charges_w_mgv:          charges_w_mgv,        
-            total_tons:             _.sum(data.map(item => Number(item.tons))),
+            total_tons:             round(_.sum(data.map(item => Number(item.tons))),2),
             utilization,
             inner_cbm,
             round_up,
@@ -169,7 +169,7 @@ exports.getDraftBill = async(filters={}) => {
             const rate_cold =    item.class_of_store === 'COLD' ? Number(draftBill.rate) : null;
             const ambient_charges = item.class_of_store === 'AMBIENT' ? Number(item.billing) : null;
             const cold_charges = item.class_of_store ==='COLD' ? Number(item.billing) : null;
-            const tons =        Number(item.actual_weight / 100);
+            const tons =        round(Number(item.actual_weight / 100),2);
            
             return {
                 draft_bill_no:      item.draft_bill_no,
