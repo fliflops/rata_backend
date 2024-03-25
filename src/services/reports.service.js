@@ -42,13 +42,13 @@ const getSubTotals = async (invoice = []) => {
         const rate_cold     = Number(data.find(item => item.class_of_store === 'COLD')?.rate_cold ?? 0 )//data[0]?.rate_cold ? Number(data[0]?.rate_cold) : null
         const cbm_ambient   = _.sum(data.map(item => item.cbm_ambient))
         const total_cbm_cold =  _.sum(data.map(item => item.cbm_cold))
-        const inner_cbm     =   total_cbm_cold / 0.16//cbm_cold ? (cbm_cold / 0.16) : null;
-        const round_up =     inner_cbm ? Math.ceil(inner_cbm) : null;
+        const inner_cbm     =   round(total_cbm_cold / 0.16,2)//cbm_cold ? (cbm_cold / 0.16) : null;
+        const round_up =        inner_cbm ? Math.ceil(inner_cbm) : null;
         const outer_cbm     = (round_up * 0.18)//_.sum(data.map(item => item.outer_cbm)) // //const outer_cbm =    round_up ? (round_up * 0.18) : null;
         
         const charges_wo_mgv  = _.sum(data.map(item => item.ambient_charges)) + _.sum(data.map(item => item.cold_charges))
         const utilization     = ((cbm_ambient + outer_cbm) / min_value) * 100
-        const charges_w_mgv   = utilization <= 100 ? (((cbm_ambient/(cbm_ambient + outer_cbm)) * min_value) * rate_ambient) + (((outer_cbm / (outer_cbm + cbm_ambient)) * min_value) * rate_cold) : charges_wo_mgv
+        const charges_w_mgv   = utilization <= 100 ?round((((cbm_ambient/(cbm_ambient + outer_cbm)) * min_value) * rate_ambient) + (((outer_cbm / (outer_cbm + cbm_ambient)) * min_value) * rate_cold),2) : charges_wo_mgv
         
         totals.push({
             group_key:              key,
