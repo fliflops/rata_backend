@@ -1,7 +1,8 @@
 const models  = require('../models');
 const asciiModels = require('../src/models/logistikus_si');
 const {podDB,scmdb,} = require('../database');
-const {redis,redisIndex} = require('../config')
+const {redis,redisIndex} = require('../config');
+const {kronos} = require('../src/models/datawarehouse')
 const jobs = require('../src/jobs')
 
 module.exports = async() => {
@@ -31,6 +32,10 @@ module.exports = async() => {
         
         await asciiModels.sequelize.authenticate().then(()=>{
             console.log('Connected to ASCII')
+        })
+
+        await kronos.authenticate().then(() => {
+            console.log('Connected to DW Kronos DB')
         })
     }
     catch(e){

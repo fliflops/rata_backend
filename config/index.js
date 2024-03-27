@@ -100,6 +100,27 @@ const asciiConfig = {
 	},
 }
 
+const dwConfig = {
+    host:       process.env.DW_DB_HOST,
+    username:   process.env.DW_DB_USER_NAME,
+    password:   process.env.DW_DB_PASSWORD,
+    dialect:    'mysql',
+    //database:   process.env.DW_DB,
+    // logging: false,
+    pool:{
+        max: 10,
+        min: 1,
+        idle: 2000000,
+        acquire: 2000000
+    },
+    dialectOptions: {
+		//useUTC: false, //for reading from database
+		dateStrings: true,
+		typeCast: true
+	},
+}
+
+
 
 module.exports = {
     dbConfig,
@@ -110,6 +131,7 @@ module.exports = {
     redis,
     ioredis,
     redisIndex, 
+    dwConfig,
     ...vars,
 
 }
