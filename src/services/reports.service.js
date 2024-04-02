@@ -7,8 +7,6 @@ const round     = require('../helpers/round');
 const path      = require('path');
 const {Op}      = sequelize;
 
-
-
 const  borderStyles = {
     top: { style: "thin" },
     left: { style: "thin" },
