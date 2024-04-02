@@ -70,7 +70,8 @@ exports.asciiSalesOrder = async (data) => {
                     LINE_NO:        1,
                     LOCATION_CODE:  header.ascii_loc_code,
                     UM_CODE:        ['2002','2003','2004','2008'].includes(header.service_type) ? 'lot' : header.min_billable_unit,
-                    QUANTITY:       quantity < Number(header.min_billable_value) ? Number(header.min_billable_value) : quantity,    
+                    QUANTITY:       header.customer === '10005' ? quantity : quantity < Number(header.min_billable_value) ? Number(header.min_billable_value) : quantity,
+                    //QUANTITY:       quantity < Number(header.min_billable_value) ? Number(header.min_billable_value) : quantity,    
                     UNIT_PRICE:     Number(header.rate),   
                     EXTENDED_AMT:   SO_AMT//round(round(((Number(header.rate) * quantity )* 100),2) / 100,2)          
                 }]
