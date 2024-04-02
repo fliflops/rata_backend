@@ -63,10 +63,15 @@ exports.getPodInvoices = async({from,to}) => {
         and a.isDeleted <> 1
     `,{
         type: Sequelize.QueryTypes.SELECT,
-       replacements:{
-           from,
-           to
-       }
+        replacements:{
+            from,
+            to
+        }
+    })
+    .then(result => {
+        //const data = JSON.parse(JSON.stringify(result))
+
+        return result.filter(item => item.rud_status !== 'CLEARED' || item.br_status !=='VERIFIED_COMPLETE')
     })
 }
 
