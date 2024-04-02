@@ -22,8 +22,8 @@ exports.getKronosTrips = async(trips=[]) => {
     })
 }
 
-exports.getPodInvoices = async() => {
-    await pod.query(`        
+exports.getPodInvoices = async({from,to}) => {
+    return await pod.query(`               
         Select     
         c.bookingRequestNo	    'tms_reference_no',    
         b.tripPlanNo			'trip_no',    
@@ -55,7 +55,7 @@ exports.getPodInvoices = async() => {
         left join trip_plan_hdr_tbl b on a.tripPlan = b.tripPlanNo    
         left join booking_request_hdr_tbl c on a.brNo = c.bookingRequestNo    
         left join reason_codes_tbl d on c.reasonCode = d.code    
-        -- where cast(c.date_cleared as date) between :from and :to
+        where cast(b.trip_date as date) between '2024-03-01' and '2024-03-10' 
         and c.deliveryStatus in ('DELIVERED_FULL','DELIVERED_PARTIAL')
         and c.rudStatus in (null,'CLEARED','NONE','PARTIAL')
         and c.brStatus in ('VERIFIED_COMPLETE', 'RETURNED_BY_TRUCKER')
@@ -64,7 +64,8 @@ exports.getPodInvoices = async() => {
     `,{
         type: Sequelize.QueryTypes.SELECT,
        replacements:{
-            trips: trips
+           from,
+           to
        }
     })
 }

@@ -1,4 +1,5 @@
 const reportService = require('../services/reports.service');
+const podReportService = require('../services/podReport.service');
 const moment = require('moment');
 const path = require('path');
 const {REPORT_P2P, REPORT_CROSSDOCK} = require('../jobs/queues/queues')
@@ -7,7 +8,23 @@ const redis = require('../../config').redis;
 const {v4:uuidv4} = require('uuid');
 const sequelize = require('sequelize')
 const asciiService = require('../services/asciiService');
-const _ = require('lodash')
+const _ = require('lodash');
+
+exports.createPodReport = async(req,res,next) => {
+    try{
+        const data = await podReportService.getPodInvoices({
+            from: '',
+            to:''
+        })
+
+        res.status(200).json(data)
+
+    }
+    catch(e){
+        next(e)
+    }
+}
+
 exports.createPreBillingReport = async(req,res,next) => {
     try{
         // const filter = await reportService.generateFilter();

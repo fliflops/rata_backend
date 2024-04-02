@@ -10,4 +10,7 @@ router.route('/:report_name')
 .put(controllers.updateReport)
 .get(controllers.getPaginatedReportDetails)
 .post(controllers.downloadReport)
+
+router.route('/pod/report')
+.get(controllers.createPodReport)
 module.exports = router;
