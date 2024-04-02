@@ -816,7 +816,7 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
 
                     return {
                         ...item,
-                        billing: isNaN(billing.toFixed(2)) ? null : round(billing,2) //billing.toFixed(2)
+                        billing: isNaN(billing.toFixed(2)) ? null : round(billing,4) //billing.toFixed(2)
                     }
                 })
             }

@@ -162,7 +162,7 @@ exports.draftBillCostAlloc = async(draft_bills=[]) => {
                 //computation for default principal
                 const total_cbm  = vehicleType?.overall_volume - totalCBM;
                 const allocation = round((total_cbm / vehicleType?.overall_volume * 100), 2);
-                const allocated_cost = round((total_cbm / vehicleType?.overall_volume) * draft_bill.total_charges);
+                const allocated_cost = round((total_cbm / vehicleType?.overall_volume) * draft_bill.total_charges, 4);
                 cost_allocation_details = cost_allocation_details.concat([
                         {
                             draft_bill_no:      draft_bill.draft_bill_no,
