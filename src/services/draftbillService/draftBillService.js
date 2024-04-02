@@ -32,6 +32,7 @@ const { Sequelize,sequelize } = require('../../models/rata');
 const models = require('../../models/rata');
 const moment = require('moment')
 const round = require('../../helpers/round');
+const costAllocation = require('../costalloc.service');
 
 const {Op} = Sequelize;
 
@@ -521,6 +522,7 @@ const draftBillIC = async({invoices}) => {
                     ship_to:            item.stc_to,
                     remarks:            item.redel_remarks,
                     class_of_store:     item.class_of_store,
+                    principal_code:     item.principal_code,
                     planned_qty,
                     actual_qty,
                     ic_qty,
@@ -681,6 +683,7 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                     ship_to:            item.stc_to,
                     remarks:            item.redel_remarks,
                     class_of_store:     item.class_of_store,
+                    principal_code:     item.principal_code,
                     planned_qty,
                     actual_qty,
                     actual_weight,  
@@ -718,10 +721,10 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                 tariff:     invoice.tariff,
                 draft_bill_details
             })
-
         })
 
         data.map(draft_bill => {
+       
             //declare variables
             let aggregatedValues = {
                 total_cbm:null,
@@ -954,6 +957,7 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
                         ship_to:            invoice.stc_to,
                         remarks:            invoice.redel_remarks,
                         class_of_store:     invoice.class_of_store,
+                        principal_code:     invoice.principal_code,
                         planned_qty,
                         actual_qty,
                         actual_weight,  
@@ -1054,6 +1058,10 @@ const createDraftBill = async({draft_bill, revenue_leak,invoices, contract_type,
                         {
                             model:models.draft_bill_details_tbl,
                             as:'details'
+                        },
+                        {
+                            model: models.draft_bill_cost_alloc_tbl,
+                            as:'cost_allocation_details'
                         }
                     ]
                 }
@@ -1129,6 +1137,10 @@ const createRevenueLeak = async({draft_bill, revenue_leak, invoices, type, user=
                         {
                             model:models.draft_bill_details_tbl,
                             as:'details'
+                        },
+                        {
+                            model: models.draft_bill_cost_alloc_tbl,
+                            as: 'cost_allocation_details'
                         }
                     ]
                 }
@@ -1268,6 +1280,8 @@ const buy = async ({
         draft_bill = await assignDraftBillNo({draft_bill:data.draft_bill});
         revenue_leak = revenue_leak.concat(data.revenue_leak);
 
+        //cost allocation function
+        draft_bill = await costAllocation.draftBillCostAlloc(draft_bill)
         /*insert to db*/
         await createDraftBill({
             draft_bill:draft_bill,
@@ -1278,6 +1292,7 @@ const buy = async ({
         })
 
         return {
+            //data
             data: draft_bill,
             revenue_leak,
         }
@@ -1400,6 +1415,8 @@ const replanBuy = async({invoices,trip_date, user=null}) => {
         data = await tripValidation(draft_bill, revenue_leak, invoices, true);
         draft_bill = await assignDraftBillNo({draft_bill:data.draft_bill})
         revenue_leak = revenue_leak.concat(data.revenue_leak);
+
+        draft_bill = await costAllocation.draftBillCostAlloc(draft_bill)
 
         //get invoices with draft bill
         data = invoices.filter(item => {

@@ -175,10 +175,17 @@ exports.transportController = async(req,res,next) => {
                         model: models.draft_bill_details_tbl,
                         as:'details'
                     },
-                    // {
-                    //     model: models.tariff_sell_hdr_tbl,
-                    //     as:'tariff'
-                    // }
+                    {
+                        model: models.draft_bill_cost_alloc_tbl,
+                        as:'cost_allocation_details',
+                        required: false,
+                        include:[
+                            {
+                                model:models.principal_tbl,
+                                required: false
+                            }
+                        ]
+                    }
                 ]
             },
             where:{
@@ -304,8 +311,6 @@ exports.transportController = async(req,res,next) => {
             })
         }),stx)
 
-        // console.log(errors)
-
         await stx.commit();
         
         const xlsx = await asciiService.generateResult({
@@ -355,6 +360,17 @@ exports.getSo = async (req,res,next) => {
                     {
                         model: models.draft_bill_details_tbl,
                         as:'details'
+                    },
+                    {
+                        model: models.draft_bill_cost_alloc_tbl,
+                        required: false,
+                        as: 'cost_allocation_details',
+                        include:[
+                            {
+                                model:models.principal_tbl,
+                                required: false
+                            }
+                        ]
                     }
                 ]
             },
