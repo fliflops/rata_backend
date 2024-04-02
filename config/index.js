@@ -120,6 +120,25 @@ const dwConfig = {
 	},
 }
 
+const kronosConfig = {
+    host:       process.env.KRONOS_DB_HOST,
+    username:   process.env.KRONOS_DB_USER_NAME,
+    password:   process.env.KRONOS_DB_PASSWORD,
+    dialect:    'mysql',
+    database:   process.env.KRONOS_DB,
+    // logging: false,
+    pool:{
+        max: 10,
+        min: 1,
+        idle: 2000000,
+        acquire: 2000000
+    },
+    dialectOptions: {
+		//useUTC: false, //for reading from database
+		dateStrings: true,
+		typeCast: true
+	},
+}
 
 
 module.exports = {
@@ -132,6 +151,7 @@ module.exports = {
     ioredis,
     redisIndex, 
     dwConfig,
+    kronosConfig,
     ...vars,
 
 }
