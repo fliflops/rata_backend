@@ -8,6 +8,7 @@ const {v4:uuidv4} = require('uuid');
 const sequelize = require('sequelize')
 const asciiService = require('../services/asciiService');
 const _ = require('lodash')
+
 exports.createPreBillingReport = async(req,res,next) => {
     try{
         // const filter = await reportService.generateFilter();
@@ -154,4 +155,8 @@ exports.downloadReport = async(req,res,next) => {
     }
     
 
+}
+
+exports.pod = async (req,res,next) => {
+    
 }

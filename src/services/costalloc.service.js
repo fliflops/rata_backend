@@ -139,8 +139,8 @@ exports.draftBillCostAlloc = async(draft_bills=[]) => {
             const totalCBM = _.sum(cost_allocation_details.map(item => item.total_cbm));
             if(totalCBM >= vehicleType.overall_volume){
                 cost_allocation_details     = cost_allocation_details.map(item => {
-                    const allocation        = round((item.total_cbm / totalCBM) * 100, 2)
-                    const allocated_cost    = round((item.total_cbm / totalCBM) * item.total_cost, 2)
+                    const allocation        = round((item.total_cbm / totalCBM) * 100, 4)
+                    const allocated_cost    = round((item.total_cbm / totalCBM) * item.total_cost, 4)
                     return {
                         ...item,
                         allocation,
@@ -150,8 +150,8 @@ exports.draftBillCostAlloc = async(draft_bills=[]) => {
             }
             else{
                 cost_allocation_details     = cost_allocation_details.map(item => {
-                    const allocation        = round((item.total_cbm / item.vehicle_capacity) * 100, 2)
-                    const allocated_cost    = round((item.total_cbm / item.vehicle_capacity) * item.total_cost, 2)
+                    const allocation        = round((item.total_cbm / item.vehicle_capacity) * 100, 4)
+                    const allocated_cost    = round((item.total_cbm / item.vehicle_capacity) * item.total_cost, 4)
                     return {
                         ...item,
                         allocation,
@@ -161,7 +161,7 @@ exports.draftBillCostAlloc = async(draft_bills=[]) => {
 
                 //computation for default principal
                 const total_cbm  = vehicleType?.overall_volume - totalCBM;
-                const allocation = round((total_cbm / vehicleType?.overall_volume * 100), 2);
+                const allocation = round((total_cbm / vehicleType?.overall_volume * 100), 4);
                 const allocated_cost = round((total_cbm / vehicleType?.overall_volume) * draft_bill.total_charges, 4);
                 cost_allocation_details = cost_allocation_details.concat([
                         {
