@@ -179,3 +179,7 @@ exports.downloadReport = async(req,res,next) => {
     
 
 }
+
+exports.pod = async (req,res,next) => {
+    
+}

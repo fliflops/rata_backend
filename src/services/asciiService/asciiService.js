@@ -7,6 +7,7 @@ const asciiModel = require('../../models/logistikus_si')
 
 const useGlobalFilter = require('../../helpers/filters');
 const moment = require('moment');
+const costAllocationService = require('../costalloc.service');
 
 const {Sequelize} = models;
 
@@ -71,6 +72,7 @@ exports.asciiSalesOrder = async (data) => {
                     UM_CODE:        ['2002','2003','2004','2008'].includes(header.service_type) ? 'lot' : header.min_billable_unit,
                     QUANTITY:       header.customer === '10005' ? quantity : quantity < Number(header.min_billable_value) ? Number(header.min_billable_value) : quantity,
                     //quantity < Number(header.min_billable_value) ? Number(header.min_billable_value) : quantity,    
+                    //QUANTITY:       quantity < Number(header.min_billable_value) ? Number(header.min_billable_value) : quantity,    
                     UNIT_PRICE:     Number(header.rate),   
                     EXTENDED_AMT:   SO_AMT//round(round(((Number(header.rate) * quantity )* 100),2) / 100,2)          
                 }]
@@ -100,25 +102,74 @@ exports.asciiSalesOrder = async (data) => {
 
 exports.asciiConfirmationReceipt = async(data) => {
     try{
+        const hasCostAlloc = await models.cost_alloc_setup_tbl.findAll({
+            where:{
+                is_active: 1
+            }
+        }).then(result => JSON.parse(JSON.stringify(result)))
 
         return data.map(header => {
-            const details = header.details
+            const isCostAlloc = hasCostAlloc.find(item => item.draft_bill_type === 'BUY' && header.service_type === item.service_type)
+            const details = header.details;
+            const cost_allocaction_details = header.cost_allocation_details;
             const amount = Number(header.total_charges);
-            
-            const CONFIRMATION_RECEIPT_DETAIL = [{
-                COMPANY_CODE:       '00001',
-                CR_CODE:            header.draft_bill_no,
-                ITEM_CODE:          header.ascii_item_code,
-                LINE_NO:            1,
-                SERVICE_TYPE_CODE:  header.ascii_service_type,
-                PRINCIPAL_CODE:     header.ascii_principal_code,
-                LOCATION_CODE:      header.ascii_loc_code,
-                UM_CODE:            details[0].vehicle_type,
-                QUANTITY:           1,
-                UNIT_PRICE:         amount,//_.round(header.total_charges,2),
-                EXTENDED_AMT:       amount//_.round(header.total_charges,2)
-            }]
 
+            let CONFIRMATION_RECEIPT_DETAIL = [];
+
+            if (isCostAlloc) {
+                const woDefault = cost_allocaction_details.filter(item => item.principal_code !== '000')
+                const defaultPrincipal = cost_allocaction_details.filter(item => item.principal_code === '000')
+                const defaultPrice = round(amount - _.sum(woDefault.map(a => Number(a.allocated_cost))),2)
+                
+                CONFIRMATION_RECEIPT_DETAIL=woDefault.map((item,i) => {
+                    return {
+                        COMPANY_CODE:       '00001',
+                        CR_CODE:            header.draft_bill_no,
+                        ITEM_CODE:          header.ascii_item_code,
+                        LINE_NO:            i + 1,
+                        SERVICE_TYPE_CODE:  header.ascii_service_type,
+                        PRINCIPAL_CODE:     item.principal_tbl?.ascii_principal_code ?? null,
+                        LOCATION_CODE:      header.ascii_loc_code,
+                        QUANTITY:           1,
+                        UM_CODE:            details[0].vehicle_type,
+                        UNIT_PRICE:         Number(item.allocated_cost),
+                        EXTENDED_AMT:       Number(item.allocated_cost),
+                    }
+                })
+
+                CONFIRMATION_RECEIPT_DETAIL = CONFIRMATION_RECEIPT_DETAIL.concat(defaultPrincipal.map(item => {
+                    return {
+                        COMPANY_CODE:       '00001',
+                        CR_CODE:            header.draft_bill_no,
+                        ITEM_CODE:          header.ascii_item_code,
+                        LINE_NO:            woDefault.length + 1,
+                        SERVICE_TYPE_CODE:  header.ascii_service_type,
+                        PRINCIPAL_CODE:     item.principal_tbl?.ascii_principal_code ?? null,
+                        LOCATION_CODE:      header.ascii_loc_code,
+                        QUANTITY:           1,
+                        UM_CODE:            details[0].vehicle_type,
+                        UNIT_PRICE:         defaultPrice,
+                        EXTENDED_AMT:       defaultPrice,
+                    }
+                }))
+    
+            }
+            else {
+                CONFIRMATION_RECEIPT_DETAIL = [{
+                    COMPANY_CODE:       '00001',
+                    CR_CODE:            header.draft_bill_no,
+                    ITEM_CODE:          header.ascii_item_code,
+                    LINE_NO:            1,
+                    SERVICE_TYPE_CODE:  header.ascii_service_type,
+                    PRINCIPAL_CODE:     header.ascii_principal_code,
+                    LOCATION_CODE:      header.ascii_loc_code,
+                    UM_CODE:            details[0].vehicle_type,
+                    QUANTITY:           1,
+                    UNIT_PRICE:         amount,
+                    EXTENDED_AMT:       amount
+                }]
+            }
+          
             return {
                 COMPANY_CODE:       '00001',
                 CR_CODE:            header.draft_bill_no,
@@ -131,7 +182,7 @@ exports.asciiConfirmationReceipt = async(data) => {
                 PARTICULAR:         details.map(i => i.invoice_no).join(','),
                 REF_SI_NO:          'n/a',
                 REF_CROSS:          header.contract_id,
-                CR_AMT:             amount,//_.round(header.total_charges,2),
+                CR_AMT:             amount,
                 CONFIRMATION_RECEIPT_DETAIL
             }
         })
@@ -151,8 +202,8 @@ exports.generateResult = async({
 
         const wb = xlsx.utils.book_new();
 
-        let error_details = []
-        let error_header = []
+        let error_details = [];
+        let error_header = [];
 
         Object.keys(errors).map(item => {
             const details = errors[item].DETAILS

@@ -102,6 +102,7 @@ exports.exportDraftBill = async(req,res,next) => {
 
         const headers=[];
         let db_details=[];
+        let cost_alloc_details=[];
 
         const getDraftBills = await models.draft_bill_hdr_tbl.getData({
             where:{
@@ -131,6 +132,11 @@ exports.exportDraftBill = async(req,res,next) => {
                     {
                         model: models.service_type_tbl,
                         required: false
+                    },
+                    {
+                        model: models.draft_bill_cost_alloc_tbl,
+                        as:'cost_allocation_details',
+                        required: false
                     }
                 ]
             }
@@ -141,7 +147,6 @@ exports.exportDraftBill = async(req,res,next) => {
             customer:           'Customer',	
             contract_type:      'Contract Type',	
             draft_bill_date:    'Draft Bil Date',
-            // delivery_date:      'Delivery Date',
             contract_id:        'Contract ID',
             tariff_id:          'Tariff ID',
             trip_no:            'Trip No.',
@@ -168,7 +173,7 @@ exports.exportDraftBill = async(req,res,next) => {
         };
 
         getDraftBills.map(item => {
-            const {details,created_by,updated_by,service_type_tbl,...header} = item
+            const {details,created_by,updated_by,service_type_tbl,cost_allocation_details,...header} = item
 
             headers.push({
                 ...header,
@@ -185,11 +190,21 @@ exports.exportDraftBill = async(req,res,next) => {
                     principal_code
                 }
             }))
+
+            cost_alloc_details = cost_alloc_details.concat(cost_allocation_details.map(item => {
+                return {
+                    ...item,
+                    location: header.location,
+                    contract_type:header.contract_type,
+                    vehicle_type: header.vehicle_type,
+                }
+            }))
         })
 
         const xlsx = await dataExportService.generateExcel({
             headers: [headerLabel].concat(headers),
-            details: db_details
+            details: db_details,
+            cost_allocation_details: cost_alloc_details
         })
 
         res.set('Content-disposition',`transport_draft_bill.xlsx`);

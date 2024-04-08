@@ -77,6 +77,7 @@ const getBookingRequest = async ({
             left join reason_codes_tbl d on c.reasonCode = d.code    
             where cast(c.date_cleared as date) between :from and :to
             and c.rudStatus = 'CLEARED'
+            and c.brStatus = 'VERIFIED_COMPLETE'
             and b.tripStatus <> 'SHORT_CLOSED'
             and a.isDeleted <> 1
         `,{
