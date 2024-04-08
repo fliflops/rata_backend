@@ -1,8 +1,49 @@
 const Sequelize  = require('sequelize');
 const {kronos, pod} = require('../models/datawarehouse');
+const models = require('../models/rata')
+const round = require('../helpers/round');
+const moment = require('moment');
 
-exports.getKronosTrips = async(trips=[]) => {
-    await kronos.query(`    
+const _ = require('lodash');
+const { vendor_group } = require('../models/rata/helios_invoices_hdr_tbl');
+
+
+
+const getSum = (details,uom,field) => {
+    return _.sumBy(details.filter(item => item.uom === uom), item => isNaN(parseFloat(item[field])) ? 0 : parseFloat(item[field]))
+}
+
+const getRevenueLeakNoFormula = ({invoices,draft_bill_details}) => {
+    //let revenue_leak = [];
+    const revenue_leak_reason = 'NO FORMULA OR CONDITION MATCHED'
+    
+    return invoices.filter(item =>  draft_bill_details.map(dtl => dtl.tms_reference_no).includes(item.tms_reference_no))
+    .map(item => {
+        const {ship_point_from,ship_point_to,group_id,tariff,...header} = item;
+        return {
+            ...header,
+            tariff_id: tariff.tariff_id,
+            revenue_leak_reason
+        }
+    })
+}
+
+const getInvalidTotalCharges = ({invoices,draft_bill_details, total_charges}) => {
+    const revenue_leak_reason = 'INVALID TOTAL CHARGES RESULT';
+
+    return invoices.filter(item =>  draft_bill_details.map(dtl => dtl.tms_reference_no).includes(item.tms_reference_no))
+    .map(item => {
+        const {ship_point_from,ship_point_to,group_id,tariff,...header} = item;
+        return {
+            ...header,
+            tariff_id: tariff.tariff_id,
+            revenue_leak_reason
+        }
+    })
+}
+
+const getKronosTrips = async(trips=[]) => {
+   return await kronos.query(`    
         Select 
         a.trip_log_id,
         a.vehicle_type,
@@ -13,17 +54,17 @@ exports.getKronosTrips = async(trips=[]) => {
         left join vehicle b on a.fk_assigned_vehicle_id = b.id
         left join trucker c on b.trucker_id = c.id
         where trip_status in ('EXECUTED','INITIATED')
-        limit 1
+        and trip_log_id in (:trips)
     `,{
        type: Sequelize.QueryTypes.SELECT,
        replacements:{
-            trips: trips
+            trips: _.uniq(trips)
        }
     })
 }
 
-exports.getPodInvoices = async({from,to}) => {
-    return await pod.query(`               
+const getPodInvoices = async({from,to}) => {
+    const header =  await pod.query(`               
         Select     
         c.bookingRequestNo	    'tms_reference_no',    
         b.tripPlanNo			'trip_no',    
@@ -55,7 +96,7 @@ exports.getPodInvoices = async({from,to}) => {
         left join trip_plan_hdr_tbl b on a.tripPlan = b.tripPlanNo    
         left join booking_request_hdr_tbl c on a.brNo = c.bookingRequestNo    
         left join reason_codes_tbl d on c.reasonCode = d.code    
-        where cast(b.trip_date as date) between '2024-03-01' and '2024-03-10' 
+        where cast(b.trip_date as date) between :from and :to 
         and c.deliveryStatus in ('DELIVERED_FULL','DELIVERED_PARTIAL')
         and c.rudStatus in (null,'CLEARED','NONE','PARTIAL')
         and c.brStatus in ('VERIFIED_COMPLETE', 'RETURNED_BY_TRUCKER')
@@ -69,12 +110,1028 @@ exports.getPodInvoices = async({from,to}) => {
         }
     })
     .then(result => {
-        //const data = JSON.parse(JSON.stringify(result))
-
         return result.filter(item => item.rud_status !== 'CLEARED' || item.br_status !=='VERIFIED_COMPLETE')
+    })
+
+    const details = await pod.query(`
+    Select distinct    
+    a.tripPlan	      'trip_no',    
+    a.brNo			  'br_no',    
+    a.deliveryStatus  'delivery_status',
+    b.class_of_stores 'class_of_store',    
+    b.uom,    
+    b.planned_qty,    
+    b.planned_weight,    
+    b.planned_cbm,    
+    b.actual_qty,    
+    CASE WHEN b.actual_qty = b.planned_qty THEN b.planned_weight ELSE b.actual_weight END 'actual_weight',  
+    CASE WHEN b.actual_qty = b.planned_qty THEN b.planned_cbm  ELSE b.actual_cbm  END 'actual_cbm',  
+    b.return_qty
+    from (    
+    select     
+    ax.tripPlan,    
+    ax.brNo,
+    cx.deliveryStatus
+    from trip_br_dtl_tbl ax    
+    left join trip_plan_hdr_tbl bx on ax.tripPlan = bx.tripPlanNo and ax.isDeleted = 0    
+    left join booking_request_hdr_tbl cx on ax.brNo = cx.bookingRequestNo and ax.isDeleted = 0    
+    where brNo in (:br)
+    ) a    
+        
+    OUTER APPLY (    
+        Select     
+        bx.class_of_stores,    
+        ax.uom,    
+        SUM(ax.planned_qty) 'planned_qty',    
+        SUM(ax.weight) 'planned_weight',    
+        SUM(ax.cbm) 'planned_cbm',    
+        SUM(ax.actual_qty) 'actual_qty',    
+        SUM(ax.actual_weight) 'actual_weight',    
+        SUM(ax.actual_cbm) 'actual_cbm',    
+        SUM(ax.return_qty) 'return_qty',    
+        SUM(ax.damaged_qty) 'damaged_qty',    
+        SUM(ax.variance_qty) 'variance_qty',    
+        SUM(ax.short_landed_qty) 'short_landed_qty',    
+        SUM(ax.lost_qty) 'lost_qty'    
+        from dispatch_item_dtl ax    
+        left join booking_request_dtl_tbl bx on ax.br_no = bx.bookingRequestNo and ax.sku_code = bx.skuCode    
+        where ax.trip_plan_id = a.tripPlan and ax.br_no = a.brNo    
+        group by ax.uom,bx.class_of_stores    
+    ) b`
+    ,{
+        type: Sequelize.QueryTypes.SELECT,
+        replacements:{
+            br: header.map(item => item.tms_reference_no)
+        }
+    })
+
+    const shipPoints = await models.ship_point_tbl.findAll({
+        where:{
+            is_active: 1,
+            stc_code: _.uniq(header.map(item => item.stc_from).concat(header.map(item => item.stc_to)))
+        }
+    }).then(result => JSON.parse(JSON.stringify(result)))
+   
+    return header.map(item => {
+        const invoiceDetails = details.filter(a => a.br_no === item.tms_reference_no);
+        const ship_point_from = shipPoints.find(a => String(a.stc_code).toLowerCase() === String(item.stc_from).toLowerCase())
+        const ship_point_to = shipPoints.find(a => String(a.stc_code).toLowerCase() === String(item.stc_to).toLowerCase())
+        return {
+            ...item,
+            is_billable: _.isNull(item.is_billable) ? 1 : item.is_billable,
+            ship_point_from: ship_point_from ?? null,
+            ship_point_to: ship_point_to ?? null,
+            details: invoiceDetails,
+        }
     })
 }
 
-exports.reportData = async() => {
+const getContract = async ({
+    from,
+    to,
+    filter
+}) => {
+    return await models.contract_hdr_tbl.findAll({
+        include:[
+            {
+                model: models.contract_tariff_dtl,
+                include:[
+                    {
+                        model: models.tariff_sell_hdr_tbl
+                    },
+                    {
+                        model:models.agg_tbl,
+                        required:false,
+                    },
+                    {
+                        model:models.agg_conditions_tbl,
+                        required:false
+                    },
+                    {
+                        model: models.tariff_ic_algo_tbl,
+                        where: {
+                            algo_status:'ACTIVE'
+                        },
+                        required:false,
+                    }
+                ],
+                required:false,
+                where:{
+
+                    status:'ACTIVE',
+                    valid_from: {
+                        [Sequelize.Op.lte]: from
+                    },
+                    valid_to:{
+                        [Sequelize.Op.gte]: to
+                    }
+                },
+            }
+        ],
+        where:{
+            ...filter,
+            contract_status:'APPROVED',
+            valid_from: {
+                [Sequelize.Op.lte]: from
+            },
+            valid_to:{
+                [Sequelize.Op.gte]: to
+            }
+        }
+    })
+    .then(result=>JSON.parse(JSON.stringify(result)))
+}
+
+exports.joinedInvoices = async({from, to}) => {
+    const pod = await getPodInvoices({
+        from,
+        to
+    })
+
+    const kronos = await getKronosTrips(pod.map(item => item.trip_no))
+
+    return pod.map(item => {
+        const vehicleData = kronos.find(a => a.trip_log_id === item.trip_no)
+
+        return {
+            ...item,
+            trucker_id:     vehicleData?.trucker_id ?? null,
+            vehicle_type:   vehicleData?.vehicle_type ?? null,
+            vehicle_id:     vehicleData?.vehicle_id ?? null,
+            kronos_trip_status:    vehicleData?.trip_status ?? null
+        }
+    })
+}
+
+const groupByTripDate = async (data = []) => {
+    return _.groupBy(data, 'trip_date')
+}
+
+const formatByClassOfStore = async (invoices) => {
+    try{
+        let invoiceData = [];
+        invoices.map(invoice => {
+            const {details,...header} = invoice;
+            const group = _.groupBy(details, item => item.class_of_store)
+            
+            Object.keys(group).map((class_of_store,i) => {
+                const invDetails = group[class_of_store];
+                const tms_reference_no = i > 0 ? `${header.tms_reference_no}-${i}` : header.tms_reference_no
+                  
+                invoiceData.push({
+                    ...header,
+                    tms_reference_no,
+                    fk_tms_reference_no: header.tms_reference_no,
+                    class_of_store: class_of_store,
+                    details: invDetails.map(item => {
+                        return {
+                            ...item,
+                            br_no: tms_reference_no
+                        }
+                    })
+                })
+            })
+        })
+
+        return invoiceData
+
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const getBillableInvoices = async(invoices) => {
+    let revenue_leak = [];
+    const data = invoices.filter(item => item.is_billable === 1 && item.ship_point_from && item.ship_point_to)
+   
+    const notBillable = invoices.filter(item => item.is_billable === 0)
+    .map(item => {
+        const {ship_point_from,ship_point_to,...header} = item;
+        
+        return {
+            ...header,
+            revenue_leak_reason: 'NOT BILLABLE'
+        }
+    });
+
+    revenue_leak = revenue_leak.concat(notBillable);
+
+    const noShipPoint = invoices.filter(item => !(item.ship_point_to && item.ship_point_from)).map(item => {
+        const {ship_point_from,ship_point_to,...header} = item;
+        return {
+            ...header,
+            revenue_leak_reason: 'NO SHIP POINT INFORMATION'
+        }
+    });
+
+    revenue_leak = revenue_leak.concat(noShipPoint);
+
+    return {
+        data,
+        revenue_leak
+    }
+
+}
+
+const assignContract = async({invoices, contracts}) => {
+    let data = [];
+    let revenue_leak = [];
+    const revenue_leak_reason = 'NO CONTRACT'
+
+    contracts.map(contract => {
+        const filtered_data = invoices.filter(item => {
+            if(contract.contract_type === 'SELL'){
+                return item.principal_code === contract.principal_code
+            }
+            else {
+                // for modification later
+                return item.vg_code === contract.vendor_group
+            }
+         })
+        .map(item => {
+            return {
+                ...item,
+                contract_id: contract.contract_id
+            }
+        })
+
+        data = data.concat(filtered_data)
+    })
+
+    revenue_leak = invoices.filter(item => {
+        return !data.map(item2 => item2.tms_reference_no).includes(item.tms_reference_no)
+    })
+    .map(item => {
+        const {contract,ship_point_from,ship_point_to,...header} = item;
+        return {
+            ...header,
+            contract_id:null,
+            revenue_leak_reason: revenue_leak_reason,
+        }
+    })
+
+    return {
+        data,
+        revenue_leak
+    }
+}
+
+
+const getTariffs = async({contracts}) => {
+    let tariffs = [];
+
+    contracts.map(contract => {
+        const {contract_id,contract_tariff_dtls} = contract;
+
+        contract_tariff_dtls.map(tariff => {
+            const {
+                tariff_id,
+                tariff_rate,
+                min_rate,
+                valid_from,
+                valid_to,
+                tariff_sell_hdr_tbl,
+                tariff_ic_algo_tbls,
+                agg_tbl,
+                agg_conditions_tbls
+            } = tariff;
+
+            tariffs.push({
+                contract_id,
+                tariff_id,
+                tariff_rate,
+                min_rate,
+                valid_from,
+                valid_to,
+                tariff_ic_algo_tbls,
+                agg_conditions_tbls,
+                ...tariff_sell_hdr_tbl,
+                ...agg_tbl,
+                
+            })
+        })
+    })
+    
+
+    return tariffs;
+}
+
+const assignTariff = async({invoices, contracts, contract_type}) => {
+    let data = [];
+    let revenue_leak = [];
+    const contract_tariffs = await getTariffs({contracts});
+
+    for (let invoice of invoices){
+        const {details, ...header} = invoice;
+        const tariffs = contract_tariffs
+        .filter(item => item.contract_id === header.contract_id)
+        .filter(tariff => {
+            let {
+                service_type,
+                from_geo_type,
+                from_geo,
+                to_geo_type,
+                to_geo,
+                location,
+                vehicle_type,    
+                class_of_store,
+                sub_service_type,
+            } = tariff;
+            
+            const inv_stc_from              = header?.ship_point_from[String(from_geo_type).toLowerCase()] || null
+            const inv_stc_to                = header?.ship_point_to[String(to_geo_type).toLowerCase()] || null
+            const invoice_sub_service_type  = String(invoice.sub_service_type).toLowerCase();
+
+            if(String(contract_type).toUpperCase() === 'SELL'){
+                if(String(location).toLowerCase()           === String(invoice.location).toLowerCase()      &&
+                (String(inv_stc_from).toLowerCase()         === String(from_geo).toLowerCase()              &&
+                String(inv_stc_to).toLowerCase()            === String(to_geo).toLowerCase())               &&
+                service_type                                === invoice.service_type                        &&
+                (invoice_sub_service_type===null || invoice_sub_service_type==='null' || invoice_sub_service_type=== '' ?   true : (invoice_sub_service_type === String(sub_service_type).toLowerCase())))
+                {
+                    //if tariff has vehicle type maintained
+                    if(vehicle_type){
+                        //if tariff is equal to invoice vehicle type
+                        if(vehicle_type === invoice.vehicle_type){
+                            
+                            //if tariff class off store is null 
+                            if(!class_of_store){
+                                return true
+                            }
+                            else{
+                                //if class of store is not null
+                                //check if the invoice class of store is equal to the tariff
+                                if(String(class_of_store).toLowerCase() === String(invoice.class_of_store).toLowerCase()){
+                                    return true
+                                }
+
+                                return false
+                            }
+                        } 
+                        return false 
+                    }
+                    else{
+                        //check if the invoice class of store is equal to the tariff
+                        if(String(class_of_store).toLowerCase() === String(invoice.class_of_store).toLowerCase()){
+                        
+                            return true
+                        }
+
+                        return false
+                    }
+                }
+            }
+            else{
+                if(String(location).toLowerCase()           === String(invoice.location).toLowerCase()      &&
+                (String(inv_stc_from).toLowerCase()         === String(from_geo).toLowerCase()              &&
+                String(inv_stc_to).toLowerCase()            === String(to_geo).toLowerCase())               &&
+                service_type                                === invoice.service_type)
+                {
+                    //if tariff has vehicle type maintained
+                    if(vehicle_type){
+                        //if tariff is equal to invoice vehicle type
+                        if(vehicle_type === invoice.vehicle_type){
+                            
+                            //if tariff class off store is null 
+                            if(!class_of_store){
+                                return true
+                            }
+                            else{
+                                //if class of store is not null
+                                //check if the invoice class of store is equal to the tariff
+                                if(String(class_of_store).toLowerCase() === String(invoice.class_of_store).toLowerCase()){
+                                    return true
+                                }
+
+                                return false
+                            }
+                        } 
+                        return false 
+                    }
+                    else{
+                        //check if the invoice class of store is equal to the tariff
+                        if(String(class_of_store).toLowerCase() === String(invoice.class_of_store).toLowerCase()){
+                        
+                            return true
+                        }
+
+                        return false
+                    }
+                }
+            }
+
+            return false
+        })
+
+        if(tariffs.length === 1){
+            const tariff={
+                tariff_id:          tariffs[0].tariff_id,
+                tariff_type:        tariffs[0].tariff_type,
+                min_billable_unit:  tariffs[0].min_billable_unit,
+                min_value:          tariffs[0].min_value,
+                max_value:          tariffs[0].max_value,
+                tariff_rate:        Number(tariffs[0].tariff_rate),
+                min_rate:           Number(tariffs[0].min_rate),
+                group_by:           tariffs[0].group_by,
+                parameter:          tariffs[0].parameter,
+                with_agg:           tariffs[0].with_agg,
+                fk_agg_id:          tariffs[0].fk_agg_id,
+                from_geo_type:      tariffs[0].from_geo_type,
+                to_geo_type:        tariffs[0].from_geo_type,
+                contract_type:      tariffs[0].contract_type,
+                tariff_ic:          tariffs[0].tariff_ic_algo_tbls,
+                conditions:         tariffs[0].agg_conditions_tbls
+            }
+
+            data.push({
+                ...invoice,
+                group_id: typeof tariff.group_by === 'string' ?  tariff.group_by.split(',').map(item =>  invoice[item]).join('|') : null,
+                tariff
+            })
+        }
+
+        if(tariffs.length > 1){
+                
+            const {ship_point_from,ship_point_to,...header} = invoice
+            revenue_leak.push({
+                ...header,
+                tariff_id: null,
+                revenue_leak_reason: 'DUPLICATE TARIFF'
+            })
+        }
+
+        if(tariffs.length === 0){
+            const {ship_point_from,ship_point_to,...header} = invoice
+            
+            revenue_leak.push({
+                ...header,
+                tariff_id:null,
+                revenue_leak_reason:'NO TARIFF'
+            })
+        }
+    }
+
+    return {
+        data,
+        revenue_leak
+    }
+}
+
+const getGroupedInvoices = async({invoices}) => {
+    return _.groupBy(invoices,(item) => {
+        return item.group_id
+    })
+}
+
+const draftBillWithAgg = async({contract_type,invoices}) => {
+    try{
+        let data = [];
+        let draft_bills = [];
+
+        let revenue_leak = [];
+
+        const aggData = invoices.filter(item => {
+            if(contract_type === 'SELL'){
+                return item.tariff.with_agg
+            }
+            else {
+                return item.is_ic===0&&item.tariff.with_agg
+            }
+        });
+
+        const raw_group = await getGroupedInvoices({invoices:aggData});
+
+        //Group the data per group id
+        Object.keys(raw_group).map(group_id => {
+            const groupedInvoice = raw_group[group_id];
+            const invoice = contract_type === 'SELL' ? groupedInvoice[0] : _.maxBy(groupedInvoice, i => i.tariff.tariff_rate)
+            const parameters = invoice.tariff.parameter ? invoice.tariff.parameter.split(',') : null
+           
+            let draft_bill_details = [];
+            
+            //compute the sum of items per invoice
+            groupedInvoice.map(item => {
+                const details = item.details;
+                const planned_qty       = _.sum(details.map(d => isNaN(Number(d.planned_qty)))           ? 0 : Number(d.planned_qty)) 
+                const actual_qty        = _.sum(details.map(d => isNaN(Number(d.actual_qty))             ? 0 : Number(d.actual_qty)))    
+                const planned_weight    = _.sumBy(details,item => isNaN(parseFloat(item.planned_weight)) ? 0 : parseFloat(item.planned_weight))
+                const planned_cbm       = _.sumBy(details,item => isNaN(parseFloat(item.planned_cbm))    ? 0 :   parseFloat(item.planned_cbm))
+                const actual_weight     = _.sumBy(details,item => isNaN(parseFloat(item.actual_weight))  ? 0 :   parseFloat(item.actual_weight))
+                const actual_cbm        = _.sumBy(details,item => isNaN(parseFloat(item.actual_cbm))     ? 0 :   parseFloat(item.actual_cbm))
+                const return_qty        = _.sumBy(details,item => isNaN(parseFloat(item.return_qty))     ? 0 :   parseFloat(item.return_qty))
+
+                draft_bill_details.push({
+                    draft_bill_no:      '',
+                    tms_reference_no:   item.tms_reference_no,
+                    fk_tms_reference_no:item.fk_tms_reference_no,
+                    br_no:              item.br_no,
+                    delivery_date:      item.rdd,
+                    trip_date:          item.trip_date,
+                    location:           item.location,
+                    trip_plan:          item.trip_no,
+                    shipment_manifest:  item.shipment_manifest,
+                    dr_no:              item.dr_no,
+                    invoice_no:         item.invoice_no,
+                    delivery_status:    item.delivery_status,
+                    vehicle_type:       item.vehicle_type,
+                    tariff_id:          item.tariff.tariff_id,
+                    contract_id:        item.contract_id,
+                    service_type:       item.service_type,
+                    sub_service_type:   item.sub_service_type,
+                    min_billable_value: Number(item.tariff.min_value) || item.tariff.min_value,
+                    max_billable_value: Number(item.tariff.max_value) || item.tariff.max_value,
+                    min_billable_unit:  item.tariff.min_billable_unit,
+                    from_geo_type:      invoice.tariff.from_geo_type,
+                    ship_from:          item.stc_from,
+                    to_geo_type:        invoice.tariff.to_geo_type,
+                    ship_to:            item.stc_to,
+                    remarks:            item.redel_remarks,
+                    class_of_store:     item.class_of_store,
+                    planned_qty,
+                    actual_qty,
+                    actual_weight,  
+                    actual_cbm, 
+                    planned_qty,     
+                    planned_weight,
+                    planned_cbm,
+                    return_qty     
+                })
+            })
+
+            data.push({
+                draft_bill_no:      null,
+                draft_bill_date:    null,
+                contract_type:      contract_type,
+                service_type:       invoice.service_type,
+                trip_no:            invoice.trip_no,
+                contract_id:        invoice.contract_id,
+                tariff_id:          invoice.tariff.tariff_id,
+                customer:           invoice.principal_code,
+                vendor:             invoice.trucker_id,
+                location:           invoice.location,
+                ship_from:          invoice.stc_from,
+                ship_point:         invoice.stc_to,
+                delivery_date:      invoice.rdd,
+                trip_date:          invoice.trip_date,
+                rate:               invoice.tariff.tariff_rate,
+                min_rate:           invoice.tariff.min_rate,
+                vehicle_type:       invoice.vehicle_type,
+                min_billable_value: invoice.tariff.min_value,
+                max_billable_value: invoice.tariff.max_value,
+                min_billable_unit:  invoice.tariff.min_billable_unit,
+                parameters,
+                conditions: invoice.tariff.conditions,
+                tariff:     invoice.tariff,
+                draft_bill_details
+            })
+
+        })
+
+        data.map(draft_bill => {
+            //declare variables
+            let aggregatedValues = {
+                total_cbm:null,
+                total_weight:null,
+                total_qty:null
+            }
+
+            let total_charges = null;
+
+            if(draft_bill.parameters) {
+                const total_cbm     = _.sumBy(draft_bill.draft_bill_details,item => isNaN(parseFloat(item.actual_cbm)) ? 0 :    parseFloat(item.actual_cbm))
+                const total_weight  = _.sumBy(draft_bill.draft_bill_details,item => isNaN(parseFloat(item.actual_weight))? 0 :  parseFloat(item.actual_weight))
+                const total_qty     = _.sumBy(draft_bill.draft_bill_details,item => isNaN(parseFloat(item.actual_qty)) ? 0 :    parseFloat(item.actual_qty))
+                    
+                aggregatedValues = {
+                    ...aggregatedValues,
+                    total_cbm:      isNaN(Number(total_cbm))    ? 0 : round(total_cbm,2),
+                    total_weight:   isNaN(Number(total_weight)) ? 0 : round(total_weight,2),
+                    total_qty:      isNaN(Number(total_qty))    ? 0 : round(total_qty,2)
+                }
+            }
+            else{
+                const total_cbm     = _.sumBy(draft_bill.draft_bill_details,item => isNaN(parseFloat(item.actual_cbm)) ? 0 :    parseFloat(item.actual_cbm))
+                const total_weight  = _.sumBy(draft_bill.draft_bill_details,item => isNaN(parseFloat(item.actual_weight))? 0 :  parseFloat(item.actual_weight))
+                    
+                aggregatedValues = {
+                    ...aggregatedValues,
+                    total_cbm:      isNaN(Number(total_cbm))    ? 0 : round(total_cbm,2),
+                    total_weight:   isNaN(Number(total_weight)) ? 0 : round(total_weight,2),
+                }
+
+            }
+            //compute total charges
+            const invoice = aggregatedValues;
+            let aggCondition = {
+                condition:null,
+                formula:null,
+            }
+
+            for(const cnd of draft_bill.conditions){
+                const {tariff} = draft_bill;
+                const condition = cnd.raw_condition.split(',').join('')
+                const fn = new Function(['tariff','invoice'],'return ' +condition)
+
+                if(fn(tariff,invoice) || fn(tariff,invoice) === null){
+                    const formula = cnd.raw_formula.split(',').join('')
+                    const fnFormula = new Function(['tariff','invoice'],'return '+formula)
+                    total_charges = round(round(Number(fnFormula(tariff,invoice)) * 100,2) / 100, 2);
+                   
+                    aggCondition = {
+                        ...aggCondition,
+                        condition:condition,
+                        formula:formula
+                    }
+
+                    break; 
+                }
+            }
+
+            const {conditions,tariff,parameters,...header} = draft_bill;
+            const df = {
+                ...header,
+                total_charges: total_charges,
+                ...aggCondition,
+                ...aggregatedValues,
+                draft_bill_details: header.draft_bill_details.map(( item,index) => {
+                    let billing = 0;
+
+                    if(String(header.min_billable_unit).toLowerCase() === 'cbm'){
+                        billing = ( item.actual_cbm / aggregatedValues.total_cbm ) * total_charges
+                    }     
+                    
+                    else if(String(header.min_billable_unit).toLowerCase() === 'weight'){
+                        billing = ( item.actual_weight / aggregatedValues.total_weight ) * total_charges
+                    }
+
+                    else if(['CASE','PIECE'].includes(String(header.min_billable_unit).toUpperCase())){
+                        billing = ( item.actual_qty / aggregatedValues.total_qty ) * total_charges
+                    }
+                    
+                    else {
+                        if(index === header.draft_bill_details.length - 1){
+                            billing=Math.floor(total_charges/header.draft_bill_details.length)  + (total_charges%header.draft_bill_details.length)
+                        }   
+                        else{
+                            billing=Math.floor(total_charges/header.draft_bill_details.length)
+                        }  
+                    }
+
+                    return {
+                        ...item,
+                        billing: isNaN(billing.toFixed(2)) ? null : round(billing,4) //billing.toFixed(2)
+                    }
+                })
+            }
+            //revenue_leaks
+            if(!aggCondition.formula) {
+                revenue_leak = revenue_leak.concat(getRevenueLeakNoFormula({
+                    invoices:invoices,
+                    draft_bill_details: header.draft_bill_details
+                }))
+
+            }
+            else if(!total_charges || Number(total_charges) <= 0 || isNaN(parseFloat(total_charges)))  {
+                revenue_leak = revenue_leak.concat(getInvalidTotalCharges({
+                    invoices:invoices,
+                    draft_bill_details: header.draft_bill_details,
+                    total_charges
+                }))
+            }
+            else {
+                //push clean draft bill
+                draft_bills.push(df)
+            }
+        })
+
+        return {
+            data: draft_bills,
+            revenue_leak
+        }
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const draftBillWithoutAgg = async({contract_type,invoices}) => {
+    try{
+
+        let data = [];
+        let revenue_leak = [];
+        const withoutAggData = invoices.filter(item => {
+            if(contract_type === 'SELL'){
+                return !item.tariff.with_agg
+            }
+            else {
+                return item.is_ic === 0&&!item.tariff.with_agg
+            }
+        });
+
+      
+
+        withoutAggData.map(invoice => {
+            const details = invoice.details;
+            const planned_qty       = getSum(details,invoice.tariff.min_billable_unit,'planned_qty') 
+            const actual_qty        = getSum(details,invoice.tariff.min_billable_unit,'actual_qty')     
+         
+            const planned_weight    = _.sumBy(details, item => isNaN(Number(item.planned_weight)) ? 0 : Number(item.planned_weight))
+            const planned_cbm       = _.sumBy(details, item => isNaN(Number(item.planned_cbm)) ? 0 :    Number(item.planned_cbm))
+            const actual_weight     = _.sumBy(details, item => isNaN(Number(item.actual_weight)) ? 0 :  Number(item.actual_weight))
+            const actual_cbm        = _.sumBy(details, item => isNaN(Number(item.actual_cbm)) ? 0 :     Number(item.actual_cbm))
+            const return_qty        = _.sumBy(details, item => isNaN(Number(item.return_qty)) ? 0 :     Number(item.return_qty))
+
+            let aggCondition = {
+                condition:null,
+                formula:null,
+            }
+
+            let total_charges = null;
+            let total_data = {
+                total_cbm:      round(actual_cbm,2),
+                total_weight:   round(actual_weight,2),
+                total_qty:      round(actual_qty,2)
+            }
+
+            for(const cnd of invoice.tariff.conditions){
+                const condition = cnd.raw_condition.split(',').join('')
+                const fn = new Function(['tariff','invoice'],'return '+condition)
+                if(fn(invoice.tariff,total_data) || fn(invoice.tariff,total_data) === null){
+                    const formula = cnd.raw_formula.split(',').join('')
+                    const fnFormula = new Function(['tariff','invoice'],'return '+formula)
+                    total_charges = round(round(Number(fnFormula(invoice.tariff,invoice)) * 100,2) / 100, 2)
+                    aggCondition = {
+                        ...aggCondition,
+                        condition: condition,
+                        formula: formula
+                    }
+                }
+            }
+
+            const draft_bill = {
+                draft_bill_no:      null,
+                draft_bill_date:    null,
+                contract_type:      contract_type,
+                service_type:       invoice.service_type,
+                trip_no:            invoice.trip_no,
+                contract_id:        invoice.contract_id,
+                tariff_id:          invoice.tariff.tariff_id,
+                customer:           invoice.principal_code,
+                vendor:             invoice.trucker_id,
+                location:           invoice.location,
+                ship_from:          invoice.stc_from,
+                ship_point:         invoice.stc_to,
+                delivery_date:      invoice.rdd,
+                trip_date:          invoice.trip_date,
+                rate:               invoice.tariff.tariff_rate,
+                min_rate:           invoice.tariff.min_rate,
+                vehicle_type:       invoice.vehicle_type,
+                min_billable_value: Number(invoice.tariff.min_value) || null,
+                max_billable_value: Number(invoice.tariff.max_value) || null,
+                min_billable_unit:  invoice.tariff.min_billable_unit,
+                ...aggCondition,
+                ...total_data,
+                total_charges,
+                draft_bill_details: [
+                    {
+                        draft_bill_no:      null,
+                        tms_reference_no:   invoice.tms_reference_no,
+                        fk_tms_reference_no:invoice.fk_tms_reference_no,
+                        br_no:              invoice.br_no,
+                        delivery_date:      invoice.rdd,
+                        trip_date:          invoice.trip_date,
+                        location:           invoice.location,
+                        trip_plan:          invoice.trip_no,
+                        shipment_manifest:  invoice.shipment_manifest,
+                        dr_no:              invoice.dr_no,
+                        invoice_no:         invoice.invoice_no,
+                        delivery_status:    invoice.delivery_status,
+                        vehicle_type:       invoice.vehicle_type,
+                        tariff_id:          invoice.tariff.tariff_id,
+                        contract_id:        invoice.contract_id,
+                        service_type:       invoice.service_type,
+                        sub_service_type:   invoice.sub_service_type,
+                        min_billable_value: invoice.tariff.min_value,
+                        max_billable_value: invoice.tariff.max_value,
+                        min_billable_unit:  invoice.tariff.min_billable_unit,
+                        from_geo_type:      invoice.tariff.from_geo_type,
+                        ship_from:          invoice.stc_from,
+                        to_geo_type:        invoice.tariff.to_geo_type,
+                        ship_to:            invoice.stc_to,
+                        remarks:            invoice.redel_remarks,
+                        class_of_store:     invoice.class_of_store,
+                        planned_qty,
+                        actual_qty,
+                        actual_weight,  
+                        actual_cbm, 
+                        planned_qty,     
+                        planned_weight,
+                        planned_cbm,
+                        return_qty,
+                        billing: total_charges     
+                    }
+                ],
+            }
+            //revenue_leak
+            if(!aggCondition.formula){
+                revenue_leak = revenue_leak.concat(getRevenueLeakNoFormula({invoices,draft_bill_details:draft_bill.draft_bill_details}))
+            }
+            else if(!total_charges || parseFloat(total_charges) <= 0 || isNaN(parseFloat(total_charges))){
+                revenue_leak = revenue_leak.concat(getInvalidTotalCharges({invoices,draft_bill_details:draft_bill.draft_bill_details,total_charges}))
+            }
+            else{
+                data.push(draft_bill)
+            }  
+        })
+
+        return {
+            data: data,
+            revenue_leak: revenue_leak
+        }
+    }
+    catch(e){
+        throw e
+    }
+}
+
+const sellValidation = async(draft_bill=[], revenue_leak=[], invoices=[], isRevLeak = false) => {
+    //group by principal and trip number
+    let leak_invoice = [];
+    const leak_trip = draft_bill.filter(db => revenue_leak.filter(rl => rl.revenue_leak_reason !== 'NOT BILLABLE').map(rl => rl.trip_no+rl.principal_code).includes(db.trip_no+db.customer))
+    
+    leak_trip.map(item => {
+        leak_invoice = leak_invoice.concat(item.draft_bill_details.map(dtl => {
+            const invoice = invoices.find(i => i.tms_reference_no === dtl.fk_tms_reference_no)
+            return {
+                tms_reference_no: dtl.tms_reference_no,
+                fk_tms_reference_no: dtl.fk_tms_reference_no,
+                class_of_store: dtl.class_of_store,
+                draft_bill_type: 'SELL',
+                rdd: dtl.delivery_date,
+                revenue_leak_reason: 'TRANSACTION ERROR',
+                job_id: invoice.job_id,
+                is_draft_bill: 0,
+                trip_date: invoice.trip_date,
+                details: isRevLeak ? invoice.tranport_rev_leak_dtl_tbls : invoice.helios_invoices_dtl_tbls.filter(i => i.class_of_store === dtl.class_of_store)
+            }
+        }))
+    })
+    
+    return {
+        revenue_leak: leak_invoice,
+        draft_bill: draft_bill.filter(item => !leak_trip.map(l => l.trip_no+l.customer).includes(item.trip_no+item.customer)),
+    }
+    
+}
+
+const assignDraftBillNo = async(draft_bill = []) => {
+    let count = 1;
+
+    const generateDraftBillNo = ({count}) => {
+        return `R${moment().format('MMDDYY')}${String(count).padStart(5,"00000")}`
+    }
+
+    return draft_bill.map(item => {
+            
+        const {draft_bill_details,ship_from,ship_point,...header} = item
+        
+        const draft_bill_no =  generateDraftBillNo({count: count})
+        const draft_bill_invoice_tbl = draft_bill_details.map(detail => {
+            return {
+                ...detail,
+                draft_bill_no
+            }
+        })
+
+        count = count+=1
+
+        return {
+            ...header,
+            draft_bill_no,
+            draft_bill_date:moment().format('YYYY-MM-DD'),
+            stc_from: ship_from,
+            stc_to: ship_point,
+            details: draft_bill_invoice_tbl
+        }
+    })
+
+
+
+}
+
+const assignVendorGroup = async (invoices=[]) => {
+    const getVendorGroup = await models.vendor_group_dtl_tbl.findAll({
+        where:{
+            vg_vendor_status: 'ACTIVE'
+        }
+    })
+
+    return invoices.map(item => {
+        const vendor = getVendorGroup.find(a => a.vg_vendor_id === item.trucker_id && String(a.location).toLowerCase() === String(item.location).toLowerCase())
+        return {
+            ...item,
+            vg_code: vendor?.vg_code || null,
+            is_ic: vendor?.is_ic || 0
+        }
+    })
+}
+
+exports.podSell = async({
+    data = [],
+    from = null,
+    to = null
+}) => {
+    let draft_bill = [];
+    let revenue_leak = [];
+    let invoice = [];
+
+    const rawData = await groupByTripDate(data)
+    const contracts = await getContract({
+        from,
+        to,
+        contract_type:'SELL',
+        principal_code: _.uniq(data.map(item => item.principal_code))
+    })
+
+    for(let trip_date of Object.keys(rawData))
+    {
+        let raw = await formatByClassOfStore(rawData[trip_date])
+        raw = await getBillableInvoices(raw)
+        revenue_leak = revenue_leak.concat(raw.revenue_leak)
+
+        raw = await assignContract({ invoices: raw.data, contracts})
+        revenue_leak = revenue_leak.concat(raw.revenue_leak)
+        
+        raw = await assignTariff({invoices: raw.data, contracts, contract_type: 'SELL'})
+        revenue_leak = revenue_leak.concat(raw.revenue_leak)
+
+        const withAgg = await draftBillWithAgg({
+            invoices: raw.data,
+            contract_type:'SELL'
+        })
+
+        const withoutAgg = await draftBillWithoutAgg({
+            invoices: raw.data,
+            contract_type:'SELL'
+        })
+
+        draft_bill = invoice.concat(withAgg.data,withoutAgg.data)
+        revenue_leak = revenue_leak.concat(withAgg.revenue_leak, withoutAgg.revenue_leak)
+
+        raw = await sellValidation(draft_bill, revenue_leak,rawData[trip_date],false)
+        draft_bill = await assignDraftBillNo(raw.draft_bill)
+        revenue_leak = revenue_leak.concat(raw.revenue_leak)
+    }
+
+    return {
+        //invoice,
+        draft_bill,
+        revenue_leak
+    };
+}
+
+exports.podBuy = async({
+    data = [],
+    from = null,
+    to = null
+}) => {
+    let draft_bill = [];
+    let revenue_leak = [];
+    let invoice = [];
+
+    let assignVGroup = await assignVendorGroup(data);
+    const raw_data = await groupByTripDate(assignVGroup);
+    
+    const contracts = await getContract({
+        from,
+        to,
+        contract_type: 'BUY',
+        vendor_group: _.uniq(assignVGroup.map(item => item.vg_code))
+    })
+
+    for(let trip_date of Object.keys(raw_data)) {
+        let raw = await formatByClassOfStore(raw_data[trip_date])
+       
+        raw = await getBillableInvoices(raw)
+        revenue_leak = revenue_leak.concat(raw.revenue_leak)
+
+        raw = await assignContract({ invoices: raw.data, contracts})
+        revenue_leak = revenue_leak.concat(raw.revenue_leak)
+        
+        raw = await assignTariff({invoices: raw.data, contracts, contract_type: 'SELL'})
+        revenue_leak = revenue_leak.concat(raw.revenue_leak)
+
+
+        invoice = invoice.concat(raw.data)
+
+    }
+    
+    return {
+        invoice,
+        revenue_leak
+    }
+    //const rawData = await groupByTripDate(data)
+    
     
 }

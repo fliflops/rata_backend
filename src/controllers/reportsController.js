@@ -12,12 +12,18 @@ const _ = require('lodash');
 
 exports.createPodReport = async(req,res,next) => {
     try{
-        const data = await podReportService.getPodInvoices({
-            from: '',
-            to:''
+        const data = await podReportService.joinedInvoices({
+            from: '2024-02-01',
+            to:'2024-02-29'
         })
 
-        res.status(200).json(data)
+        const draftBill = await podReportService.podBuy({
+            data,
+            from: '2024-02-01',
+            to: '2024-02-29'
+        })
+
+        res.status(200).json(draftBill)
 
     }
     catch(e){
@@ -66,14 +72,15 @@ exports.createP2PReport = async(req,res,next) => {
     try{
        
         const filters = await reportService.generateFilter();
+        
         const draftBills = await reportService.getDraftBill({
             customer: '10005',
             service_type:'2003',
             updatedAt:{
                 [sequelize.Op.between]: [filters.from,filters.to]
             },
-            
         });
+
         await REPORT_P2P.add(null, {
             jobId:uuidv4(),
             removeOnFail:true,
