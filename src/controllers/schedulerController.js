@@ -223,3 +223,26 @@ exports.putEmail = async(req,res,next) => {
         next(e)
     }
 }
+
+
+// controllers for cron testing
+exports.cronTest = async(req,res,next) => {
+    try{
+        const { reportName } = req.query;
+
+        await Queue.REPORT_ACC_REVENUE.add({
+            isRepeatable: false,  
+        },
+        {
+            jobId:uuidv4(),
+            removeOnFail:true,
+            removeOnComplete:true
+        })
+
+        res.end();
+    }
+    catch(e){
+        next(e)
+    }
+
+}

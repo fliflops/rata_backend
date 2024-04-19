@@ -48,6 +48,12 @@ class vendor_group_dtl_tbl extends Model {
             sourceKey:'vg_code',
             foreignKey:'vg_code'
         })
+
+        this.vendor = this.hasOne(models.vendor_tbl,{
+            sourceKey:'vg_vendor_id',
+            foreignKey:'vendor_id',
+            as:'vendor_hdr'
+        })
     }
 }
 

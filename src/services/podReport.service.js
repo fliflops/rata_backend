@@ -5,9 +5,6 @@ const round = require('../helpers/round');
 const moment = require('moment');
 
 const _ = require('lodash');
-const { vendor_group } = require('../models/rata/helios_invoices_hdr_tbl');
-
-
 
 const getSum = (details,uom,field) => {
     return _.sumBy(details.filter(item => item.uom === uom), item => isNaN(parseFloat(item[field])) ? 0 : parseFloat(item[field]))
@@ -176,11 +173,14 @@ const getPodInvoices = async({from,to}) => {
         const invoiceDetails = details.filter(a => a.br_no === item.tms_reference_no);
         const ship_point_from = shipPoints.find(a => String(a.stc_code).toLowerCase() === String(item.stc_from).toLowerCase())
         const ship_point_to = shipPoints.find(a => String(a.stc_code).toLowerCase() === String(item.stc_to).toLowerCase())
+        const redel_remarks = String(item.invoice_no).split('|')
         return {
             ...item,
             is_billable: _.isNull(item.is_billable) ? 1 : item.is_billable,
             ship_point_from: ship_point_from ?? null,
             ship_point_to: ship_point_to ?? null,
+            invoice_no: redel_remarks[0],
+            redel_remarks: typeof redel_remarks[1] === 'undefined' ? null : redel_remarks[1],
             details: invoiceDetails,
         }
     })
@@ -189,7 +189,7 @@ const getPodInvoices = async({from,to}) => {
 const getContract = async ({
     from,
     to,
-    filter
+    ...filter
 }) => {
     return await models.contract_hdr_tbl.findAll({
         include:[
@@ -217,7 +217,6 @@ const getContract = async ({
                 ],
                 required:false,
                 where:{
-
                     status:'ACTIVE',
                     valid_from: {
                         [Sequelize.Op.lte]: from
@@ -229,38 +228,17 @@ const getContract = async ({
             }
         ],
         where:{
-            ...filter,
             contract_status:'APPROVED',
             valid_from: {
                 [Sequelize.Op.lte]: from
             },
             valid_to:{
                 [Sequelize.Op.gte]: to
-            }
+            },
+            ...filter
         }
     })
     .then(result=>JSON.parse(JSON.stringify(result)))
-}
-
-exports.joinedInvoices = async({from, to}) => {
-    const pod = await getPodInvoices({
-        from,
-        to
-    })
-
-    const kronos = await getKronosTrips(pod.map(item => item.trip_no))
-
-    return pod.map(item => {
-        const vehicleData = kronos.find(a => a.trip_log_id === item.trip_no)
-
-        return {
-            ...item,
-            trucker_id:     vehicleData?.trucker_id ?? null,
-            vehicle_type:   vehicleData?.vehicle_type ?? null,
-            vehicle_id:     vehicleData?.vehicle_id ?? null,
-            kronos_trip_status:    vehicleData?.trip_status ?? null
-        }
-    })
 }
 
 const groupByTripDate = async (data = []) => {
@@ -588,7 +566,6 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
     try{
         let data = [];
         let draft_bills = [];
-
         let revenue_leak = [];
 
         const aggData = invoices.filter(item => {
@@ -605,7 +582,7 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
         //Group the data per group id
         Object.keys(raw_group).map(group_id => {
             const groupedInvoice = raw_group[group_id];
-            const invoice = contract_type === 'SELL' ? groupedInvoice[0] : _.maxBy(groupedInvoice, i => i.tariff.tariff_rate)
+            const invoice = contract_type === 'SELL' ? groupedInvoice[0] : _.maxBy(groupedInvoice, i => Number(i.tariff.tariff_rate))
             const parameters = invoice.tariff.parameter ? invoice.tariff.parameter.split(',') : null
            
             let draft_bill_details = [];
@@ -648,6 +625,12 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                     ship_to:            item.stc_to,
                     remarks:            item.redel_remarks,
                     class_of_store:     item.class_of_store,
+                    planned_trucker:        item.planned_trucker,
+                    planned_vehicle_type:   item.planned_vehicle_type,
+                    planned_vehicle_id:     item.planned_vehicle_id,
+                    kronos_trip_status:     item.kronos_trip_status,
+                    br_status:              item.br_status,
+                    uom:                    details[0]?.uom ?? null,
                     planned_qty,
                     actual_qty,
                     actual_weight,  
@@ -680,9 +663,15 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                 min_billable_value: invoice.tariff.min_value,
                 max_billable_value: invoice.tariff.max_value,
                 min_billable_unit:  invoice.tariff.min_billable_unit,
+                conditions:         invoice.tariff.conditions,
+                tariff:             invoice.tariff,
+                planned_trucker:        invoice.planned_trucker,
+                planned_vehicle_type:   invoice.planned_vehicle_type,
+                planned_vehicle_id:     invoice.planned_vehicle_id,
+                kronos_trip_status:     invoice.kronos_trip_status,
+                sub_service_type:       invoice.sub_service_type,
+                vehicle_id:             invoice.vehicle_id,
                 parameters,
-                conditions: invoice.tariff.conditions,
-                tariff:     invoice.tariff,
                 draft_bill_details
             })
 
@@ -829,8 +818,6 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
             }
         });
 
-      
-
         withoutAggData.map(invoice => {
             const details = invoice.details;
             const planned_qty       = getSum(details,invoice.tariff.min_billable_unit,'planned_qty') 
@@ -841,6 +828,7 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
             const actual_weight     = _.sumBy(details, item => isNaN(Number(item.actual_weight)) ? 0 :  Number(item.actual_weight))
             const actual_cbm        = _.sumBy(details, item => isNaN(Number(item.actual_cbm)) ? 0 :     Number(item.actual_cbm))
             const return_qty        = _.sumBy(details, item => isNaN(Number(item.return_qty)) ? 0 :     Number(item.return_qty))
+            const uom               = details[0]?.uom ?? null; 
 
             let aggCondition = {
                 condition:null,
@@ -890,6 +878,12 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
                 min_billable_value: Number(invoice.tariff.min_value) || null,
                 max_billable_value: Number(invoice.tariff.max_value) || null,
                 min_billable_unit:  invoice.tariff.min_billable_unit,
+                planned_trucker:        invoice.planned_trucker,
+                planned_vehicle_type:   invoice.planned_vehicle_type,
+                planned_vehicle_id:     invoice.planned_vehicle_id,
+                kronos_trip_status:     invoice.kronos_trip_status,
+                sub_service_type:       invoice.sub_service_type,
+                vehicle_id:             invoice.vehicle_id,
                 ...aggCondition,
                 ...total_data,
                 total_charges,
@@ -921,6 +915,8 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
                         ship_to:            invoice.stc_to,
                         remarks:            invoice.redel_remarks,
                         class_of_store:     invoice.class_of_store,
+                        br_status:          invoice.br_status,
+                        uom,
                         planned_qty,
                         actual_qty,
                         actual_weight,  
@@ -964,16 +960,16 @@ const sellValidation = async(draft_bill=[], revenue_leak=[], invoices=[], isRevL
         leak_invoice = leak_invoice.concat(item.draft_bill_details.map(dtl => {
             const invoice = invoices.find(i => i.tms_reference_no === dtl.fk_tms_reference_no)
             return {
+                ...invoice,
                 tms_reference_no: dtl.tms_reference_no,
                 fk_tms_reference_no: dtl.fk_tms_reference_no,
                 class_of_store: dtl.class_of_store,
                 draft_bill_type: 'SELL',
                 rdd: dtl.delivery_date,
                 revenue_leak_reason: 'TRANSACTION ERROR',
-                job_id: invoice.job_id,
                 is_draft_bill: 0,
                 trip_date: invoice.trip_date,
-                details: isRevLeak ? invoice.tranport_rev_leak_dtl_tbls : invoice.helios_invoices_dtl_tbls.filter(i => i.class_of_store === dtl.class_of_store)
+                details: invoice.details.filter(i => i.class_of_store === dtl.class_of_store)
             }
         }))
     })
@@ -985,17 +981,16 @@ const sellValidation = async(draft_bill=[], revenue_leak=[], invoices=[], isRevL
     
 }
 
-const assignDraftBillNo = async(draft_bill = []) => {
-    let count = 1;
+const assignDraftBillNo = async(draft_bill = [], current=0) => {
+    let count = 1 + current;
 
     const generateDraftBillNo = ({count}) => {
         return `R${moment().format('MMDDYY')}${String(count).padStart(5,"00000")}`
     }
 
     return draft_bill.map(item => {
-            
-        const {draft_bill_details,ship_from,ship_point,...header} = item
         
+        const {draft_bill_details,ship_from,ship_point,...header} = item
         const draft_bill_no =  generateDraftBillNo({count: count})
         const draft_bill_invoice_tbl = draft_bill_details.map(detail => {
             return {
@@ -1022,6 +1017,12 @@ const assignDraftBillNo = async(draft_bill = []) => {
 
 const assignVendorGroup = async (invoices=[]) => {
     const getVendorGroup = await models.vendor_group_dtl_tbl.findAll({
+        include:[
+            {
+                model: models.vendor_tbl,
+                as: 'vendor_hdr'
+            }
+        ],
         where:{
             vg_vendor_status: 'ACTIVE'
         }
@@ -1031,8 +1032,292 @@ const assignVendorGroup = async (invoices=[]) => {
         const vendor = getVendorGroup.find(a => a.vg_vendor_id === item.trucker_id && String(a.location).toLowerCase() === String(item.location).toLowerCase())
         return {
             ...item,
-            vg_code: vendor?.vg_code || null,
-            is_ic: vendor?.is_ic || 0
+            vg_code: vendor ? vendor?.vg_code : null,
+            is_ic: vendor ? vendor.vendor_hdr?.is_ic : null
+        }
+    })
+}
+
+const draftBillIC = async({invoices}) => {
+    let data = [];
+    let revenue_leak = [];
+    const ic = invoices.filter(item => item.is_ic === 1);
+
+    const raw_group = await getGroupedInvoices({invoices:ic});
+
+    Object.keys(raw_group).map(group_id => {
+        const groupedInvoice = raw_group[group_id];
+        const invoice = groupedInvoice[0];
+        let draft_bill_details = [];
+        const tariffIC = invoice.tariff.tariff_ic;
+        let rates = [];
+        let total_charges = null;
+        
+        //compute the sum of items per invoice
+        groupedInvoice.map(item => {
+            const details = item.details;
+            
+            const planned_qty       = getSum(details,item.tariff.min_billable_unit,'planned_qty') 
+            const actual_qty        = getSum(details,item.tariff.min_billable_unit,'actual_qty')     
+            const ic_qty            = _.sumBy(details,item => {
+                if(item.uom === 'PIECE') {
+                    return 1
+                } 
+                return parseFloat(item.actual_qty)
+            })
+
+            const planned_weight    = _.sumBy(details, item => isNaN(parseFloat(item.planned_weight)) ? 0 : parseFloat(item.planned_weight))
+            const planned_cbm       = _.sumBy(details, item => isNaN(parseFloat(item.planned_cbm)) ? 0 : parseFloat(item.planned_cbm))
+            const actual_weight     = _.sumBy(details, item => isNaN(parseFloat(item.actual_weight)) ? 0 : parseFloat(item.actual_weight))
+            const actual_cbm        = _.sumBy(details, item => isNaN(parseFloat(item.actual_cbm)) ? 0 : parseFloat(item.actual_cbm))
+            const return_qty        = _.sumBy(details, item => isNaN(parseFloat(item.return_qty)) ? 0 : parseFloat(item.return_qty))
+
+            draft_bill_details.push({
+                draft_bill_no:      '',
+                tms_reference_no:   item.tms_reference_no,
+                fk_tms_reference_no:item.fk_tms_reference_no,
+                br_no:              item.br_no,
+                delivery_date:      item.rdd,
+                trip_date:          item.trip_date,
+                location:           item.location,
+                trip_plan:          item.trip_no,
+                shipment_manifest:  item.shipment_manifest,
+                dr_no:              item.dr_no,
+                invoice_no:         item.invoice_no,
+                delivery_status:    item.delivery_status,
+                vehicle_type:       item.vehicle_type,
+                tariff_id:          item.tariff.tariff_id,
+                contract_id:        item.contract_id,
+                service_type:       item.service_type,
+                sub_service_type:   item.sub_service_type,
+                min_billable_value: Number(item.tariff.min_value) || item.tariff.min_value,
+                max_billable_value: Number(item.tariff.max_value) || item.tariff.max_value,
+                min_billable_unit:  item.tariff.min_billable_unit,
+                from_geo_type:      invoice.tariff.from_geo_type,
+                ship_from:          item.stc_from,
+                to_geo_type:        invoice.tariff.to_geo_type,
+                ship_to:            item.stc_to,
+                remarks:            item.redel_remarks,
+                class_of_store:     item.class_of_store,
+                principal_code:     item.principal_code,
+                planned_qty,
+                actual_qty,
+                ic_qty,
+                actual_weight,  
+                actual_cbm, 
+                planned_qty,     
+                planned_weight,
+                planned_cbm,
+                return_qty     
+            })
+        })
+
+        //group invoices per stc
+        //sum ic qty per stc/drop
+        const groupByStc = _.groupBy(draft_bill_details,item => item.ship_to)
+        Object.keys(groupByStc).map(stc => {
+            const details = groupByStc[stc]
+            const total_ic_qty = _.sumBy(details,item => item.ic_qty)
+
+            tariffIC.filter(item => item.uom === details[0].min_billable_unit)
+            .filter(ic => total_ic_qty >= ic.min_value && total_ic_qty <= ic.max_value)
+            .map(item => {  
+                rates.push(parseFloat(item.rate))
+            })
+        })
+
+        //compute total charges
+        if(['L300','L300CV'].includes(invoice.vehicle_type)) {
+            /** 
+             * L300 Total Charges Computation
+             * 1. Sort the rates in descending order
+             * 2. Remove the first element from array
+             * 3. Add the base rate
+            */
+            const sorted = rates.sort().reverse()
+            sorted.shift();
+            total_charges = round(Number(invoice.tariff.tariff_rate) + _.sum(sorted),2)
+        }
+        else {
+            total_charges = round(_.sum(rates),2)
+        }
+
+        let total_weight  =round( _.sumBy(draft_bill_details, item => parseFloat(item.actual_weight)),2);
+        let total_cbm     =round( _.sumBy(draft_bill_details, item => parseFloat(item.actual_cbm)),2);
+        let total_qty     = round(_.sumBy(draft_bill_details, item => parseFloat(item.actual_qty)),2);
+
+        if(!total_charges || Number(total_charges) <= 0 || isNaN(parseFloat(total_charges)))  {
+            
+            revenue_leak = revenue_leak.concat(getInvalidTotalCharges({
+                invoices:invoices,
+                draft_bill_details,
+                total_charges
+            }))
+        }
+        else {
+            data.push({
+                draft_bill_no:      null,
+                draft_bill_date:    null,
+                contract_type:      'BUY',
+                service_type:       invoice.service_type,
+                trip_no:            invoice.trip_no,
+                contract_id:        invoice.contract_id,
+                tariff_id:          invoice.tariff.tariff_id,
+                customer:           invoice.principal_code,
+                vendor:             invoice.trucker_id,
+                location:           invoice.location,
+                ship_from:          invoice.stc_from,
+                ship_point:         invoice.stc_to,
+                delivery_date:      invoice.rdd,
+                trip_date:          invoice.trip_date,
+                rate:               invoice.tariff.tariff_rate,
+                min_rate:           invoice.tariff.min_rate,
+                total_charges,
+                vehicle_type:       invoice.vehicle_type,
+                min_billable_value: invoice.tariff.min_value,
+                max_billable_value: invoice.tariff.max_value,
+                min_billable_unit:  invoice.tariff.min_billable_unit,
+                total_cbm: isNaN(total_cbm) ? null : total_cbm,
+                total_qty: isNaN(total_qty) ? null : total_qty,
+                total_weight: isNaN(total_weight) ? null :total_weight,       
+                draft_bill_details,
+            })
+        }
+    })
+
+    return {
+        data,
+        revenue_leak
+    }
+}
+
+const draftBillCostAlloc = async(draft_bills=[], vehicleTypes = [], hasCostAlloc=[]) => {
+ 
+    return draft_bills.map(draft_bill => {
+        const isCostAlloc = hasCostAlloc.find(item => draft_bill.contract_type === item.draft_bill_type && draft_bill.service_type === item.service_type)
+        const vehicleType = vehicleTypes.find(item => item.vehicle_type === draft_bill.vehicle_type)
+        let cost_allocation_details = [];
+        
+        if(isCostAlloc) {
+            Object.keys(_.groupBy(draft_bill.details,'principal_code')).map(principal => {
+                const detail         = draft_bill.details.filter(item => principal === item.principal_code);
+                const total_cbm      = round(_.sum(detail.map(item => Number(item.actual_cbm))),2);
+                const total_cost     = draft_bill.total_charges;
+               
+                cost_allocation_details.push({
+                    draft_bill_no:      draft_bill.draft_bill_no,
+                    trip_no:            draft_bill.trip_no,
+                    service_type:       draft_bill.service_type,
+                    vendor_id:          draft_bill.vendor_id,
+                    principal_code:     principal,
+                    vehicle_type:       draft_bill.vehicle_type,
+                    vehicle_capacity:   vehicleType?.overall_volume,
+                    vendor_id:          draft_bill.vendor,
+                    total_cbm,
+                    total_cost
+                })
+            })
+
+            //CHECKING OF UTILIZATION SIZE
+            //total utilization size of cost allocation details
+            const totalCBM = _.sum(cost_allocation_details.map(item => item.total_cbm));
+            if(totalCBM >= vehicleType.overall_volume){
+                cost_allocation_details     = cost_allocation_details.map(item => {
+                    const allocation        = round((item.total_cbm / totalCBM) * 100, 2)
+                    const allocated_cost    = round((item.total_cbm / totalCBM) * item.total_cost, 2)
+                    return {
+                        ...item,
+                        allocation,
+                        allocated_cost
+                    }
+                })
+            }
+            else{
+                cost_allocation_details     = cost_allocation_details.map(item => {
+                    const allocation        = round((item.total_cbm / item.vehicle_capacity) * 100, 2)
+                    const allocated_cost    = round((item.total_cbm / item.vehicle_capacity) * item.total_cost, 2)
+                    return {
+                        ...item,
+                        allocation,
+                        allocated_cost
+                    }
+                })
+
+                //computation for default principal
+                const total_cbm  = vehicleType?.overall_volume - totalCBM;
+                const allocation = round((total_cbm / vehicleType?.overall_volume * 100), 2);
+                const allocated_cost = round((total_cbm / vehicleType?.overall_volume) * draft_bill.total_charges, 2);
+                cost_allocation_details = cost_allocation_details.concat([
+                        {
+                            draft_bill_no:      draft_bill.draft_bill_no,
+                            trip_no:            draft_bill.trip_no,
+                            service_type:       draft_bill.service_type,
+                            vendor_id:          draft_bill.vendor_id,
+                            principal_code:     '000',
+                            vehicle_type:       draft_bill.vehicle_type,
+                            vehicle_capacity:   vehicleType?.overall_volume,
+                            vendor_id:          draft_bill.vendor,
+                            total_cbm,          
+                            allocation,
+                            allocated_cost,
+                            total_cost:         draft_bill.total_charges
+                        }
+                    ])
+                }
+        }
+
+        return {
+            ...draft_bill,
+            cost_allocation_details 
+        }
+    })
+}
+
+const tripValidation = async(draft_bill=[], revenue_leak=[], invoices=[], isRevLeak = false) => {
+    let leak_invoice = [];
+    const leak_trip = draft_bill.filter(db => revenue_leak.filter(rl => rl.revenue_leak_reason !== 'NOT BILLABLE').map(rl => rl.trip_no).includes(db.trip_no))
+
+    leak_trip.map(item => {
+        leak_invoice = leak_invoice.concat(item.draft_bill_details.map(dtl => {
+            const invoice = invoices.find(i => i.tms_reference_no === dtl.fk_tms_reference_no)
+
+            return {
+                tms_reference_no: dtl.tms_reference_no,
+                fk_tms_reference_no: dtl.fk_tms_reference_no,
+                class_of_store: dtl.class_of_store,
+                draft_bill_type: 'BUY',
+                rdd: dtl.delivery_date,
+                revenue_leak_reason: 'TRANSACTION ERROR',
+                is_draft_bill: 0,
+                trip_date: invoice.trip_date,
+                details: invoice.details.filter(i => i.class_of_store === dtl.class_of_store)
+            }
+        }))
+    })
+    
+    return {
+        revenue_leak: leak_invoice,
+        draft_bill: draft_bill.filter(item => !leak_trip.map(l => l.trip_no).includes(item.trip_no)),
+    }
+}
+
+exports.joinedInvoices = async({from, to}) => {
+    const pod = await getPodInvoices({
+        from,
+        to
+    })
+
+    const kronos = await getKronosTrips(pod.map(item => item.trip_no))
+
+    return pod.map(item => {
+        const vehicleData = kronos.find(a => a.trip_log_id === item.trip_no)
+
+        return {
+            ...item,
+            trucker_id:             vehicleData?.trucker_id ?? null,
+            vehicle_type:           vehicleData?.vehicle_type ?? null,
+            vehicle_id:             vehicleData?.vehicle_id ?? null,
+            kronos_trip_status:     vehicleData?.trip_status ?? null
         }
     })
 }
@@ -1065,6 +1350,8 @@ exports.podSell = async({
         
         raw = await assignTariff({invoices: raw.data, contracts, contract_type: 'SELL'})
         revenue_leak = revenue_leak.concat(raw.revenue_leak)
+        
+        //draft_bill = draft_bill.concat(raw.data)
 
         const withAgg = await draftBillWithAgg({
             invoices: raw.data,
@@ -1076,16 +1363,15 @@ exports.podSell = async({
             contract_type:'SELL'
         })
 
-        draft_bill = invoice.concat(withAgg.data,withoutAgg.data)
+        invoice = invoice.concat(withAgg.data,withoutAgg.data)
         revenue_leak = revenue_leak.concat(withAgg.revenue_leak, withoutAgg.revenue_leak)
 
-        raw = await sellValidation(draft_bill, revenue_leak,rawData[trip_date],false)
-        draft_bill = await assignDraftBillNo(raw.draft_bill)
+        raw = await sellValidation(invoice, revenue_leak,data,false)
+        draft_bill = draft_bill.concat(await assignDraftBillNo(raw.draft_bill, draft_bill.length))
         revenue_leak = revenue_leak.concat(raw.revenue_leak)
     }
 
     return {
-        //invoice,
         draft_bill,
         revenue_leak
     };
@@ -1102,6 +1388,18 @@ exports.podBuy = async({
 
     let assignVGroup = await assignVendorGroup(data);
     const raw_data = await groupByTripDate(assignVGroup);
+
+    const vehicleTypes = await models.vehicle_types_tbl.findAll({
+        where:{
+            status:'ACTIVE'
+        }
+    }).then(result => JSON.parse(JSON.stringify(result)))
+
+    const hasCostAlloc = await models.cost_alloc_setup_tbl.findAll({
+        where:{
+            is_active:1
+        }
+    }).then(result => JSON.parse(JSON.stringify(result)))
     
     const contracts = await getContract({
         from,
@@ -1112,26 +1410,35 @@ exports.podBuy = async({
 
     for(let trip_date of Object.keys(raw_data)) {
         let raw = await formatByClassOfStore(raw_data[trip_date])
-       
+        let temp_draft_bill = [];
+
         raw = await getBillableInvoices(raw)
         revenue_leak = revenue_leak.concat(raw.revenue_leak)
 
         raw = await assignContract({ invoices: raw.data, contracts})
         revenue_leak = revenue_leak.concat(raw.revenue_leak)
-        
-        raw = await assignTariff({invoices: raw.data, contracts, contract_type: 'SELL'})
+
+        raw = await assignTariff({invoices: raw.data, contracts, contract_type: 'BUY'})
         revenue_leak = revenue_leak.concat(raw.revenue_leak)
 
+        const ic = await draftBillIC({invoices: raw.data})
+        const withAgg = await draftBillWithAgg({invoices: raw.data, contract_type: 'BUY'})
+        const withoutAgg =  await draftBillWithoutAgg({invoices: raw.data, contract_type:'BUY'})
 
-        invoice = invoice.concat(raw.data)
+        invoice = invoice.concat(ic.data, withAgg.data, withoutAgg.data)
+        revenue_leak = revenue_leak.concat(withAgg.revenue_leak,withoutAgg.revenue_leak, ic.revenue_leak)
+
+        raw = await tripValidation(invoice, revenue_leak, assignVGroup, false)
+        temp_draft_bill = temp_draft_bill.concat(await assignDraftBillNo(raw.draft_bill, draft_bill.length));
+        revenue_leak = revenue_leak.concat(raw.revenue_leak)
+
+        draft_bill = draft_bill.concat(await draftBillCostAlloc(temp_draft_bill, vehicleTypes, hasCostAlloc))
 
     }
-    
+   
     return {
-        invoice,
-        revenue_leak
-    }
-    //const rawData = await groupByTripDate(data)
-    
-    
+        draft_bill,
+        revenue_leak,
+        invoice
+    }   
 }
