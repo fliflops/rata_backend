@@ -9,6 +9,21 @@ module.exports = () => {
     REPORT_P2P.process(async (job, done) => {
         try{
             const filters = reportService.generateFilter();
+            const root = global.appRoot;
+            const fileName = moment().format('YYYYMMDDHHmmss')+'p2p.xlsx';
+            const filePath = path.join(root,'/assets/reports/pre-billing/',fileName);
+           
+
+            const isJobExists = await reportService.getReportLog({
+                id: job.id
+            })
+
+            if(isJobExists) {
+                return done(null,{
+                    filePath,
+                    fileName
+                });
+            }
 
             const report = await reportService.findReport({
                 report_name: 'p2p'
@@ -20,10 +35,6 @@ module.exports = () => {
                 report_status:'INPROGRESS',
             })
 
-            const root = global.appRoot;
-            const fileName = moment().format('YYYYMMDDHHmmss')+'p2p.xlsx';
-            const filePath = path.join(root,'/assets/reports/pre-billing/',fileName);
-           
             const draftBills = await reportService.getDraftBill({
                 customer: '10005',
                 service_type:'2003',

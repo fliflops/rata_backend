@@ -10,23 +10,31 @@ module.exports = () => {
     REPORT_CROSSDOCK.process(async (job, done) => {
         try{
             const filters = reportService.generateFilter();
+            const root = global.appRoot;
+            const fileName = moment().format('YYYYMMDDHHmmss')+'crossdock-secondary.xlsx';
+            const filePath = path.join(root,'/assets/reports/pre-billing/',fileName);
             
+            const isJobExists = await reportService.getReportLog({
+                id: job.id
+            })
+
+            if(isJobExists) {
+                return done(null,{
+                    filePath,
+                    fileName
+                });
+            }
 
             const report = await reportService.findReport({
                 report_name: 'crossdock_secondary'
             })
-
+    
             await reportService.createReportLog({
                 id: job.id,
                 report_id: report.id,
                 report_status:'INPROGRESS',
             })
 
-            
-            const root = global.appRoot;
-            const fileName = moment().format('YYYYMMDDHHmmss')+'crossdock-secondary.xlsx';
-            const filePath = path.join(root,'/assets/reports/pre-billing/',fileName);
-            
             const draftBills = await reportService.getDraftBill({
                 service_type: '2001',
                 updatedAt:{
@@ -34,7 +42,7 @@ module.exports = () => {
                 }
             });
 
-            const ascii = await asciiService.getSalesOrder(draftBills.map(item => item.draft_bill_no))
+            const ascii = await asciiService.getSalesOrder(draftBills.length === 0 ? '' :draftBills.map(item => item.draft_bill_no))
 
             await reportService.crossDockSecondary({
                 data: draftBills.filter(item => ascii.map(a => a.SO_CODE).includes(item.draft_bill_no)),

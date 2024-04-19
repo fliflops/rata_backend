@@ -1032,6 +1032,14 @@ exports.getReporHeader = async(query) => {
     }
 }
 
+exports.getReportLog = async(filter) => {
+    return await models.report_tbl.findOne({
+        where:{
+            ...filter
+        }
+    })
+}
+
 exports.findReport = async(filter) => {
     return await models.report_schedule_tbl.findOne({
         where:{

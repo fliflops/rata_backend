@@ -66,7 +66,8 @@ module.exports =  async () => {
                 cron: item.start_time_cron
             },
             removeOnFail:true,
-            removeOnComplete:true
+            removeOnComplete:true,
+            //lockDuration: 1200000
         })
     })
 
