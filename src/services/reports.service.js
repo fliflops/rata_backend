@@ -60,7 +60,7 @@ const getSubTotals = async (invoice = []) => {
             total_actual_cbm:       _.sum(data.map(item => item.actual_cbm)),
             total_cbm:              cbm_ambient + outer_cbm,
             charges_wo_mgv:         round(charges_wo_mgv,2),
-            charges_w_mgv:          charges_w_mgv,        
+            charges_w_mgv:          isNaN(charges_w_mgv) ? 0 : charges_w_mgv,        
             total_tons:             round(_.sum(data.map(item => Number(item.tons))),2),
             utilization,
             inner_cbm,

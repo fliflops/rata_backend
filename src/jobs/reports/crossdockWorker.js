@@ -19,10 +19,7 @@ module.exports = () => {
             })
 
             if(isJobExists) {
-                return done(null,{
-                    filePath,
-                    fileName
-                });
+                return done(null,null);
             }
 
             const report = await reportService.findReport({
@@ -33,6 +30,8 @@ module.exports = () => {
                 id: job.id,
                 report_id: report.id,
                 report_status:'INPROGRESS',
+                file_path: filePath,
+                file_name: fileName
             })
 
             const draftBills = await reportService.getDraftBill({
@@ -50,8 +49,8 @@ module.exports = () => {
                 filePath
             })
 
-            job.progress('completed')
-            done(null,{
+            await job.progress('completed')
+            return done(null,{
                 filePath,
                 fileName
             });
@@ -68,10 +67,10 @@ module.exports = () => {
             },
             data:{
                 report_status:'DONE',
-                file_path: job.returnvalue.filePath,
-                file_name: job.returnvalue.fileName
+                // file_path: job.returnvalue.filePath,
+                // file_name: job.returnvalue.fileName
             }
-        })
+        })    
     })
 
     REPORT_CROSSDOCK.on('failed', async(job,err) => {
