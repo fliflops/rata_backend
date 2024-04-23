@@ -287,7 +287,7 @@ exports.updateReport = async(req,res,next) => {
 
 exports.downloadReport = async(req,res,next) => {
     try{
-        const {filePath} = req.query;
+        const {filePath} = req.body;
         
         res.download(filePath)
     }
