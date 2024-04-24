@@ -59,7 +59,7 @@ module.exports = () => {
         }
 
         const root = global.appRoot;
-        const fileName = moment().format('YYYYMMDDHHmmss')+'revenue_accrual_report.xlsx'
+        const fileName = moment().format('YYYYMMDDHHmmss')+'expense_accrual_report.xlsx'
         const filePath = path.join( root,'/assets/reports/accrual/', fileName);
 
         await podReportExcelService.podAccrualTemplate(
