@@ -42,7 +42,7 @@ module.exports = () => {
                 }
             });
 
-            const ascii = await asciiService.getSalesOrder(draftBills.map(item => item.draft_bill_no))
+            const ascii = await asciiService.getSalesOrder(draftBills.length === 0 ? '' : draftBills.map(item => item.draft_bill_no))
 
             await reportService.p2p({
                 data: draftBills.filter(item => ascii.map(a => a.SO_CODE).includes(item.draft_bill_no)),
