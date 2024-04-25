@@ -50,9 +50,417 @@ const footer = (ws) => {
     }
 }
 
-const expenseColumns = [];
+const expenseColumns = [
+    {
+        header:'Accrued Bill Number',
+        key:'draft_bill_no'
+    },
+    {
+        header:'Trip Date',
+        key:'trip_date'
+    },
+    {
+        header:'Contract Type',
+        key:'contract_type'
+    },
+    {
+        header:'TMS Service Type Code',
+        key:'service_type'
+    },
+    {
+        header:'Location',
+        key:'location'
+    },
+    {
+        header:'Trip Number',
+        key:'trip_no'
+    },
+    {
+        header:'Kronos Trucker ID',
+        key:'vendor'
+    },
+    {
+        header:'Vehicle Type',
+        key:'vehicle_type'
+    },
+    {
+        header:'Planned Vehicle Type',
+        key:'planned_vehicle_type'
+    },
+    {
+        header:'Plate Number',
+        key:'vehicle_id'
+    },
+    {
+        header:'Kronos Trip Status',
+        key:'kronos_trip_status'
+    },
+    {
+        header:'Total Actual Quantity',
+        key:'total_qty'
+    },
+    {
+        header:'Total Actual Weight',
+        key:'total_weight'
+    },
+    {
+        header:'Total Actual CBM',
+        key:'total_cbm'
+    },
+    {
+        header:'Contract ID',
+        key:'contract_id'
+    },
+    {
+        header:'Tariff ID',
+        key:'tariff_id'
+    },
+    {
+        header:'Condition',
+        key:'condition'
+    },
+    {
+        header:'Formula',
+        key:'formula'
+    },
+    {
+        header:'Contracted Rate',
+        key:'rate'
+    },
+    {
+        header:`Accrued Expense`,
+        key:'total_charges'
+    }
+];
 
-const revenueColumns = [];
+const revenueColumns = [
+    {
+        header:'Accrued Bill Number',
+        key:'draft_bill_no'
+    },
+    {
+        header:'Trip Date',
+        key:'trip_date'
+    },
+    {
+        header:'Contract Type',
+        key:'contract_type'
+    },
+    {
+        header:'Ship From',
+        key:'stc_from'
+    },
+    {
+        header:'Ship To',
+        key:'stc_to'
+    },
+    {
+        header:'Principal Code',
+        key:'customer'
+    },
+    {
+        header:'TMS Service Type Code',
+        key:'service_type'
+    },
+    {
+        header:'Location',
+        key:'location'
+    },
+    {
+        header:'Trip Number',
+        key:'trip_no'
+    },
+    {
+        header:'Kronos Trucker ID',
+        key:'vendor'
+    },
+    {
+        header:'Vehicle Type',
+        key:'vehicle_type'
+    },
+    {
+        header:'Planned Vehicle Type',
+        key:'planned_vehicle_type'
+    },
+    {
+        header:'Plate Number',
+        key:'vehicle_id'
+    },
+    {
+        header:'Kronos Trip Status',
+        key:'kronos_trip_status'
+    },
+    {
+        header:'Sub Service Type',
+        key:'sub_service_type'
+    },
+    {
+        header:'Total Actual Quantity',
+        key:'total_qty'
+    },
+    {
+        header:'Total Actual Weight',
+        key:'total_weight'
+    },
+    {
+        header:'Total Actual CBM',
+        key:'total_cbm'
+    },
+    {
+        header:'Contract ID',
+        key:'contract_id'
+    },
+    {
+        header:'Tariff ID',
+        key:'tariff_id'
+    },
+    {
+        header:'Condition',
+        key:'condition'
+    },
+    {
+        header:'Formula',
+        key:'formula'
+    },
+    {
+        header:'Min. Billable Value',
+        key:'min_billable_value'
+    },
+    {
+        header:'Max. Billable Value',
+        key:'max_billable_value'
+    },
+    {
+        header:'MBU',
+        key:'min_billable_unit'
+    },
+    {
+        header:'Minimum Rate',
+        key:''
+    },
+    {
+        header:'Contracted Rate',
+        key:'rate'
+    },
+    {
+        header:`Accrued Revenue`,
+        key:'total_charges'
+    }
+];
+
+const expenseDetailColumns = [
+    {
+        header: 'Accrued Bill Number',
+        key:    'draft_bill_no'
+    },
+    {
+        header: 'FK TMS Reference Number',
+        key:    'fk_tms_reference_no'
+    },
+    {
+        header: 'TMS Reference Number',
+        key:    'tms_reference_no'
+    },
+    {
+        header: 'Trip Number',
+        key:    'trip_plan'
+    },
+    {
+        header: 'RDD',
+        key:    'delivery_date'
+    },
+    {
+        header: 'Principal Code',
+        key:'principal_code'
+    },
+    {
+        header: 'DR No',
+        key:    'dr_no'
+    },
+    {
+        header: 'Customer Invoice Number',
+        key:    'invoice_no'
+    },
+    {
+        header: 'Shipment Manifest',
+        key:    'shipment_manifest'
+    },
+    {
+        header: 'From Geo Type',
+        key:    'from_geo_type'
+    },
+    {
+        header: 'Ship From',
+        key:    'ship_from'
+    },
+    {
+        header: 'To Geo Type',
+        key:    'to_geo_type'
+    },
+    {
+        header: 'Ship To',
+        key:    'ship_to'
+    },
+    {
+        header: 'Delivery Status',
+        key:    'delivery_status'
+    },
+    {
+        header: 'BR Status',
+        key:    'br_status'
+    },
+    {
+        header:'RUD Status',
+        key:'rud_status'
+    },
+    {
+        header: 'Planned Qty',
+        key:    'planned_qty'
+    },
+    {
+        header: 'Planned Weight',
+        key:    'planned_weight'
+    },
+    {
+        header: 'Planned CBM',
+        key:    'planned_cbm'
+    },
+    {
+        header: 'Actual Quantity',
+        key:    'actual_qty'
+    },
+    {
+        header: 'Quantity UOM',
+        key:    'uom'
+    },
+    {
+        header: 'Actual Weight',
+        key:    'actual_weight'
+    },
+    {
+        header: 'Actual CBM',
+        key:    'actual_cbm'
+    },
+    {
+        header: 'Return Qty',
+        key:    'return_qty'
+    },
+    {
+        header: 'Class Of Store',
+        key:    'class_of_store'
+    },
+    {
+        header: `Accrued Expense Breakdown`,
+        key:    'billing'
+    }
+]
+
+const revenueDetailColumns = [
+    {
+        header: 'Accrued Bill Number',
+        key:    'draft_bill_no'
+    },
+    {
+        header: 'FK TMS Reference Number',
+        key:    'fk_tms_reference_no'
+    },
+    {
+        header: 'TMS Reference Number',
+        key:    'tms_reference_no'
+    },
+    {
+        header: 'Trip Number',
+        key:    'trip_plan'
+    },
+    {
+        header: 'RDD',
+        key:    'delivery_date'
+    },
+    {
+        header: 'Principal Code',
+        key:'principal_code'
+    },
+    {
+        header: 'DR No',
+        key:    'dr_no'
+    },
+    {
+        header: 'Customer Invoice Number',
+        key:    'invoice_no'
+    },
+    {
+        header: 'Shipment Manifest',
+        key:    'shipment_manifest'
+    },
+    {
+        header: 'From Geo Type',
+        key:    'from_geo_type'
+    },
+    {
+        header: 'Ship From',
+        key:    'ship_from'
+    },
+    {
+        header: 'To Geo Type',
+        key:    'to_geo_type'
+    },
+    {
+        header: 'Ship To',
+        key:    'ship_to'
+    },
+    {
+        header: 'Delivery Status',
+        key:    'delivery_status'
+    },
+    {
+        header: 'BR Status',
+        key:    'br_status'
+    },
+    {
+        header:'RUD Status',
+        key:'rud_status'
+    },
+    {
+        header: 'Planned Qty',
+        key:    'planned_qty'
+    },
+    {
+        header: 'Planned Weight',
+        key:    'planned_weight'
+    },
+    {
+        header: 'Planned CBM',
+        key:    'planned_cbm'
+    },
+    {
+        header: 'Actual Quantity',
+        key:    'actual_qty'
+    },
+    {
+        header: 'Quantity UOM',
+        key:    'uom'
+    },
+    {
+        header: 'Actual Weight',
+        key:    'actual_weight'
+    },
+    {
+        header: 'Actual CBM',
+        key:    'actual_cbm'
+    },
+    {
+        header: 'Return Qty',
+        key:    'return_qty'
+    },
+    {
+        header: 'Class Of Store',
+        key:    'class_of_store'
+    },
+    {
+        header: `Accrued Revenue Breakdown`,
+        key:    'billing'
+    }
+]
 
 exports.podAccrualTemplate = async({
     header=[],details=[],leak_header=[],leak_details=[],filePath=null,type=null, from=null, to=null
@@ -86,120 +494,7 @@ exports.podAccrualTemplate = async({
         fgColor:{argb:'000000'},
     }
     
-    const columns = [
-        {
-            header:'Accrued Bill Number',
-            key:'draft_bill_no'
-        },
-        {
-            header:'Trip Date',
-            key:'trip_date'
-        },
-        {
-            header:'Contract Type',
-            key:'contract_type'
-        },
-        {
-            header:'Ship From',
-            key:'stc_from'
-        },
-        {
-            header:'Ship To',
-            key:'stc_to'
-        },
-        {
-            header:'Principal Code',
-            key:'customer'
-        },
-        {
-            header:'TMS Service Type Code',
-            key:'service_type'
-        },
-        {
-            header:'Location',
-            key:'location'
-        },
-        {
-            header:'Trip Number',
-            key:'trip_no'
-        },
-        {
-            header:'Kronos Trucker ID',
-            key:'vendor'
-        },
-        {
-            header:'Vehicle Type',
-            key:'vehicle_type'
-        },
-        {
-            header:'Planned Vehicle Type',
-            key:'planned_vehicle_type'
-        },
-        {
-            header:'Plate Number',
-            key:'vehicle_id'
-        },
-        {
-            header:'Kronos Trip Status',
-            key:'kronos_trip_status'
-        },
-        {
-            header:'Sub Service Type',
-            key:'sub_service_type'
-        },
-        {
-            header:'Total Actual Quantity',
-            key:'total_qty'
-        },
-        {
-            header:'Total Actual Weight',
-            key:'total_weight'
-        },
-        {
-            header:'Total Actual CBM',
-            key:'total_cbm'
-        },
-        {
-            header:'Contract ID',
-            key:'contract_id'
-        },
-        {
-            header:'Tariff ID',
-            key:'tariff_id'
-        },
-        {
-            header:'Condition',
-            key:'condition'
-        },
-        {
-            header:'Formula',
-            key:'formula'
-        },
-        {
-            header:'Min. Billable Value',
-            key:'min_billable_value'
-        },
-        {
-            header:'Max. Billable Value',
-            key:'max_billable_value'
-        },
-        {
-            header:'MBU',
-            key:'min_billable_unit'
-        },
-        {
-            header:'Minimum Rate',
-            key:''
-        },
-        {
-            header:'Contracted Rate',
-            key:'rate'
-        },
-        {
-            header:`Accrued ${type==='BUY' ? 'Expense': 'Revenue'}`,
-            key:'total_charges'
-        }
-    ]
+    const columns = type ==='BUY' ? expenseColumns: revenueColumns
 
     headerWs.getRow(8).values = columns.map(item => item.header);
     columns.forEach((item, index) => {
@@ -235,104 +530,7 @@ exports.podAccrualTemplate = async({
         fgColor:{argb:'000000'},
     }
 
-    const detailColumns = [
-        {
-            header: 'Accrued Bill Number',
-            key:    'draft_bill_no'
-        },
-        {
-            header: 'FK TMS Reference Number',
-            key:    'fk_tms_reference_no'
-        },
-        {
-            header: 'TMS Reference Number',
-            key:    'tms_reference_no'
-        },
-        {
-            header: 'Trip Number',
-            key:    'trip_plan'
-        },
-        {
-            header: 'RDD',
-            key:    'delivery_date'
-        },
-        {
-            header: 'DR No',
-            key:    'dr_no'
-        },
-        {
-            header: 'Customer Invoice Number',
-            key:    'invoice_no'
-        },
-        {
-            header: 'Shipment Manifest',
-            key:    'shipment_manifest'
-        },
-        {
-            header: 'From Geo Type',
-            key:    'from_geo_type'
-        },
-        {
-            header: 'Ship From',
-            key:    'ship_from'
-        },
-        {
-            header: 'To Geo Type',
-            key:    'to_geo_type'
-        },
-        {
-            header: 'Ship To',
-            key:    'ship_to'
-        },
-        {
-            header: 'Delivery Status',
-            key:    'delivery_status'
-        },
-        {
-            header: 'BR Status',
-            key:    'br_status'
-        },
-        {
-            header: 'Planned Qty',
-            key:    'planned_qty'
-        },
-        {
-            header: 'Planned Weight',
-            key:    'planned_weight'
-        },
-        {
-            header: 'Planned CBM',
-            key:    'planned_cbm'
-        },
-        {
-            header: 'Actual Quantity',
-            key:    'actual_qty'
-        },
-        {
-            header: 'Quantity UOM',
-            key:    'uom'
-        },
-        {
-            header: 'Actual Weight',
-            key:    'actual_weight'
-        },
-        {
-            header: 'Actual CBM',
-            key:    'actual_cbm'
-        },
-        {
-            header: 'Return Qty',
-            key:    'return_qty'
-        },
-        {
-            header: 'Class Of Store',
-            key:    'class_of_store'
-        },
-        {
-            header: `Accrued ${type==='BUY' ? 'Expense': 'Revenue'} Breakdown`,
-            key:    'billing'
-        }
-    ]
+    const detailColumns = type === 'BUY' ? expenseDetailColumns : revenueDetailColumns;
 
     detailWs.getRow(8).values = detailColumns.map(item => item.header);
     detailColumns.forEach((item, index) => {

@@ -52,7 +52,7 @@ exports.createPodReport = async(req,res,next) => {
         }
 
         const root = global.appRoot;
-        const fileName = moment().format('YYYYMMDDHHmmss')+'expense_accrual_report.xlsx'
+        const fileName = moment().format('YYYYMMDDHHmmss')+'revenue_accrual_report.xlsx'
         const filePath = path.join( root,'/assets/reports/accrual/', fileName);
 
         await podReportExcelService.podAccrualTemplate({
@@ -114,7 +114,7 @@ exports.createPodReportBuy = async(req,res,next) => {
         }
 
         const root = global.appRoot;
-        const fileName = moment().format('YYYYMMDDHHmmss')+'revenue_accrual_report.xlsx'
+        const fileName = moment().format('YYYYMMDDHHmmss')+'expense_accrual_report.xlsx'
         const filePath = path.join( root,'/assets/reports/accrual/', fileName);
 
         await podReportExcelService.podAccrualTemplate(
@@ -124,9 +124,9 @@ exports.createPodReportBuy = async(req,res,next) => {
                 leak_header:    leak_header,
                 leak_details:   leak_details,
                 filePath,
-                type:'BUY',
-                from: moment(from).format('MMMM DD, YYYY'),
-                to:moment(to).format('MMMM DD, YYYY'),
+                type:           'BUY',
+                from:           moment(from).format('MMMM DD, YYYY'),
+                to:             moment(to).format('MMMM DD, YYYY'),
             }
         )
         res.status(200).json(draftBill)
