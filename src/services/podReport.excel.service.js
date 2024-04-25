@@ -25,13 +25,14 @@ const getColumnLetter = (index) => {
 
 const footer = (ws) => {
     const foo1 = ws.getCell(getColumnLetter(ws.actualColumnCount - 1)+(ws.rowCount + 2))
-    foo1.value = `Report Generation Date: ${moment().format('MMMM DD, YYYY - h:mm:ss a')}`;
+    const date = moment();
+    foo1.value = `Report Generation Date: ${date.format('MMMM DD, YYYY - h:mm:ss a')}`;
     foo1.alignment = {
         horizontal: 'right'
     }
 
     const foo2 = ws.getCell(getColumnLetter(ws.actualColumnCount - 1)+(ws.rowCount + 1))
-    foo2.value = `Reported Printed By: RATA${moment().format('MMDDYYYYHHMMSSsss')}`;
+    foo2.value = `Reported Printed By: RATA${date.format('MMDDYYYYHHmmSSsss')}`;
     foo2.alignment = {
         horizontal: 'right'
     }
@@ -48,6 +49,10 @@ const footer = (ws) => {
         horizontal: 'right'
     }
 }
+
+const expenseColumns = [];
+
+const revenueColumns = [];
 
 exports.podAccrualTemplate = async({
     header=[],details=[],leak_header=[],leak_details=[],filePath=null,type=null, from=null, to=null
@@ -372,10 +377,6 @@ exports.podAccrualTemplate = async({
             header:'revenue_leak_reason',
             key:'revenue_leak_reason'
         },
-        // {
-        //     header:'is_draft_bill',
-        //     key:''
-        // },
         {
             header:'trip_no',
             key:'trip_no'
@@ -488,6 +489,10 @@ exports.podAccrualTemplate = async({
         {
             header:'Quantity UOM',
             key:'uom'
+        },
+        {
+            header:'RUD Status',
+            key:'rud_status'
         },
         {
             header:'planned_qty',

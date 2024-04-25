@@ -107,7 +107,7 @@ const getPodInvoices = async({from,to}) => {
         }
     })
     .then(result => {
-        return result.filter(item => item.rud_status !== 'CLEARED' || item.br_status !=='VERIFIED_COMPLETE')
+        return result.filter(item => item.rud_status !== 'CLEARED' && item.br_status !=='VERIFIED_COMPLETE')
     })
 
     const details = await pod.query(`
@@ -354,7 +354,6 @@ const assignContract = async({invoices, contracts}) => {
         revenue_leak
     }
 }
-
 
 const getTariffs = async({contracts}) => {
     let tariffs = [];
@@ -985,7 +984,7 @@ const assignDraftBillNo = async(draft_bill = [], current=0) => {
     let count = 1 + current;
 
     const generateDraftBillNo = ({count}) => {
-        return `R${moment().format('MMDDYY')}${String(count).padStart(5,"00000")}`
+        return `B${moment().format('MMDDYY')}${String(count).padStart(5,"00000")}`
     }
 
     return draft_bill.map(item => {
