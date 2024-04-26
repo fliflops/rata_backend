@@ -1367,17 +1367,18 @@ exports.podSell = async({
             contract_type:'SELL'
         })
 
-        invoice = invoice.concat(withAgg.data,withoutAgg.data)
+        //raw = [].concat(withAgg.data,withoutAgg.data)
         revenue_leak = revenue_leak.concat(withAgg.revenue_leak, withoutAgg.revenue_leak)
 
-        raw = await sellValidation(invoice, revenue_leak,data,false)
+        raw = await sellValidation([].concat(withAgg.data,withoutAgg.data), revenue_leak,data,false)
         draft_bill = draft_bill.concat(await assignDraftBillNo(raw.draft_bill, draft_bill.length))
         revenue_leak = revenue_leak.concat(raw.revenue_leak)
     }
 
     return {
         draft_bill,
-        revenue_leak
+        revenue_leak,
+        invoice
     };
 }
 
@@ -1429,10 +1430,10 @@ exports.podBuy = async({
         const withAgg = await draftBillWithAgg({invoices: raw.data, contract_type: 'BUY'})
         const withoutAgg =  await draftBillWithoutAgg({invoices: raw.data, contract_type:'BUY'})
 
-        invoice = invoice.concat(ic.data, withAgg.data, withoutAgg.data)
+        
         revenue_leak = revenue_leak.concat(withAgg.revenue_leak,withoutAgg.revenue_leak, ic.revenue_leak)
 
-        raw = await tripValidation(invoice, revenue_leak, assignVGroup, false)
+        raw = await tripValidation([].concat(ic.data, withAgg.data, withoutAgg.data), revenue_leak, assignVGroup, false)
         temp_draft_bill = temp_draft_bill.concat(await assignDraftBillNo(raw.draft_bill, draft_bill.length));
         revenue_leak = revenue_leak.concat(raw.revenue_leak)
 

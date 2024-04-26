@@ -20,8 +20,8 @@ exports.createPodReport = async(req,res,next) => {
         let leak_header = [];
         let leak_details = [];
 
-        const from = '2024-02-01'
-        const to = '2024-02-15'
+        const from = '2024-04-01'
+        const to = '2024-04-15'
 
         const data = await podReportService.joinedInvoices({
             from,
@@ -81,9 +81,8 @@ exports.createPodReportBuy = async(req,res,next) => {
         let leak_header = [];
         let leak_details = [];
 
-        const from = '2024-02-01'
-        const to = '2024-02-15'
-
+        const from = '2024-04-01'
+        const to = '2024-04-15'
         const data = await podReportService.joinedInvoices({
             from,
             to
