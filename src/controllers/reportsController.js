@@ -65,7 +65,7 @@ exports.createPodReport = async(req,res,next) => {
             from: moment(from).format('MMMM DD, YYYY'),
             to:moment(to).format('MMMM DD, YYYY'),
         })
-        res.status(200).json(data)
+        res.status(200).json(draftBill)
 
     }
     catch(e){

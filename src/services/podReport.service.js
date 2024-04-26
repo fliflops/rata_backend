@@ -591,7 +591,7 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
             //compute the sum of items per invoice
             groupedInvoice.map(item => {
                 const details = item.details;
-                const planned_qty       = _.sum(details.map(d => isNaN(Number(d.planned_qty)))           ? 0 : Number(d.planned_qty)) 
+                const planned_qty       = _.sum(details.map(d => isNaN(Number(d.planned_qty))           ? 0 : Number(d.planned_qty))) 
                 const actual_qty        = _.sum(details.map(d => isNaN(Number(d.actual_qty))             ? 0 : Number(d.actual_qty)))    
                 const planned_weight    = _.sumBy(details,item => isNaN(parseFloat(item.planned_weight)) ? 0 : parseFloat(item.planned_weight))
                 const planned_cbm       = _.sumBy(details,item => isNaN(parseFloat(item.planned_cbm))    ? 0 :   parseFloat(item.planned_cbm))
