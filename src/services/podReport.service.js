@@ -106,7 +106,12 @@ const getPodInvoices = async({from,to}) => {
         }
     })
     .then(result => {
-        return result.filter(item => item.rud_status !== 'CLEARED' && item.br_status !=='VERIFIED_COMPLETE')
+        return result.map(item => ({
+            ...item,
+            status: item.br_status+'_'+item.rud_status
+        }))
+       // .filter(item => item.rud_status !== 'CLEARED' && item.br_status !=='VERIFIED_COMPLETE')
+        .filter(item => item.status !== 'VERIFIED_COMPLETE_CLEARED')
     })
 
     const details = await pod.query(`
@@ -1391,6 +1396,7 @@ exports.podBuy = async({
     let revenue_leak = [];
     let invoice = [];
 
+
     let assignVGroup = await assignVendorGroup(data);
     const raw_data = await groupByTripDate(assignVGroup);
 
@@ -1415,7 +1421,9 @@ exports.podBuy = async({
 
     for(let trip_date of Object.keys(raw_data)) {
         let raw = await formatByClassOfStore(raw_data[trip_date])
-        let temp_draft_bill = [];
+        let temp_draft_bill = [];   
+
+        invoice = invoice.concat(raw_data[trip_date])
 
         raw = await getBillableInvoices(raw)
         revenue_leak = revenue_leak.concat(raw.revenue_leak)
@@ -1429,8 +1437,7 @@ exports.podBuy = async({
         const ic = await draftBillIC({invoices: raw.data})
         const withAgg = await draftBillWithAgg({invoices: raw.data, contract_type: 'BUY'})
         const withoutAgg =  await draftBillWithoutAgg({invoices: raw.data, contract_type:'BUY'})
-
-        
+ 
         revenue_leak = revenue_leak.concat(withAgg.revenue_leak,withoutAgg.revenue_leak, ic.revenue_leak)
 
         raw = await tripValidation([].concat(ic.data, withAgg.data, withoutAgg.data), revenue_leak, assignVGroup, false)
