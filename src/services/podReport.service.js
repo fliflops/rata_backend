@@ -285,9 +285,9 @@ const formatByClassOfStore = async (invoices) => {
 
 const getBillableInvoices = async(invoices) => {
     let revenue_leak = [];
-    const data = invoices.filter(item => item.is_billable === 1 && item.ship_point_from && item.ship_point_to)
+    const data = invoices.filter(item => (item.is_billable === 1 || item.is_billable) && item.ship_point_from && item.ship_point_to)
    
-    const notBillable = invoices.filter(item => item.is_billable === 0)
+    const notBillable = invoices.filter(item => !item.is_billable)
     .map(item => {
         const {ship_point_from,ship_point_to,...header} = item;
         
@@ -297,8 +297,6 @@ const getBillableInvoices = async(invoices) => {
         }
     });
 
-    revenue_leak = revenue_leak.concat(notBillable);
-
     const noShipPoint = invoices.filter(item => !(item.ship_point_to && item.ship_point_from)).map(item => {
         const {ship_point_from,ship_point_to,...header} = item;
         return {
@@ -307,7 +305,7 @@ const getBillableInvoices = async(invoices) => {
         }
     });
 
-    revenue_leak = revenue_leak.concat(noShipPoint);
+    revenue_leak = revenue_leak.concat(noShipPoint,notBillable);
 
     return {
         data,
@@ -1421,30 +1419,33 @@ exports.podBuy = async({
 
     for(let trip_date of Object.keys(raw_data)) {
         let raw = await formatByClassOfStore(raw_data[trip_date])
-        let temp_draft_bill = [];   
+        let temp_draft_bill = []; 
+        let temp_rev_leak  = [];
 
-        invoice = invoice.concat(raw_data[trip_date])
+        //invoice = invoice.concat(raw_data[trip_date])
 
         raw = await getBillableInvoices(raw)
-        revenue_leak = revenue_leak.concat(raw.revenue_leak)
+        temp_rev_leak = temp_rev_leak.concat(raw.revenue_leak)
+
+        invoice = invoice.concat(raw.data)
 
         raw = await assignContract({ invoices: raw.data, contracts})
-        revenue_leak = revenue_leak.concat(raw.revenue_leak)
+        temp_rev_leak = temp_rev_leak.concat(raw.revenue_leak)
 
         raw = await assignTariff({invoices: raw.data, contracts, contract_type: 'BUY'})
-        revenue_leak = revenue_leak.concat(raw.revenue_leak)
+        temp_rev_leak = temp_rev_leak.concat(raw.revenue_leak)
 
         const ic = await draftBillIC({invoices: raw.data})
         const withAgg = await draftBillWithAgg({invoices: raw.data, contract_type: 'BUY'})
         const withoutAgg =  await draftBillWithoutAgg({invoices: raw.data, contract_type:'BUY'})
  
-        revenue_leak = revenue_leak.concat(withAgg.revenue_leak,withoutAgg.revenue_leak, ic.revenue_leak)
+        temp_rev_leak = temp_rev_leak.concat(withAgg.revenue_leak,withoutAgg.revenue_leak, ic.revenue_leak)
 
-        raw = await tripValidation([].concat(ic.data, withAgg.data, withoutAgg.data), revenue_leak, assignVGroup, false)
-        temp_draft_bill = temp_draft_bill.concat(await assignDraftBillNo(raw.draft_bill, draft_bill.length));
-        revenue_leak = revenue_leak.concat(raw.revenue_leak)
+        raw = await tripValidation([].concat(ic.data, withAgg.data, withoutAgg.data), temp_rev_leak, assignVGroup, false)
+        draft_bill = draft_bill.concat(await assignDraftBillNo(raw.draft_bill, draft_bill.length));
+        revenue_leak = revenue_leak.concat(temp_rev_leak,raw.revenue_leak)
 
-        draft_bill = draft_bill.concat(await draftBillCostAlloc(temp_draft_bill, vehicleTypes, hasCostAlloc))
+        //draft_bill = //draft_bill.concat(await draftBillCostAlloc(temp_draft_bill, vehicleTypes, hasCostAlloc))
 
     }
    

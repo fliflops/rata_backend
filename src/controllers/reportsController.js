@@ -89,47 +89,47 @@ exports.createPodReportBuy = async(req,res,next) => {
             to
         })
 
-        // const draftBill = await podReportService.podBuy({
-        //     data,
-        //     from,
-        //     to
-        // })
+        const draftBill = await podReportService.podBuy({
+            data: data.filter(item => item.tms_reference_no === 'BR002218422'),
+            from,
+            to
+        })
 
         
-        // for(let {details,...db} of  draftBill.draft_bill){
-        //     draft_bill_header.push(db)
-        //     draft_bill_details = draft_bill_details.concat(details)
-        // }
+        for(let {details,...db} of  draftBill.draft_bill){
+            draft_bill_header.push(db)
+            draft_bill_details = draft_bill_details.concat(details)
+        }
         
-        // for(let {details,...leak} of  draftBill.revenue_leak){
-        //     leak_header.push({
-        //         ...leak,
-        //         draft_bill_type:'BUY',
-        //     })
-        //     leak_details = leak_details.concat(details.map(items => ({
-        //         ...items,
-        //         class_of_store: leak.class_of_store,
-        //         draft_bill_type:'BUY'
-        //     })))
-        // }
+        for(let {details,...leak} of  draftBill.revenue_leak){
+            leak_header.push({
+                ...leak,
+                draft_bill_type:'BUY',
+            })
+            leak_details = leak_details.concat(details.map(items => ({
+                ...items,
+                class_of_store: leak.class_of_store,
+                draft_bill_type:'BUY'
+            })))
+        }
 
-        // const root = global.appRoot;
-        // const fileName = moment().format('YYYYMMDDHHmmss')+'expense_accrual_report.xlsx'
-        // const filePath = path.join( root,'/assets/reports/accrual/', fileName);
+        const root = global.appRoot;
+        const fileName = moment().format('YYYYMMDDHHmmss')+'expense_accrual_report.xlsx'
+        const filePath = path.join( root,'/assets/reports/accrual/', fileName);
 
-        // await podReportExcelService.podAccrualTemplate(
-        //     {
-        //         header:         draft_bill_header,
-        //         details:        draft_bill_details,
-        //         leak_header:    leak_header,
-        //         leak_details:   leak_details,
-        //         filePath,
-        //         type:           'BUY',
-        //         from:           moment(from).format('MMMM DD, YYYY'),
-        //         to:             moment(to).format('MMMM DD, YYYY'),
-        //     }
-        // )
-        res.status(200).json(data)
+        await podReportExcelService.podAccrualTemplate(
+            {
+                header:         draft_bill_header,
+                details:        draft_bill_details,
+                leak_header:    leak_header,
+                leak_details:   leak_details,
+                filePath,
+                type:           'BUY',
+                from:           moment(from).format('MMMM DD, YYYY'),
+                to:             moment(to).format('MMMM DD, YYYY'),
+            }
+        )
+        res.status(200).json(draftBill)
     }
     catch(e){
         next(e)
