@@ -638,7 +638,6 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                     actual_qty,
                     actual_weight,  
                     actual_cbm, 
-                    planned_qty,     
                     planned_weight,
                     planned_cbm,
                     return_qty     
@@ -823,7 +822,7 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
 
         withoutAggData.map(invoice => {
             const details = invoice.details;
-            const planned_qty       = getSum(details,invoice.tariff.min_billable_unit,'planned_qty') 
+            const planned_qty       = _.sumBy(details,'planned_qty') 
             const actual_qty        = getSum(details,invoice.tariff.min_billable_unit,'actual_qty')     
          
             const planned_weight    = _.sumBy(details, item => isNaN(Number(item.planned_weight)) ? 0 : Number(item.planned_weight))
@@ -925,8 +924,7 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
                         planned_qty,
                         actual_qty,
                         actual_weight,  
-                        actual_cbm, 
-                        planned_qty,     
+                        actual_cbm,     
                         planned_weight,
                         planned_cbm,
                         return_qty,
@@ -1062,7 +1060,7 @@ const draftBillIC = async({invoices}) => {
         groupedInvoice.map(item => {
             const details = item.details;
             
-            const planned_qty       = getSum(details,item.tariff.min_billable_unit,'planned_qty') 
+            const planned_qty       = _.sumBy(details,'planned_qty') 
             const actual_qty        = getSum(details,item.tariff.min_billable_unit,'actual_qty')     
             const ic_qty            = _.sumBy(details,item => {
                 if(item.uom === 'PIECE') {
@@ -1112,7 +1110,6 @@ const draftBillIC = async({invoices}) => {
                 ic_qty,
                 actual_weight,  
                 actual_cbm, 
-                planned_qty,     
                 planned_weight,
                 planned_cbm,
                 return_qty     

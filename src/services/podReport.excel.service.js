@@ -477,8 +477,8 @@ exports.podAccrualTemplate = async({
     headerWs.addImage(kliLogo, 'P2:R4');
     headerWs.getCell('A5').value = `Period Covered:`
     headerWs.getCell('B5').value = `From  ${from} to ${to}`
-
-    headerWs.mergeCells('A7:AB7')
+    //'A7:AB7'
+    headerWs.mergeCells(type === 'SELL' ? 'A7:AB7' : 'A7:T7')
     headerWs.getCell('A7').value = `Monthly ${type==='BUY' ? 'Expense': 'Revenue'} Accrual for Delivered but Pending POD Clearance Report`
     headerWs.getCell('A7').alignment =  { vertical: 'middle', horizontal: 'center' };
     headerWs.getCell('A7').font = {
@@ -514,7 +514,7 @@ exports.podAccrualTemplate = async({
     detailWs.getCell('A5').value = 'Period Covered:'
     detailWs.getCell('B5').value = `From  ${from} to ${to}`
 
-    detailWs.mergeCells('A7:X7')
+    detailWs.mergeCells('A7:Z7')
     detailWs.getCell('A7').value = `Monthly ${type==='BUY' ? 'Expense': 'Revenue'} Accrual for Delivered but Pending POD Clearance Report`
     detailWs.getCell('A7').alignment =  { vertical: 'middle', horizontal: 'center' };
     detailWs.getCell('A7').font = {
