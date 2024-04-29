@@ -698,9 +698,9 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                     
                 aggregatedValues = {
                     ...aggregatedValues,
-                    total_cbm:      isNaN(Number(total_cbm))    ? 0 : round(total_cbm,2),
-                    total_weight:   isNaN(Number(total_weight)) ? 0 : round(total_weight,2),
-                    total_qty:      isNaN(Number(total_qty))    ? 0 : round(total_qty,2)
+                    total_cbm:      isNaN(Number(total_cbm))    ? 0 : round(total_cbm,4),
+                    total_weight:   isNaN(Number(total_weight)) ? 0 : round(total_weight,4),
+                    total_qty:      isNaN(Number(total_qty))    ? 0 : round(total_qty,4)
                 }
             }
             else{
@@ -709,8 +709,8 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                     
                 aggregatedValues = {
                     ...aggregatedValues,
-                    total_cbm:      isNaN(Number(total_cbm))    ? 0 : round(total_cbm,2),
-                    total_weight:   isNaN(Number(total_weight)) ? 0 : round(total_weight,2),
+                    total_cbm:      isNaN(Number(total_cbm))    ? 0 : round(total_cbm,4),
+                    total_weight:   isNaN(Number(total_weight)) ? 0 : round(total_weight,4),
                 }
 
             }
@@ -802,11 +802,11 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
             const planned_qty       = _.sumBy(details,'planned_qty') 
             const actual_qty        = getSum(details,invoice.tariff.min_billable_unit,'actual_qty')     
          
-            const planned_weight    = _.sumBy(details, item => isNaN(Number(item.planned_weight)) ? 0 : Number(item.planned_weight))
-            const planned_cbm       = _.sumBy(details, item => isNaN(Number(item.planned_cbm)) ? 0 :    Number(item.planned_cbm))
-            const actual_weight     = _.sumBy(details, item => isNaN(Number(item.actual_weight)) ? 0 :  Number(item.actual_weight))
-            const actual_cbm        = _.sumBy(details, item => isNaN(Number(item.actual_cbm)) ? 0 :     Number(item.actual_cbm))
-            const return_qty        = _.sumBy(details, item => isNaN(Number(item.return_qty)) ? 0 :     Number(item.return_qty))
+            const planned_weight    = _.sumBy(details, item => isNaN(Number(item.planned_weight)) ? 0 : round(item.planned_weight,2))
+            const planned_cbm       = _.sumBy(details, item => isNaN(Number(item.planned_cbm)) ? 0 :    round(item.planned_cbm,2))
+            const actual_weight     = _.sumBy(details, item => isNaN(Number(item.actual_weight)) ? 0 :  round(item.actual_weight,2))
+            const actual_cbm        = _.sumBy(details, item => isNaN(Number(item.actual_cbm)) ? 0 :     round(item.actual_cbm,2))
+            const return_qty        = _.sumBy(details, item => isNaN(Number(item.return_qty)) ? 0 :     round(item.return_qty,2))
             const uom               = details[0]?.uom ?? null; 
 
             let aggCondition = {
@@ -816,9 +816,9 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
 
             let total_charges = null;
             let total_data = {
-                total_cbm:      round(actual_cbm,2),
-                total_weight:   round(actual_weight,2),
-                total_qty:      round(actual_qty,2)
+                total_cbm:      round(actual_cbm,4),
+                total_weight:   round(actual_weight,4),
+                total_qty:      round(actual_qty,4)
             }
 
             for(const cnd of invoice.tariff.conditions){
@@ -1095,7 +1095,7 @@ const draftBillIC = async({invoices}) => {
         groupedInvoice.map(item => {
             const details = item.details;
             
-            const planned_qty       = _.sumBy(details,'planned_qty') 
+            const planned_qty       = _.sumBy(details,i => isNaN(Number(i.planned_qty)) ? 0 : Number(i.planned_qty)) 
             const actual_qty        = getSum(details,item.tariff.min_billable_unit,'actual_qty')     
             const ic_qty            = _.sumBy(details,item => {
                 if(item.uom === 'PIECE') {
@@ -1105,10 +1105,10 @@ const draftBillIC = async({invoices}) => {
             })
 
             const planned_weight    = _.sumBy(details, item => isNaN(parseFloat(item.planned_weight)) ? 0 : parseFloat(item.planned_weight))
-            const planned_cbm       = _.sumBy(details, item => isNaN(parseFloat(item.planned_cbm)) ? 0 : parseFloat(item.planned_cbm))
-            const actual_weight     = _.sumBy(details, item => isNaN(parseFloat(item.actual_weight)) ? 0 : parseFloat(item.actual_weight))
-            const actual_cbm        = _.sumBy(details, item => isNaN(parseFloat(item.actual_cbm)) ? 0 : parseFloat(item.actual_cbm))
-            const return_qty        = _.sumBy(details, item => isNaN(parseFloat(item.return_qty)) ? 0 : parseFloat(item.return_qty))
+            const planned_cbm       = _.sumBy(details, item => isNaN(parseFloat(item.planned_cbm)) ? 0 :    parseFloat(item.planned_cbm))
+            const actual_weight     = _.sumBy(details, item => isNaN(parseFloat(item.actual_weight)) ? 0 :  parseFloat(item.actual_weight))
+            const actual_cbm        = _.sumBy(details, item => isNaN(parseFloat(item.actual_cbm)) ? 0 :     parseFloat(item.actual_cbm))
+            const return_qty        = _.sumBy(details, item => isNaN(parseFloat(item.return_qty)) ? 0 :     parseFloat(item.return_qty))
 
             draft_bill_details.push({
                 draft_bill_no:      '',
@@ -1140,13 +1140,13 @@ const draftBillIC = async({invoices}) => {
                 class_of_store:     item.class_of_store,
                 principal_code:     item.principal_code,
                 rud_status:         item.rud_status,
-                planned_qty,
-                actual_qty,
-                ic_qty,
-                actual_weight,  
-                actual_cbm, 
-                planned_weight,
-                planned_cbm,
+                planned_qty:        round(planned_qty,2),
+                actual_qty:         round(actual_qty,2),
+                ic_qty:             round(ic_qty,2),
+                actual_weight:      round(actual_weight,2),  
+                actual_cbm:         round(actual_cbm,2), 
+                planned_weight:     round(planned_weight,2),
+                planned_cbm:        round(planned_cbm,2),
                 return_qty     
             })
         })
