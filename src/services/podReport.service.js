@@ -1354,8 +1354,6 @@ exports.podSell = async({
         
         raw = await assignTariff({invoices: raw.data, contracts, contract_type: 'SELL'})
         revenue_leak = revenue_leak.concat(raw.revenue_leak)
-        
-        //draft_bill = draft_bill.concat(raw.data)
 
         const withAgg = await draftBillWithAgg({
             invoices: raw.data,
@@ -1367,7 +1365,6 @@ exports.podSell = async({
             contract_type:'SELL'
         })
 
-        //raw = [].concat(withAgg.data,withoutAgg.data)
         revenue_leak = revenue_leak.concat(withAgg.revenue_leak, withoutAgg.revenue_leak)
 
         raw = await sellValidation([].concat(withAgg.data,withoutAgg.data), revenue_leak,data,false)
