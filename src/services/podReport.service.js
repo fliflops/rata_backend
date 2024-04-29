@@ -1147,6 +1147,8 @@ const draftBillIC = async({invoices}) => {
                 actual_cbm:         round(actual_cbm,2), 
                 planned_weight:     round(planned_weight,2),
                 planned_cbm:        round(planned_cbm,2),
+                br_status:              item.br_status,
+                uom:                    details[0]?.uom ?? null,
                 return_qty     
             })
         })
