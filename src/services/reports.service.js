@@ -7,8 +7,6 @@ const round     = require('../helpers/round');
 const path      = require('path');
 const {Op}      = sequelize;
 
-
-
 const  borderStyles = {
     top: { style: "thin" },
     left: { style: "thin" },
@@ -38,13 +36,13 @@ const getSubTotals = async (invoice = []) => {
 
         const data = grouped[key];
         const min_value = data[0]?.min_value ?? null
-        const rate_ambient  = Number(data.find(item => item.class_of_store === 'AMBIENT')?.rate_ambient ?? 0)//data[0]?.rate_ambient ? Number(data[0]?.rate_ambient) : null
-        const rate_cold     = Number(data.find(item => item.class_of_store === 'COLD')?.rate_cold ?? 0 )//data[0]?.rate_cold ? Number(data[0]?.rate_cold) : null
-        const cbm_ambient   = _.sum(data.map(item => item.cbm_ambient))
-        const total_cbm_cold =  _.sum(data.map(item => item.cbm_cold))
-        const inner_cbm     =   round(total_cbm_cold / 0.16,2)//cbm_cold ? (cbm_cold / 0.16) : null;
-        const round_up =        inner_cbm ? Math.ceil(inner_cbm) : null;
-        const outer_cbm     = (round_up * 0.18)//_.sum(data.map(item => item.outer_cbm)) // //const outer_cbm =    round_up ? (round_up * 0.18) : null;
+        const rate_ambient      = Number(data.find(item => item.class_of_store === 'AMBIENT')?.rate_ambient ?? 0)
+        const rate_cold         = Number(data.find(item => item.class_of_store === 'COLD')?.rate_cold ?? 0 )
+        const cbm_ambient       = _.sum(data.map(item => item.cbm_ambient))
+        const total_cbm_cold    =  _.sum(data.map(item => item.cbm_cold))
+        const inner_cbm         =   round(total_cbm_cold / 0.16,2)
+        const round_up          = inner_cbm ? Math.ceil(inner_cbm) : null;
+        const outer_cbm         = (round_up * 0.18)
         
         const charges_wo_mgv  = _.sum(data.map(item => item.ambient_charges)) + _.sum(data.map(item => item.cold_charges))
         const utilization     = ((cbm_ambient + outer_cbm) / min_value) * 100
@@ -147,8 +145,7 @@ exports.getDraftBill = async(filters={}) => {
                     contract_type: 'SELL'
                 }
             ]
-        },
-        limit: 100
+        }
     })
     .then(data => JSON.parse(JSON.stringify(data)))
 

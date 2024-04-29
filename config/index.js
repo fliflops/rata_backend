@@ -120,6 +120,29 @@ const dwConfig = {
 	},
 }
 
+const dwPodConfig = {
+    username:       process.env.DWPOD_DB_USER,
+    password:       process.env.DWPOD_DB_PASSWORD,
+    host:           process.env.DWPOD_DB_HOST,
+    database:       process.env.DWPOD_DB,
+    dialect:        'mssql',
+    dialectOptions : {
+        options:{
+            requestTimeout: 3600000
+        }
+    },
+    pool: { 
+        max: 1000000,
+        min: 0,
+        idle: 2000000,
+        acquire: 2000000,
+        idleTimeoutMillis: 50,
+        evictionRunIntervalMillis: 5,
+        softIdleTimeoutMillis: 5,
+        logging: false
+    }
+}
+
 const kronosConfig = {
     host:       process.env.KRONOS_DB_HOST,
     username:   process.env.KRONOS_DB_USER_NAME,
@@ -151,6 +174,7 @@ module.exports = {
     ioredis,
     redisIndex, 
     dwConfig,
+    dwPodConfig,
     kronosConfig,
     ...vars,
 

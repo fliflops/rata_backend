@@ -2,7 +2,7 @@ const models  = require('../models');
 const asciiModels = require('../src/models/logistikus_si');
 const {podDB,scmdb,} = require('../database');
 const {redis,redisIndex} = require('../config');
-const {kronos} = require('../src/models/datawarehouse')
+const {kronos, pod} = require('../src/models/datawarehouse')
 const jobs = require('../src/jobs')
 
 module.exports = async() => {
@@ -36,6 +36,10 @@ module.exports = async() => {
 
         await kronos.authenticate().then(() => {
             console.log('Connected to DW Kronos DB')
+        })
+
+        await pod.authenticate().then(() => {
+            console.log('Connected to DW Helios DB')
         })
     }
     catch(e){

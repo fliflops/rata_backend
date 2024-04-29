@@ -1,18 +1,167 @@
-const reportService = require('../services/reports.service');
-
-const moment = require('moment');
-const path = require('path');
+const reportService         = require('../services/reports.service');
+const podReportService      = require('../services/podReport.service');
+const podReportExcelService = require('../services/podReport.excel.service');
+const moment                = require('moment');
+const path                  = require('path');
 const {REPORT_P2P, REPORT_CROSSDOCK} = require('../jobs/queues/queues')
-const Queue = require('../jobs/queues/queues');
-const redis = require('../../config').redis;
-const {v4:uuidv4} = require('uuid');
-const sequelize = require('sequelize')
-const asciiService = require('../services/asciiService');
-const _ = require('lodash')
+const Queue                 = require('../jobs/queues/queues');
+const redis                 = require('../../config').redis;
+const {v4:uuidv4}           = require('uuid');
+const sequelize             = require('sequelize');
+const asciiService          = require('../services/asciiService');
+
+const _ = require('lodash');
+
+exports.createPodReport = async(req,res,next) => {
+    try{
+        
+        let draft_bill_header  = [];
+        let draft_bill_details = [];
+        let leak_header = [];
+        let leak_details = [];
+
+        const from = '2024-04-01'
+        const to = '2024-04-15'
+
+        const data = await podReportService.joinedInvoices({
+            from,
+            to
+        })
+
+        const draftBill = await podReportService.podSell({
+            data,
+            from,
+            to
+        })
+
+        for(let {details,...db} of  draftBill.draft_bill){
+            draft_bill_header.push(db)
+            draft_bill_details = draft_bill_details.concat(details)
+        }
+        
+        for(let {details,...leak} of  draftBill.revenue_leak){
+            leak_header.push({
+                ...leak,
+                draft_bill_type:'SELL',
+            })
+            leak_details = leak_details.concat(details.map(items => ({
+                ...items,
+                class_of_store: leak.class_of_store,
+                draft_bill_type:'SELL'
+            })))
+        }
+
+        const root = global.appRoot;
+        const fileName = moment().format('YYYYMMDDHHmmss')+'revenue_accrual_report.xlsx'
+        const filePath = path.join( root,'/assets/reports/accrual/', fileName);
+
+        await podReportExcelService.podAccrualTemplate({
+            header:         draft_bill_header,
+            details:        draft_bill_details,
+            leak_header:    leak_header,
+            leak_details:   leak_details,
+            filePath,
+            type:'SELL',
+            from: moment(from).format('MMMM DD, YYYY'),
+            to:moment(to).format('MMMM DD, YYYY'),
+        })
+        res.status(200).json(draftBill)
+
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.createPodReportBuy = async(req,res,next) => {
+    try{
+
+        let draft_bill_header  = [];
+        let draft_bill_details = [];
+        let leak_header = [];
+        let leak_details = [];
+
+        const from = '2024-04-01'
+        const to = '2024-04-26'
+
+        const data = await podReportService.joinedInvoices({
+            from,
+            to
+        })
+
+        const draftBill = await podReportService.podBuy({
+            data,//: data.filter(item => item.tms_reference_no === 'BR002218422'),
+            from,
+            to
+        })
+
+        
+        for(let {details,...db} of  draftBill.draft_bill){
+            draft_bill_header.push(db)
+            draft_bill_details = draft_bill_details.concat(details)
+        }
+        
+        for(let {details,...leak} of  draftBill.revenue_leak){
+            leak_header.push({
+                ...leak,
+                draft_bill_type:'BUY',
+            })
+            leak_details = leak_details.concat(details.map(items => ({
+                ...items,
+                class_of_store: leak.class_of_store,
+                draft_bill_type:'BUY'
+            })))
+        }
+
+        const root = global.appRoot;
+        const fileName = moment().format('YYYYMMDDHHmmss')+'expense_accrual_report.xlsx'
+        const filePath = path.join( root,'/assets/reports/accrual/', fileName);
+
+        await podReportExcelService.podAccrualTemplate(
+            {
+                header:         draft_bill_header,
+                details:        draft_bill_details,
+                leak_header:    leak_header,
+                leak_details:   leak_details,
+                filePath,
+                type:           'BUY',
+                from:           moment(from).format('MMMM DD, YYYY'),
+                to:             moment(to).format('MMMM DD, YYYY'),
+            }
+        )
+        res.status(200).json(draftBill)
+    }
+    catch(e){
+        next(e)
+    }
+}
 
 exports.createPreBillingReport = async(req,res,next) => {
     try{
-        // const filter = await reportService.generateFilter();
+        const filter = reportService.generateFilter();
+
+        const root = global.appRoot;
+            const fileName = moment().format('YYYYMMDDHHmmss')+'p2p.xlsx';
+            const filePath = path.join(root,'/assets/reports/pre-billing/',fileName);
+            
+            const draftBills = await reportService.getDraftBill({
+                customer: '10005',
+                service_type:'2003',
+                updatedAt:{
+                    [sequelize.Op.between]:['2024-03-15 00:00:00', '2024-04-14 00:00:00']
+                    //[sequelize.Op.between]: [filters.from,filters.to]
+                }
+            });
+
+            const ascii = await asciiService.getSalesOrder(draftBills.map(item => item.draft_bill_no))
+
+            await reportService.p2p({
+                data: draftBills.filter(item => ascii.map(a => a.SO_CODE).includes(item.draft_bill_no)),
+                dates:filter,
+                filePath
+            })
+
+            res.end();
 
         // const data = await asciiService.getSalesOrder({
         //     from: filters.from,
@@ -20,27 +169,18 @@ exports.createPreBillingReport = async(req,res,next) => {
         // });
         // res.status(200).json(data)
      
-        await REPORT_CROSSDOCK.add(null, {
-            jobId:uuidv4(),
-            removeOnFail:true,
-            removeOnComplete:true
-        })
-        // res.end();
+        // const draftBill = await reportService.getDraftBill({
+        //     service_type:'2001',
+        //     updatedAt: {
+        //         [sequelize.Op.between]:['2024-03-15 00:00:00', '2024-04-14 00:00:00']
+        //     },
+        // })
 
-        // const filter = await reportService.generateFilter()
-        const draftBill = await reportService.getDraftBill({
-            service_type:'2001',
-            updatedAt: {
-                [sequelize.Op.between]:['2024-01-01 00:00:00', '2024-01-31 00:00:00']
-                //[sequelize.Op.between]:[filter.from,filter.to]
-            },
-        })
+        // const ascii = await asciiService.getSalesOrder(draftBill.map(item => item.draft_bill_no))
 
-        const ascii = await asciiService.getSalesOrder(draftBill.map(item => item.draft_bill_no))
-
-        res.status(200).json({
-            data:draftBill.filter(item => ascii.map(a => a.SO_CODE).includes(item.draft_bill_no)),
-        });
+        // res.status(200).json({
+        //     data:draftBill.filter(item => ascii.map(a => a.SO_CODE).includes(item.draft_bill_no)),
+        // });
     }
     catch(e){
         next(e)
@@ -57,8 +197,8 @@ exports.createP2PReport = async(req,res,next) => {
             updatedAt:{
                 [sequelize.Op.between]: [filters.from,filters.to]
             },
-            
         });
+
         await REPORT_P2P.add(null, {
             jobId:uuidv4(),
             removeOnFail:true,
@@ -147,15 +287,13 @@ exports.updateReport = async(req,res,next) => {
 
 exports.downloadReport = async(req,res,next) => {
     try{
-        const {filePath} = req.query;
+        const {filePath} = req.body;
         
         res.download(filePath)
     }
     catch(e){
         next(e  )
     }
-    
-
 }
 
 exports.pod = async (req,res,next) => {
