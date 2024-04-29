@@ -585,19 +585,19 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
             const groupedInvoice = raw_group[group_id];
             const invoice = contract_type === 'SELL' ? groupedInvoice[0] : _.maxBy(groupedInvoice, i => Number(i.tariff.tariff_rate))
             const parameters = invoice.tariff.parameter ? invoice.tariff.parameter.split(',') : null
-           
+            
             let draft_bill_details = [];
             
             //compute the sum of items per invoice
             groupedInvoice.map(item => {
                 const details = item.details;
-                const planned_qty       = _.sum(details.map(d => isNaN(Number(d.planned_qty))           ? 0 : Number(d.planned_qty))) 
+                const planned_qty       = _.sum(details.map(d => isNaN(Number(d.planned_qty))            ? 0 : Number(d.planned_qty))) 
                 const actual_qty        = _.sum(details.map(d => isNaN(Number(d.actual_qty))             ? 0 : Number(d.actual_qty)))    
-                const planned_weight    = _.sumBy(details,item => isNaN(parseFloat(item.planned_weight)) ? 0 : parseFloat(item.planned_weight))
-                const planned_cbm       = _.sumBy(details,item => isNaN(parseFloat(item.planned_cbm))    ? 0 :   parseFloat(item.planned_cbm))
-                const actual_weight     = _.sumBy(details,item => isNaN(parseFloat(item.actual_weight))  ? 0 :   parseFloat(item.actual_weight))
-                const actual_cbm        = _.sumBy(details,item => isNaN(parseFloat(item.actual_cbm))     ? 0 :   parseFloat(item.actual_cbm))
-                const return_qty        = _.sumBy(details,item => isNaN(parseFloat(item.return_qty))     ? 0 :   parseFloat(item.return_qty))
+                const planned_weight    = _.sumBy(details,item => isNaN(parseFloat(item.planned_weight)) ? 0 : round(item.planned_weight,2))
+                const planned_cbm       = _.sumBy(details,item => isNaN(parseFloat(item.planned_cbm))    ? 0 : round(item.planned_cbm,2))
+                const actual_weight     = _.sumBy(details,item => isNaN(parseFloat(item.actual_weight))  ? 0 : round(item.actual_weight,2))
+                const actual_cbm        = _.sumBy(details,item => isNaN(parseFloat(item.actual_cbm))     ? 0 : round(item.actual_cbm,2))
+                const return_qty        = _.sumBy(details,item => isNaN(parseFloat(item.return_qty))     ? 0 : round(item.return_qty,2))
 
                 draft_bill_details.push({
                     draft_bill_no:      '',
@@ -689,6 +689,8 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
 
             let total_charges = null;
 
+            
+
             if(draft_bill.parameters) {
                 const total_cbm     = _.sumBy(draft_bill.draft_bill_details,item => isNaN(parseFloat(item.actual_cbm)) ? 0 :    parseFloat(item.actual_cbm))
                 const total_weight  = _.sumBy(draft_bill.draft_bill_details,item => isNaN(parseFloat(item.actual_weight))? 0 :  parseFloat(item.actual_weight))
@@ -712,6 +714,7 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                 }
 
             }
+
             //compute total charges
             const invoice = aggregatedValues;
             let aggCondition = {
@@ -739,41 +742,15 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
                 }
             }
 
+           
+
             const {conditions,tariff,parameters,...header} = draft_bill;
             const df = {
                 ...header,
                 total_charges: total_charges,
                 ...aggCondition,
                 ...aggregatedValues,
-                draft_bill_details: header.draft_bill_details.map(( item,index) => {
-                    let billing = 0;
-
-                    if(String(header.min_billable_unit).toLowerCase() === 'cbm'){
-                        billing = ( item.actual_cbm / aggregatedValues.total_cbm ) * total_charges
-                    }     
-                    
-                    else if(String(header.min_billable_unit).toLowerCase() === 'weight'){
-                        billing = ( item.actual_weight / aggregatedValues.total_weight ) * total_charges
-                    }
-
-                    else if(['CASE','PIECE'].includes(String(header.min_billable_unit).toUpperCase())){
-                        billing = ( item.actual_qty / aggregatedValues.total_qty ) * total_charges
-                    }
-                    
-                    else {
-                        if(index === header.draft_bill_details.length - 1){
-                            billing=Math.floor(total_charges/header.draft_bill_details.length)  + (total_charges%header.draft_bill_details.length)
-                        }   
-                        else{
-                            billing=Math.floor(total_charges/header.draft_bill_details.length)
-                        }  
-                    }
-
-                    return {
-                        ...item,
-                        billing: isNaN(billing.toFixed(2)) ? null : round(billing,4) //billing.toFixed(2)
-                    }
-                })
+                draft_bill_details:header.draft_bill_details,
             }
             //revenue_leaks
             if(!aggCondition.formula) {
@@ -928,7 +905,8 @@ const draftBillWithoutAgg = async({contract_type,invoices}) => {
                         planned_weight,
                         planned_cbm,
                         return_qty,
-                        billing: total_charges     
+                        billing: null
+                        //billing: total_charges     
                     }
                 ],
             }
@@ -992,13 +970,39 @@ const assignDraftBillNo = async(draft_bill = [], current=0) => {
     }
 
     return draft_bill.map(item => {
-        
         const {draft_bill_details,ship_from,ship_point,...header} = item
         const draft_bill_no =  generateDraftBillNo({count: count})
-        const draft_bill_invoice_tbl = draft_bill_details.map(detail => {
+        const draft_bill_invoice_tbl = draft_bill_details.map((detail,index) => {
+            let billing = 0;
+
+            if(draft_bill_details.length === 1) {
+                billing = header.total_charges
+            }
+            else{   
+                if(String(header.min_billable_unit).toUpperCase() === 'CBM'){
+                    billing = ( detail.actual_cbm / header.total_cbm ) * header.total_charges
+                }
+                else if(String(header.min_billable_unit).toUpperCase() === 'WEIGHT'){
+                    billing = ( detail.actual_weight / header.total_weight ) * header.total_charges
+                }
+                else if(['CASE','PIECE'].includes(String(header.min_billable_unit).toUpperCase())){
+                    billing = ( detail.actual_qty / header.total_qty ) * header.total_charges
+                }
+                else {
+                    if(index === draft_bill_details.length - 1){
+                        billing=Math.floor(header.total_charges/draft_bill_details.length)  + (header.total_charges%draft_bill_details.length)        
+                    }
+                    else{
+                        billing=Math.floor(header.total_charges/draft_bill_details.length)
+                    }
+                }
+
+            }
+
             return {
                 ...detail,
-                draft_bill_no
+                draft_bill_no,
+                billing: round(billing,4)
             }
         })
 
@@ -1013,6 +1017,37 @@ const assignDraftBillNo = async(draft_bill = [], current=0) => {
             details: draft_bill_invoice_tbl
         }
     })
+
+
+    // : header.draft_bill_details.map(( item,index) => {
+    //     let billing = 0;
+
+    //     if(String(header.min_billable_unit).toLowerCase() === 'cbm'){
+    //         billing = ( item.actual_cbm / aggregatedValues.total_cbm ) * total_charges
+    //     }     
+        
+    //     else if(String(header.min_billable_unit).toLowerCase() === 'weight'){
+    //         billing = ( item.actual_weight / aggregatedValues.total_weight ) * total_charges
+    //     }
+
+    //     else if(['CASE','PIECE'].includes(String(header.min_billable_unit).toUpperCase())){
+    //         billing = ( item.actual_qty / aggregatedValues.total_qty ) * total_charges
+    //     }
+        
+    //     else {
+    //         if(index === header.draft_bill_details.length - 1){
+    //             billing=Math.floor(total_charges/header.draft_bill_details.length)  + (total_charges%header.draft_bill_details.length)
+    //         }   
+    //         else{
+    //             billing=Math.floor(total_charges/header.draft_bill_details.length)
+    //         }  
+    //     }
+
+    //     return {
+    //         ...item,
+    //         billing: isNaN(billing.toFixed(2)) ? null : round(billing,4) //billing.toFixed(2)
+    //     }
+    // })
 
 
 
