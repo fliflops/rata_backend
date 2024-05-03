@@ -296,10 +296,6 @@ exports.downloadReport = async(req,res,next) => {
     }
 }
 
-exports.pod = async (req,res,next) => {
-    
-}
-
 exports.reverseLogistics = async(req,res,next) => {
     try{
         const draftBill = await reportService.getDraftBill({
@@ -311,10 +307,40 @@ exports.reverseLogistics = async(req,res,next) => {
         })
 
         const ascii = await asciiService.getSalesOrder(draftBill.length === 0 ? '' : draftBill.map(item => item.draft_bill_no))
+        const root = global.appRoot;
+        const fileName = moment().format('YYYYMMDDHHmmss')+'reverse_logistics.xlsx';
+        const filePath = path.join( root,'/assets/reports/pre-billing/', fileName);
 
-        res.status(200).json({
-            data:draftBill.filter(item => ascii.map(a => a.SO_CODE).includes(item.draft_bill_no)),
-        });
+        const asciiValidation = draftBill.filter(item => ascii.map(a => a.SO_CODE).includes(item.draft_bill_no))
+        const generateCount = _.uniq(asciiValidation.map(item => item.draft_bill_no)).map((item,index) => ({
+            draft_bill_no: item,
+            count: index + 1
+        }))
+
+        const asciiEventDetails = await reportService.getAsciiEvents(_.uniq(asciiValidation.map(item => item.trip_plan)))
+
+        const data = asciiValidation.map(item => {
+            const count = generateCount.find(a => a.draft_bill_no === item.draft_bill_no)
+            const eventDvry = asciiEventDetails.find(a => a.trip_log_id === item.trip_plan && a.to_location === item.to_stc && a.type === 'DELIVERY')
+            const eventPckp = asciiEventDetails.find(a => a.trip_log_id === item.trip_plan && a.from_location === item.ship_from && a.type === 'PICKUP')
+            return {
+                ...item,
+                ...count,
+                drvy_actual_datetime: eventDvry?.actual_datetime ?? null,
+                actual_datetime: eventPckp?.actual_datetime ?? null
+            }
+        })
+
+        await reportService.reverseLogistics({
+            data,
+            filePath,
+            dates:{
+                from: '2024-04-01',
+                to:'2024-04-15'
+            }
+        })
+
+        res.status(200).json(data);
     }
     catch(e){
         next(e)
