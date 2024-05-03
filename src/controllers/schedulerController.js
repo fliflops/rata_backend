@@ -94,6 +94,7 @@ exports.updateScheduler = async(req,res,next) => {
                 
                 removeOnFail:true,
                 removeOnComplete:true,
+                timeout: 4 * 60 * 1000,
                 repeat:{
                     cron: data.start_time_cron
                 }

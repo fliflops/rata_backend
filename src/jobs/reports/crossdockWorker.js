@@ -10,7 +10,9 @@ module.exports = () => {
     REPORT_CROSSDOCK.process(async (job, done) => {
         try{
             const filters = reportService.generateFilter();
-            
+            const date = moment();
+            const from = date.subtract(18,'days').format('YYYY-MM-DD HH:mm:ss');
+            const to = date.subtract(3,'days').format('YYYY-MM-DD HH:mm:ss');
 
             const report = await reportService.findReport({
                 report_name: 'crossdock_secondary'
@@ -29,13 +31,14 @@ module.exports = () => {
             
             const draftBills = await reportService.getDraftBill({
                 service_type: '2001',
+                //customer: '10005',
                 updatedAt:{
-                    //[sequelize.Op.between]:['2024-03-15 00:00:00', '2024-04-14 00:00:00']
-                    [sequelize.Op.between]: [filters.from,filters.to]
+                    //[sequelize.Op.between]:['2024-04-01 00:00:00', '2024-04-30 00:00:00']
+                    [sequelize.Op.between]: [from,to]
                 }
             });
 
-            const ascii = await asciiService.getSalesOrder(draftBills.map(item => item.draft_bill_no))
+            const ascii = await asciiService.getSalesOrder(draftBills.length === 0 ? '' : draftBills.map(item => item.draft_bill_no))
 
             await reportService.crossDockSecondary({
                 data: draftBills.filter(item => ascii.map(a => a.SO_CODE).includes(item.draft_bill_no)),
