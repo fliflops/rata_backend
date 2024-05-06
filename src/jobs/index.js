@@ -5,6 +5,7 @@ const crossdockReport = require('./reports/crossdockWorker');
 const p2pReport = require('./reports/p2pWorker');
 const accrualRevenue = require('./reports/accrualRevenue');
 const accrualExpense = require('./reports/accrualExpense');
+const reverseLogistics = require('./reports/reverseLogistics');
 
 const crons = require('./crons');
 
@@ -18,5 +19,6 @@ module.exports = () => {
     p2pReport();
     accrualExpense();
     accrualRevenue();
+    reverseLogistics();
     crons();
 }

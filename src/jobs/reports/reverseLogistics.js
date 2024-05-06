@@ -2,13 +2,52 @@ const {REPORT_REVERSE_LOGISTICS} = require('../queues/queues')
 const reportService = require('../../services/reports.service');
 const asciiService = require('../../services/asciiService')
 const moment = require('moment');
+const _ = require('lodash');
 const path = require('path');
 const sequelize = require('sequelize');
 
 module.exports = () => {
+    const generateFilter = () => {
+        let filter = {
+            from:null,
+            to:null
+        }
+        const today = moment();
+    
+        if(today.date() <= 10){
+            filter = {
+                from: moment().subtract(48,'days').format('YYYY-MM-DD HH:mm:ss'), 
+                to: moment().subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
+            }
+        }
+        else if(today.date() <= 17){
+            filter = {
+                from: moment().subtract(48,'days').format('YYYY-MM-DD HH:mm:ss'), 
+                to: moment().subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
+            }
+        }
+        else if(today.date() <= 23){
+            filter = {
+                from: moment().subtract(48,'days').format('YYYY-MM-DD HH:mm:ss'), 
+                to: moment().subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
+            }
+        }
+        else{
+            filter = {
+                from: moment().subtract(48,'days').format('YYYY-MM-DD HH:mm:ss'), 
+                to: moment().subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
+            }
+        }
+        return filter
+    }
+     
+
     REPORT_REVERSE_LOGISTICS.process(async (job,done) => {
         try{
-            const filters = reportService.generateFilter();
+            console.log('test')
+            //const filters = reportService.generateFilter();
+            const filters = generateFilter();
+            
             const report = await reportService.findReport({
                 report_name: 'report_reverse_logistics'
             })
@@ -25,7 +64,7 @@ module.exports = () => {
             
             const draftBill = await reportService.getDraftBill({
                 service_type:'2004',
-                updatedAt: {
+                trip_date: {
                     //[sequelize.Op.between]:['2024-01-01 00:00:00', '2024-01-31 00:00:00']
                     [sequelize.Op.between]:[filters.from,filters.to]
                 },
@@ -70,11 +109,12 @@ module.exports = () => {
 
         }
         catch(e){
+            console.log(e)
             done(e)
         }
     })
 
-    REPORT_P2P.on('completed', async(job) => {
+    REPORT_REVERSE_LOGISTICS.on('completed', async(job) => {
         await reportService.updateReportLog({
             filter:{
                 id: job.id,
@@ -87,7 +127,7 @@ module.exports = () => {
         })
     })
 
-    REPORT_P2P.on('failed', async(job,err) => {
+    REPORT_REVERSE_LOGISTICS.on('failed', async(job,err) => {
         await reportService.updateReportLog({
             filter:{
                 id: job.id,

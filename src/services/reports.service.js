@@ -1192,8 +1192,7 @@ const getRLTotals = async(data=[]) => {
 exports.reverseLogistics = async({data=[], filePath=null, dates={}}) => {
     const workbook = new excelJs.Workbook();
     const ws = workbook.addWorksheet('RL');
-    const totals = await getTotals(data);
-
+   
     const root = global.appRoot;
     const kliLogo = workbook.addImage({
         filename:path.join(root,'/assets/image/klilogo.png'),
@@ -1203,15 +1202,10 @@ exports.reverseLogistics = async({data=[], filePath=null, dates={}}) => {
     ws.addImage(kliLogo, 'T2:U5');
     ws.getCell('A6').value = 'Billed by:'
     ws.getCell('B6').value = 'Kerry Logistikus Philippines, Inc.'
-
-    ws.getCell('AK6').value = 'Billed to:'
-    ws.getCell('AL6').value = 'Mondelez Philippines, Inc.'
-    
+   
     ws.getCell('A7').value = 'Address:'
     ws.getCell('B7').value = '268 C. Raymundo Ave., Maybunga, Pasig City'
-    ws.getCell('AK7').value = 'Address:'
-    ws.getCell('AL7').value = 'MANUFACTURING 8378 DR.A SANTOS AVE,. PARANAQUE CITY'
-
+ 
     ws.getCell('A8').value = 'Email Add:'
     ws.getCell('B8').value = 'customer.experience@logistikus.com'
 
