@@ -54,7 +54,7 @@ const getKronosTrips = async(trips=[]) => {
     `,{
        type: Sequelize.QueryTypes.SELECT,
        replacements:{
-            trips: _.uniq(trips)
+            trips:trips.length === 0 ? '' : _.uniq(trips)
        }
     })
 }
@@ -162,7 +162,7 @@ const getPodInvoices = async({from,to}) => {
     ,{
         type: Sequelize.QueryTypes.SELECT,
         replacements:{
-            br: header.map(item => item.tms_reference_no)
+            br: header.length === 0 ? '' : header.map(item => item.tms_reference_no)
         }
     })
 
