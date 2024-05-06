@@ -14,8 +14,8 @@ module.exports = () => {
             let leak_header = [];
             let leak_details = [];
             
-            const to = moment().subtract(2,'days').format('YYYY-MM-DD')
-            const from = moment(to).startOf('month').format('YYYY-MM-DD')
+            const from = moment().subtract(1,'month').startOf('month').format('YYYY-MM-DD');
+            const to = moment().subtract(1,'month').endOf('month').format('YYYY-MM-DD')
 
             const report = await reportService.findReport({
                 report_name: 'accrual_revenue'
