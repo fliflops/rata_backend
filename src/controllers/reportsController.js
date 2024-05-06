@@ -298,49 +298,50 @@ exports.downloadReport = async(req,res,next) => {
 
 exports.reverseLogistics = async(req,res,next) => {
     try{
-        const draftBill = await reportService.getDraftBill({
-            service_type:'2004',
-            updatedAt: {
-                [sequelize.Op.between]:['2024-01-01 00:00:00', '2024-01-31 00:00:00']
-                //[sequelize.Op.between]:[filter.from,filter.to]
-            },
-        })
+        // const draftBill = await reportService.getDraftBill({
+        //     service_type:'2004',
+        //     updatedAt: {
+        //         [sequelize.Op.between]:['2024-01-01 00:00:00', '2024-01-31 00:00:00']
+        //         //[sequelize.Op.between]:[filter.from,filter.to]
+        //     },
+        // })
 
-        const ascii = await asciiService.getSalesOrder(draftBill.length === 0 ? '' : draftBill.map(item => item.draft_bill_no))
-        const root = global.appRoot;
-        const fileName = moment().format('YYYYMMDDHHmmss')+'reverse_logistics.xlsx';
-        const filePath = path.join( root,'/assets/reports/pre-billing/', fileName);
+        // const ascii = await asciiService.getSalesOrder(draftBill.length === 0 ? '' : draftBill.map(item => item.draft_bill_no))
+        // const root = global.appRoot;
+        // const fileName = moment().format('YYYYMMDDHHmmss')+'reverse_logistics.xlsx';
+        // const filePath = path.join( root,'/assets/reports/pre-billing/', fileName);
 
-        const asciiValidation = draftBill.filter(item => ascii.map(a => a.SO_CODE).includes(item.draft_bill_no))
-        const generateCount = _.uniq(asciiValidation.map(item => item.draft_bill_no)).map((item,index) => ({
-            draft_bill_no: item,
-            count: index + 1
-        }))
+        // const asciiValidation = draftBill.filter(item => ascii.map(a => a.SO_CODE).includes(item.draft_bill_no))
+        // const generateCount = _.uniq(asciiValidation.map(item => item.draft_bill_no)).map((item,index) => ({
+        //     draft_bill_no: item,
+        //     count: index + 1
+        // }))
 
-        const asciiEventDetails = await reportService.getAsciiEvents(_.uniq(asciiValidation.map(item => item.trip_plan)))
+        // const asciiEventDetails = await reportService.getAsciiEvents(_.uniq(asciiValidation.map(item => item.trip_plan)))
 
-        const data = asciiValidation.map(item => {
-            const count = generateCount.find(a => a.draft_bill_no === item.draft_bill_no)
-            const eventDvry = asciiEventDetails.find(a => a.trip_log_id === item.trip_plan && a.to_location === item.to_stc && a.type === 'DELIVERY')
-            const eventPckp = asciiEventDetails.find(a => a.trip_log_id === item.trip_plan && a.from_location === item.ship_from && a.type === 'PICKUP')
-            return {
-                ...item,
-                ...count,
-                drvy_actual_datetime: eventDvry?.actual_datetime ?? null,
-                actual_datetime: eventPckp?.actual_datetime ?? null
-            }
-        })
+        // const data = asciiValidation.map(item => {
+        //     const count = generateCount.find(a => a.draft_bill_no === item.draft_bill_no)
+        //     const eventDvry = asciiEventDetails.find(a => a.trip_log_id === item.trip_plan && a.to_location === item.to_stc && a.type === 'DELIVERY')
+        //     const eventPckp = asciiEventDetails.find(a => a.trip_log_id === item.trip_plan && a.from_location === item.ship_from && a.type === 'PICKUP')
+        //     return {
+        //         ...item,
+        //         ...count,
+        //         trip_rate: item.rate,
+        //         drvy_actual_datetime: eventDvry?.actual_datetime ?? null,
+        //         actual_datetime: eventPckp?.actual_datetime ?? null
+        //     }
+        // })
 
-        await reportService.reverseLogistics({
-            data,
-            filePath,
-            dates:{
-                from: '2024-04-01',
-                to:'2024-04-15'
-            }
-        })
+        // await reportService.reverseLogistics({
+        //     data,
+        //     filePath,
+        //     dates:{
+        //         from: '2024-04-01',
+        //         to:'2024-04-15'
+        //     }
+        // })
 
-        res.status(200).json(data);
+        res.status(200).end();
     }
     catch(e){
         next(e)

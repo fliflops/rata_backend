@@ -1169,6 +1169,26 @@ exports.p2p = async({data=[], filePath=null, dates={}}) => {
     return await workbook.xlsx.writeFile(filePath)
 }
 
+const getRLTotals = async(data=[]) => {
+    const uniqeData = _.uniq(data.map(item => item.draft_bill_no)).map(item => {
+        const draftbill = data.find(a => a.draft_bill_no === item)
+        return {
+            draft_bill_no: item,
+            trip_rate: draftbill.rate,
+            total_amount: draftbill.rate,
+            vat: draftbill.vat,
+            gross_amount: draftbill.gross_amount
+        }
+    })
+  
+    return {
+        trip_rate:_.sumBy(uniqeData,'trip_rate'),
+        total_amount: _.sumBy(uniqeData,'total_amount'),
+        vat: _.sumBy(uniqeData,'vat'),
+        gross_amount: _.sumBy(uniqeData,'gross_amount')
+    }
+}
+
 exports.reverseLogistics = async({data=[], filePath=null, dates={}}) => {
     const workbook = new excelJs.Workbook();
     const ws = workbook.addWorksheet('RL');
@@ -1209,7 +1229,7 @@ exports.reverseLogistics = async({data=[], filePath=null, dates={}}) => {
     ws.getCell('AF6').value = 'Billed To:'
     ws.getCell('AF7').value = 'Address:'
 
-    ws.mergeCells('A17:AO17')
+    ws.mergeCells('A17:AH17')
     ws.getCell('A17').value = 'PRE-BILLING SUMMARY FOR REVERSE LOGISTICS';
     ws.getCell('A17').alignment =  { vertical: 'middle', horizontal: 'center' };
     ws.getCell('A17').font = {
@@ -1264,6 +1284,10 @@ exports.reverseLogistics = async({data=[], filePath=null, dates={}}) => {
         {
             header:'Principal',
             key:'principal'
+        },
+        {
+            header:'Warehouse Location',
+            key:'location'
         },
         {
             header:'Service Type',
@@ -1331,7 +1355,7 @@ exports.reverseLogistics = async({data=[], filePath=null, dates={}}) => {
         },
         {
             header:'Trip Rate',
-            key:'rate'
+            key:'trip_rate'
         },
         {
             header:'Manos',
@@ -1366,12 +1390,48 @@ exports.reverseLogistics = async({data=[], filePath=null, dates={}}) => {
     })
 
     data.forEach((item) => {
-       // console.log(item)
         ws.addRow({
-            ...item,
-            //utilization: item.utilization/100
+            ...item
         })
     })
+
+    const total = await getRLTotals(data);
+    
+    const lastRow = ws.rowCount+1;
+    ws.getCell('AB'+lastRow).value = total.trip_rate;
+    ws.getCell('AF'+lastRow).value = total.trip_rate;
+    ws.getCell('AG'+lastRow).value = total.vat;
+    ws.getCell('AH'+lastRow).value = total.gross_amount;
+
+    const fooRow1 = ws.rowCount+2;    
+    const date = moment();
+    ws.getCell('A'+fooRow1).value       = 'Prepared by:';
+    ws.getCell('AH'+fooRow1).value      = `Report Generation Date: ${date.format('MMMM DD, YYYY - h:mm:ss a')}`
+    ws.getCell('AH'+fooRow1).alignment  = {
+        horizontal: 'right'
+    }
+    
+    const fooRow2 = ws.rowCount+1
+    ws.getCell('AH'+fooRow2).value =`Reported Printed By: RATA${date.format('MMDDYYYYHHmmSSsss')}`;
+    ws.getCell('AH'+fooRow2).alignment = {
+        horizontal: 'right'
+    }
+    
+    const fooRow3 = ws.rowCount + 1;
+    ws.getCell('AH'+fooRow3).value = 'Source Systems: Data Warehouse, RATA';
+    ws.getCell('AH'+fooRow3).alignment = {
+        horizontal: 'right'
+    }
+
+    const fooRow4 = ws.rowCount + 1;
+    ws.getCell('AH'+fooRow4).value = 'Printed via: RATA - Rating and Billing';
+    ws.getCell('AH'+fooRow4).alignment = {
+        horizontal: 'right'
+    }
+
+    ws.getCell('A'+fooRow4).value = 'Approved by:';
+
+
 
     return await workbook.xlsx.writeFile(filePath)
 }   
