@@ -65,6 +65,7 @@ module.exports =  async () => {
             repeat:{
                 cron: item.start_time_cron
             },
+            timeout:'4 * 60 * 1000',
             removeOnFail:true,
             removeOnComplete:true,
             //lockDuration: 1200000
@@ -82,6 +83,7 @@ module.exports =  async () => {
             repeat:{
                 cron: item.start_time_cron
             },
+            timeout: 1800000,
             removeOnFail:true,
             removeOnComplete:true
         })

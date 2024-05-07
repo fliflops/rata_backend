@@ -34,19 +34,19 @@ exports.asciiSalesOrder = async (data) => {
 
             if(header.customer === '10005' && String(details[0].class_of_store).toUpperCase() === 'COLD') {
                 SALES_ORDER_DETAIL=[
-                        {
-                            COMPANY_CODE:   '00001',
-                            SO_CODE:        header.draft_bill_no,
-                            ITEM_CODE:      header.ascii_item_code,
-                            LINE_NO:        1,
-                            LOCATION_CODE:  header.ascii_loc_code,
-                            UM_CODE:        ['2002','2003','2004','2008'].includes(details[0].service_type) ? 'lot' : details[0].min_billable_unit,
-                            QUANTITY:       1,
-                            UNIT_PRICE:     SO_AMT,   
-                            EXTENDED_AMT:   SO_AMT                    
-                        }
-                    ]
-                }
+                    {
+                        COMPANY_CODE:   '00001',
+                        SO_CODE:        header.draft_bill_no,
+                        ITEM_CODE:      header.ascii_item_code,
+                        LINE_NO:        1,
+                        LOCATION_CODE:  header.ascii_loc_code,
+                        UM_CODE:        ['2002','2003','2004','2008'].includes(details[0].service_type) ? 'lot' : details[0].min_billable_unit,
+                        QUANTITY:       1,
+                        UNIT_PRICE:     SO_AMT,   
+                        EXTENDED_AMT:   SO_AMT                    
+                    }
+                ]
+            }
             else if(header.customer === '10002' && details[0].service_type === '2001') {
                 const isEqual = quantity * Number(header.rate) ===  SO_AMT;
                 SALES_ORDER_DETAIL=[{
@@ -71,6 +71,7 @@ exports.asciiSalesOrder = async (data) => {
                     LOCATION_CODE:  header.ascii_loc_code,
                     UM_CODE:        ['2002','2003','2004','2008'].includes(header.service_type) ? 'lot' : header.min_billable_unit,
                     QUANTITY:       header.customer === '10005' ? quantity : quantity < Number(header.min_billable_value) ? Number(header.min_billable_value) : quantity,
+                    //quantity < Number(header.min_billable_value) ? Number(header.min_billable_value) : quantity,    
                     //QUANTITY:       quantity < Number(header.min_billable_value) ? Number(header.min_billable_value) : quantity,    
                     UNIT_PRICE:     Number(header.rate),   
                     EXTENDED_AMT:   SO_AMT//round(round(((Number(header.rate) * quantity )* 100),2) / 100,2)          

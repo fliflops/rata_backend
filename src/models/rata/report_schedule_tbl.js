@@ -21,6 +21,9 @@ class report_schedule_tbl extends Model {
             is_active:{
                 type: DataTypes.STRING
             },
+            report_type:{
+                type: DataTypes.STRING
+            },
             updatedAt: DataTypes.DATE,
             createdAt: DataTypes.DATE,
 

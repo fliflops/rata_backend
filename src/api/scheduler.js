@@ -15,5 +15,8 @@ router.route('/email')
 .post(authorize,    schedulerController.postEmail)
 .put(authorize,     schedulerController.putEmail)
 
+router.route('/cron')
+.post(schedulerController.cronTest)
+
 
 module.exports = router;

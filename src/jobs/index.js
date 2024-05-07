@@ -3,6 +3,9 @@ const {tmsautosync,transportSell,transportBuy} = require('./transportWorker');
 
 const crossdockReport = require('./reports/crossdockWorker');
 const p2pReport = require('./reports/p2pWorker');
+const accrualRevenue = require('./reports/accrualRevenue');
+const accrualExpense = require('./reports/accrualExpense');
+
 const crons = require('./crons');
 
 module.exports = () => {
@@ -12,7 +15,8 @@ module.exports = () => {
     transportSell()   
     transportBuy()
     crossdockReport()
-    p2pReport()
+    p2pReport();
+    accrualExpense();
+    accrualRevenue();
     crons();
-
 }
