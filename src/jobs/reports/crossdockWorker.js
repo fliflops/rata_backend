@@ -16,14 +16,6 @@ module.exports = () => {
             
             job.progress(10)
 
-            // const isJobExists = await reportService.getReportLog({
-            //     id: job.id
-            // })
-
-            // if(isJobExists) {
-            //     return done(null,null);
-            // }
-
             const draftBills = await reportService.getDraftBill({
                 service_type: '2001',
                 updatedAt:{
@@ -40,8 +32,8 @@ module.exports = () => {
                 dates:filters,
                 filePath
             })
-
             job.progress(100)
+
             return done(null,{
                 filePath,
                 fileName
@@ -70,7 +62,6 @@ module.exports = () => {
                 // file_name: fileName
             })
         }
-
     })
 
     REPORT_CROSSDOCK.on('completed', async(job) => {

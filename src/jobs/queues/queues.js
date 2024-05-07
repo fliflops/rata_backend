@@ -14,7 +14,7 @@ module.exports = {
     REPORT_CROSSDOCK:       new Bull('rata:reports:crossdock-secondary', {
         redis:redisConfig,
         settings:{
-            lockDuration: 1800000
+            lockDuration: 1800000,
         }
     }),
     REPORT_P2P:             new Bull('rata:reports:p2p', connection),
