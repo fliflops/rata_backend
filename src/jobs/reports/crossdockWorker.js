@@ -19,7 +19,8 @@ module.exports = () => {
             const draftBills = await reportService.getDraftBill({
                 service_type: '2001',
                 updatedAt:{
-                    [sequelize.Op.between]: [filters.from,filters.to]
+                    [sequelize.Op.between]:['2024-03-22 00:00:00','2024-04-21 00:00:00']
+                    //[sequelize.Op.between]: [filters.from,filters.to]
                 }
             });
             job.progress(30)
