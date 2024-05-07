@@ -11,7 +11,12 @@ module.exports = {
     RATA_DRAFT_BILL_SELL:   new Bull('rata:transport_draft_bill_sell', connection),
     RATA_DRAFT_BILL_BUY:    new Bull('rata:transport_draft_bill_buy', connection),
 
-    REPORT_CROSSDOCK:       new Bull('rata:reports:crossdock-secondary', connection),
+    REPORT_CROSSDOCK:       new Bull('rata:reports:crossdock-secondary', {
+        redis:redisConfig,
+        settings:{
+            lockDuration: 1800000
+        }
+    }),
     REPORT_P2P:             new Bull('rata:reports:p2p', connection),
     REPORT_ACC_EXPENSE:     new Bull('rata:reports:accrual-expense', connection),
     REPORT_ACC_REVENUE:     new Bull('rata:reports:accrual-revenue', connection)

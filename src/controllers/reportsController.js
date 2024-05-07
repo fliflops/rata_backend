@@ -142,7 +142,7 @@ exports.createPreBillingReport = async(req,res,next) => {
         await REPORT_CROSSDOCK.add(null, {
             jobId:uuidv4(),
             removeOnFail:true,
-            removeOnComplete:true
+            removeOnComplete:true,
         });
 
         res.end();
