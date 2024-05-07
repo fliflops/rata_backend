@@ -39,7 +39,7 @@ module.exports = () => {
                 //customer: '10005',
                 updatedAt:{
                     //[sequelize.Op.between]:['2024-04-01 00:00:00', '2024-04-30 00:00:00']
-                    [sequelize.Op.between]: [from,to]
+                    [sequelize.Op.between]: [filters.from,filters.to]
                 }
             });
 
