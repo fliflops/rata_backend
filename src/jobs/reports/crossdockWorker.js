@@ -14,44 +14,26 @@ module.exports = () => {
             const fileName = moment().format('YYYYMMDDHHmmss')+'crossdock-secondary.xlsx';
             const filePath = path.join(root,'/assets/reports/pre-billing/',fileName);
             
-            const isJobExists = await reportService.getReportLog({
-                id: job.id
-            })
-
-            if(isJobExists) {
-                return done(null,null);
-            }
-
-            const report = await reportService.findReport({
-                report_name: 'crossdock_secondary'
-            })
-    
-            await reportService.createReportLog({
-                id: job.id,
-                report_id: report.id,
-                report_status:'INPROGRESS',
-                file_path: filePath,
-                file_name: fileName
-            })
+            job.progress(10)
 
             const draftBills = await reportService.getDraftBill({
                 service_type: '2001',
-                //customer: '10005',
                 updatedAt:{
-                    //[sequelize.Op.between]:['2024-04-01 00:00:00', '2024-04-30 00:00:00']
-                    [sequelize.Op.between]: [from,to]
+                    [sequelize.Op.between]: [filters.from,filters.to]
                 }
             });
+            job.progress(30)
 
             const ascii = await asciiService.getSalesOrder(draftBills.length === 0 ? '' : draftBills.map(item => item.draft_bill_no))
+            job.progress(80)
 
             await reportService.crossDockSecondary({
                 data: draftBills.filter(item => ascii.map(a => a.SO_CODE).includes(item.draft_bill_no)),
                 dates:filters,
                 filePath
             })
+            job.progress(100)
 
-            await job.progress('completed')
             return done(null,{
                 filePath,
                 fileName
@@ -62,6 +44,26 @@ module.exports = () => {
         }
     })
 
+    REPORT_CROSSDOCK.on('active', async(job) => {
+        const isJobExists = await reportService.getReportLog({
+            id: job.id
+        })
+
+        if(!isJobExists) {
+            const report = await reportService.findReport({
+                report_name: 'crossdock_secondary'
+            })
+    
+            await reportService.createReportLog({
+                id: job.id,
+                report_id: report.id,
+                report_status:'INPROGRESS',
+                // file_path: filePath,
+                // file_name: fileName
+            })
+        }
+    })
+
     REPORT_CROSSDOCK.on('completed', async(job) => {
         await reportService.updateReportLog({
             filter:{
@@ -69,8 +71,8 @@ module.exports = () => {
             },
             data:{
                 report_status:'DONE',
-                // file_path: job.returnvalue.filePath,
-                // file_name: job.returnvalue.fileName
+                file_path: job.returnvalue.filePath,
+                file_name: job.returnvalue.fileName
             }
         })    
     })
