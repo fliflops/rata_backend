@@ -44,8 +44,7 @@ module.exports = () => {
 
     REPORT_REVERSE_LOGISTICS.process(async (job,done) => {
         try{
-            console.log('test')
-            //const filters = reportService.generateFilter();
+           
             const filters = generateFilter();
             
             const report = await reportService.findReport({
@@ -96,8 +95,8 @@ module.exports = () => {
                 data,
                 filePath,
                 dates:{
-                    from: '2024-04-01',
-                    to:'2024-04-15'
+                    from: filters.from,
+                    to: filters.to
                 }
             })
             
