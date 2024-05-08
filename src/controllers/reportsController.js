@@ -21,7 +21,7 @@ exports.createPodReport = async(req,res,next) => {
         let leak_details = [];
 
         const from = '2024-04-01'
-        const to = '2024-04-15'
+        const to = '2024-04-30'
 
         const data = await podReportService.joinedInvoices({
             from,
@@ -29,7 +29,7 @@ exports.createPodReport = async(req,res,next) => {
         })
 
         const draftBill = await podReportService.podSell({
-            data,
+            data: data.filter(item => item.principal_code === '10005'),
             from,
             to
         })
@@ -82,7 +82,7 @@ exports.createPodReportBuy = async(req,res,next) => {
         let leak_details = [];
 
         const from = '2024-04-01'
-        const to = '2024-04-26'
+        const to = '2024-04-30'
 
         const data = await podReportService.joinedInvoices({
             from,
@@ -90,7 +90,7 @@ exports.createPodReportBuy = async(req,res,next) => {
         })
 
         const draftBill = await podReportService.podBuy({
-            data,//: data.filter(item => item.tms_reference_no === 'BR002218422'),
+            data,
             from,
             to
         })

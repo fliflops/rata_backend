@@ -13,13 +13,10 @@ module.exports = () => {
             const root = global.appRoot;
             const fileName = moment().format('YYYYMMDDHHmmss')+'crossdock-secondary.xlsx';
             const filePath = path.join(root,'/assets/reports/pre-billing/',fileName);
-            
             job.progress(10)
-
             const draftBills = await reportService.getDraftBill({
                 service_type: '2001',
                 updatedAt:{
-                    //[sequelize.Op.between]:['2024-03-22 00:00:00','2024-04-21 00:00:00']
                     [sequelize.Op.between]: [filters.from,filters.to]
                 }
             });
