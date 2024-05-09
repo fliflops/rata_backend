@@ -21,7 +21,7 @@ exports.createPodReport = async(req,res,next) => {
         let leak_details = [];
 
         const from = '2024-04-01'
-        const to = '2024-04-30'
+        const to = '2024-04-15'
 
         const data = await podReportService.joinedInvoices({
             from,
@@ -29,7 +29,7 @@ exports.createPodReport = async(req,res,next) => {
         })
 
         const draftBill = await podReportService.podSell({
-            data: data.filter(item => item.principal_code === '10005'),
+            data,
             from,
             to
         })
@@ -81,8 +81,8 @@ exports.createPodReportBuy = async(req,res,next) => {
         let leak_header = [];
         let leak_details = [];
 
-        const from = '2024-04-01'
-        const to = '2024-04-30'
+        const from = '2024-04-08'
+        const to = '2024-04-08'
 
         const data = await podReportService.joinedInvoices({
             from,
@@ -95,7 +95,6 @@ exports.createPodReportBuy = async(req,res,next) => {
             to
         })
 
-        
         for(let {details,...db} of  draftBill.draft_bill){
             draft_bill_header.push(db)
             draft_bill_details = draft_bill_details.concat(details)

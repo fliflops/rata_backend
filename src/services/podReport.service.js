@@ -134,7 +134,7 @@ const getPodInvoices = async({from,to}) => {
     ax.brNo,
     cx.deliveryStatus
     from trip_br_dtl_tbl ax    
-    left join trip_plan_hdr_tbl bx on ax.tripPlan = bx.tripPlanNo and ax.isDeleted = 0    
+    inner join trip_plan_hdr_tbl bx on ax.tripPlan = bx.tripPlanNo and ax.isDeleted = 0    
     left join booking_request_hdr_tbl cx on ax.brNo = cx.bookingRequestNo and ax.isDeleted = 0    
     where brNo in (:br)
     ) a    
@@ -178,6 +178,7 @@ const getPodInvoices = async({from,to}) => {
         const ship_point_from = shipPoints.find(a => String(a.stc_code).toLowerCase() === String(item.stc_from).toLowerCase())
         const ship_point_to = shipPoints.find(a => String(a.stc_code).toLowerCase() === String(item.stc_to).toLowerCase())
         const redel_remarks = String(item.invoice_no).split('|')
+        
         return {
             ...item,
             is_billable: _.isNull(item.is_billable) ? 1 : item.is_billable,
@@ -693,8 +694,6 @@ const draftBillWithAgg = async({contract_type,invoices}) => {
 
             let total_charges = null;
 
-            
-
             if(draft_bill.parameters) {
                 const total_cbm     = _.sumBy(draft_bill.draft_bill_details,item => isNaN(parseFloat(item.actual_cbm)) ? 0 :    parseFloat(item.actual_cbm))
                 const total_weight  = _.sumBy(draft_bill.draft_bill_details,item => isNaN(parseFloat(item.actual_weight))? 0 :  parseFloat(item.actual_weight))
@@ -1066,7 +1065,7 @@ const draftBillIC = async({invoices}) => {
             const details = item.details;
             
             const planned_qty       = _.sumBy(details,i => isNaN(Number(i.planned_qty)) ? 0 : Number(i.planned_qty)) 
-            const actual_qty        = getSum(details,item.tariff.min_billable_unit,'actual_qty')     
+            const actual_qty        = _.sumBy(details,i => isNaN(Number(i.actual_qty)) ? 0 : Number(i.actual_qty))     
             const ic_qty            = _.sumBy(details,item => {
                 if(item.uom === 'PIECE') {
                     return 1
@@ -1392,7 +1391,6 @@ exports.podSell = async({
         draft_bill,
         revenue_leak,
         invoice,
-        contracts
     };
 }
 
@@ -1424,8 +1422,6 @@ exports.podBuy = async({
         raw = await getBillableInvoices(raw)
         temp_rev_leak = temp_rev_leak.concat(raw.revenue_leak)
 
-        invoice = invoice.concat(raw.data)
-
         raw = await assignContract({ invoices: raw.data, contracts})
         temp_rev_leak = temp_rev_leak.concat(raw.revenue_leak)
 
@@ -1447,6 +1443,5 @@ exports.podBuy = async({
         draft_bill,
         revenue_leak,
         invoice,
-        contracts
     }   
 }
