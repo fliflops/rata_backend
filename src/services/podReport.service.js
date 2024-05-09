@@ -1,5 +1,4 @@
 const Sequelize  = require('sequelize');
-const {sql} = require('@sequelize/core');
 const {kronos, pod} = require('../models/datawarehouse');
 const models = require('../models/rata')
 const round = require('../helpers/round');
