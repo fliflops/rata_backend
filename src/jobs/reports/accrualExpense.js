@@ -86,7 +86,7 @@ module.exports = () => {
         }
     })
 
-    REPORT_CROSSDOCK.on('active', async(job) => {
+    REPORT_ACC_EXPENSE.on('active', async(job) => {
         const isJobExists = await reportService.getReportLog({
             id: job.id
         })
