@@ -14,6 +14,8 @@ const _ = require('lodash');
 
 exports.createPodReport = async(req,res,next) => {
     try{
+
+        res.end()
         
         // let draft_bill_header  = [];
         // let draft_bill_details = [];
@@ -75,6 +77,10 @@ exports.createPodReport = async(req,res,next) => {
 
 exports.createPodReportBuy = async(req,res,next) => {
     try{
+
+        
+
+        res.end();
 
         // let draft_bill_header  = [];
         // let draft_bill_details = [];
