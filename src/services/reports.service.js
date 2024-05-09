@@ -153,6 +153,7 @@ exports.getDraftBill = async(filters={}) => {
     .then(data => JSON.parse(JSON.stringify(data)))
 
     data.forEach(({details,...draftBill}) => {
+   
         reportData = reportData.concat(details.map(({invoice,...item}) => {
             const invoiceDetails = invoice.helios_invoices_dtl_tbls.filter(value => value.class_of_store === item.class_of_store)
             const actual_qty_pc = _.sum(invoiceDetails.filter(value => value.uom === 'PIECE').map(value => Number(value.actual_qty)))
@@ -235,9 +236,9 @@ exports.getDraftBill = async(filters={}) => {
                 truck_count:        1,
                 utilization:        null,
                 tons:               isNaN(tons) ? null : tons,
-                draft_bill_count:   details.length,
+                draft_bill_count:   _.uniq(details.map(item => item.ship_from)).length,
                 vat:                Number(draftBill.rate) * 0.12,
-                gross_amount:       Number(draftBill.rate) * (Number(draftBill.rate) * 0.12),
+                gross_amount:       Number(draftBill.rate) + (Number(draftBill.rate) * 0.12),
                 group_key:          `${draftBill.trip_date}-${invoice.principal_code}-${item.trip_plan}-${invoice.ship_point_to.stc_name}`
             }
         }))
@@ -356,7 +357,7 @@ exports.updateReportLog = async({filter,data}) => {
     })
 }
 
-exports.getAsciiEvents = async(trip_nos = []) => {
+exports.getKronosEvents = async(trip_nos = []) => {
     return await kronos.query(`
         Select  
         a.trip_log_id,
@@ -764,7 +765,7 @@ exports.crossDockSecondary = async({
             horizontal:'right'
         }
     }
-    ws.getCell('BB'+String(lastRow+13)).value = 'Reported Printed By: RATA'+moment().format('MMDDYYYYHHmmsss')
+    ws.getCell('BB'+String(lastRow+13)).value = 'Reported Printed By: RATA'+moment().format('MMDDYYYYHHmmssSSS')
     ws.getCell('BB'+String(lastRow+13)).style = {
         alignment:{
             horizontal:'right'
@@ -1111,7 +1112,7 @@ exports.p2p = async({data=[], filePath=null, dates={}}) => {
             horizontal:'right'
         }
     }
-    ws.getCell('AO'+String(lastRow+13)).value = 'Reported Printed By: RATA'+moment().format('MMDDYYYYHHmmsss')
+    ws.getCell('AO'+String(lastRow+13)).value = 'Reported Printed By: RATA'+moment().format('MMDDYYYYHHmmssSSS')
     ws.getCell('AO'+String(lastRow+13)).style = {
         alignment:{
             horizontal:'right'
@@ -1406,13 +1407,13 @@ exports.reverseLogistics = async({data=[], filePath=null, dates={}}) => {
     }
     
     const fooRow2 = ws.rowCount+1
-    ws.getCell('AH'+fooRow2).value =`Reported Printed By: RATA${date.format('MMDDYYYYHHmmSSsss')}`;
+    ws.getCell('AH'+fooRow2).value =`Reported Printed By: RATA${date.format('MMDDYYYYHHmmssSSS')}`;
     ws.getCell('AH'+fooRow2).alignment = {
         horizontal: 'right'
     }
     
     const fooRow3 = ws.rowCount + 1;
-    ws.getCell('AH'+fooRow3).value = 'Source Systems: Data Warehouse, RATA';
+    ws.getCell('AH'+fooRow3).value = 'Source Systems: RATA, ASCII, Kronos';
     ws.getCell('AH'+fooRow3).alignment = {
         horizontal: 'right'
     }

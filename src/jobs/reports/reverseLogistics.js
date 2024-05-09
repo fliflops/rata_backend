@@ -64,7 +64,6 @@ module.exports = () => {
             const draftBill = await reportService.getDraftBill({
                 service_type:'2004',
                 trip_date: {
-                    //[sequelize.Op.between]:['2024-01-01 00:00:00', '2024-01-31 00:00:00']
                     [sequelize.Op.between]:[filters.from,filters.to]
                 },
             })
@@ -76,18 +75,18 @@ module.exports = () => {
                 count: index + 1
             }))
             
-            const asciiEventDetails = await reportService.getAsciiEvents(_.uniq(asciiValidation.map(item => item.trip_plan)))
+            const kronosEventDetails = await reportService.getKronosEvents(_.uniq(asciiValidation.map(item => item.trip_plan)))
 
             const data = asciiValidation.map(item => {
                 const count = generateCount.find(a => a.draft_bill_no === item.draft_bill_no)
-                const eventDvry = asciiEventDetails.find(a => a.trip_log_id === item.trip_plan && a.to_location === item.to_stc && a.type === 'DELIVERY')
-                const eventPckp = asciiEventDetails.find(a => a.trip_log_id === item.trip_plan && a.from_location === item.ship_from && a.type === 'PICKUP')
+                const eventDvry = kronosEventDetails.find(a => a.trip_log_id === item.trip_plan && a.to_location === item.to_stc && a.type === 'DELIVERY')
+                const eventPckp = kronosEventDetails.find(a => a.trip_log_id === item.trip_plan && a.to_location === item.ship_from && a.type === 'PICKUP')
                 return {
                     ...item,
                     ...count,
                     trip_rate: item.rate,
-                    drvy_actual_datetime: eventDvry?.actual_datetime ?? null,
-                    actual_datetime: eventPckp?.actual_datetime ?? null
+                    drvy_actual_datetime: moment(eventDvry?.actual_datetime).format('YYYY-MM-DD') ?? null,
+                    actual_datetime: moment(eventPckp?.actual_datetime).format('YYYY-MM-DD') ?? null
                 }
             })
 
