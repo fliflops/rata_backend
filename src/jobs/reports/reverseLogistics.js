@@ -58,7 +58,7 @@ module.exports = () => {
             })
 
             const root = global.appRoot;
-            const fileName = moment().format('YYYYMMDDHHmmss')+'reverese_logitics.xlsx';
+            const fileName = moment().format('YYYYMMDDHHmmss')+'reverese_logistics.xlsx';
             const filePath = path.join(root,'/assets/reports/pre-billing/',fileName);
             
             const draftBill = await reportService.getDraftBill({
