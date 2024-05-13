@@ -58,7 +58,7 @@ const getSubTotals = async (invoice = []) => {
             total_actual_cbm:       _.sum(data.map(item => item.actual_cbm)),
             total_cbm:              cbm_ambient + outer_cbm,
             charges_wo_mgv:         round(charges_wo_mgv,2),
-            charges_w_mgv:          charges_w_mgv,        
+            charges_w_mgv:          isNaN(charges_w_mgv) ? 0 : charges_w_mgv,        
             total_tons:             round(_.sum(data.map(item => Number(item.tons))),2),
             utilization,
             inner_cbm,
@@ -148,29 +148,29 @@ exports.getDraftBill = async(filters={}) => {
                     contract_type: 'SELL'
                 }
             ]
-        }
+        },
     })
     .then(data => JSON.parse(JSON.stringify(data)))
 
     data.forEach(({details,...draftBill}) => {
    
         reportData = reportData.concat(details.map(({invoice,...item}) => {
-            const invoiceDetails = invoice.helios_invoices_dtl_tbls.filter(value => value.class_of_store === item.class_of_store)
-            const actual_qty_pc = _.sum(invoiceDetails.filter(value => value.uom === 'PIECE').map(value => Number(value.actual_qty)))
-            const actual_qty_cs = _.sum(invoiceDetails.filter(value => value.uom === 'CASE').map(value => Number(value.actual_qty)))
+            const invoiceDetails = invoice.helios_invoices_dtl_tbls.filter(value => String(value.class_of_store).toUpperCase() === String(item.class_of_store).toUpperCase())
+            const actual_qty_pc = _.sum(invoiceDetails.filter(value => String(value.uom).toUpperCase() === 'PIECE').map(value => Number(value.actual_qty)))
+            const actual_qty_cs = _.sum(invoiceDetails.filter(value => String(value.uom).toUpperCase() === 'CASE').map(value => Number(value.actual_qty)))
             const actual_weight = _.sum(invoiceDetails.map(value => Number(value.actual_weight)));
             const cbm =           _.sum(invoiceDetails.map(value => Number(value.actual_cbm)));
 
-            const cbm_ambient =  item.class_of_store === 'AMBIENT' ? cbm : null;
+            const cbm_ambient =  String(item.class_of_store).toUpperCase() === 'AMBIENT' ? cbm : null;
             const cbm_cold =     item.class_of_store === 'COLD' ? cbm :null;
             //const inner_cbm =    
             //const round_up =     inner_cbm ? Math.ceil(inner_cbm) : null;
             //const outer_cbm =    round_up ? (round_up * 0.18) : null;
-            const rate_ambient = item.class_of_store === 'AMBIENT' ? Number(draftBill.rate) : null;
-            const rate_cold =    item.class_of_store === 'COLD' ? Number(draftBill.rate) : null;
-            const ambient_charges = item.class_of_store === 'AMBIENT' ? Number(item.billing) : null;
-            const cold_charges = item.class_of_store ==='COLD' ? Number(item.billing) : null;
-            const tons =        round(Number(item.actual_weight / 100),2);
+            const rate_ambient =    String(item.class_of_store).toUpperCase() === 'AMBIENT' ? Number(draftBill.rate) : null;
+            const rate_cold =       String(item.class_of_store).toUpperCase() === 'COLD' ? Number(draftBill.rate) : null;
+            const ambient_charges = String(item.class_of_store).toUpperCase() === 'AMBIENT' ? Number(item.billing) : null;
+            const cold_charges =    String(item.class_of_store).toUpperCase() ==='COLD' ? Number(item.billing) : null;
+            const tons =            round(Number(item.actual_weight / 100),2);
            
             return {
                 draft_bill_no:      item.draft_bill_no,
@@ -251,9 +251,9 @@ exports.getDraftBill = async(filters={}) => {
         return {
             ...item,
             ...subTotal,
-            inner_cbm: item.class_of_store === 'COLD' ? subTotal.inner_cbm : null,
-            round_up:   item.class_of_store === 'COLD' ? subTotal.round_up : null,
-            outer_cbm: item.class_of_store === 'COLD' ? subTotal.outer_cbm : null
+            inner_cbm: String(item.class_of_store).toUpperCase() === 'COLD' ? subTotal.inner_cbm : null,
+            round_up:  String(item.class_of_store).toUpperCase() === 'COLD' ? subTotal.round_up : null,
+            outer_cbm: String(item.class_of_store).toUpperCase() === 'COLD' ? subTotal.outer_cbm : null
         }
     })
     

@@ -9,6 +9,18 @@ module.exports = () => {
     REPORT_P2P.process(async (job, done) => {
         try{
             const filters = reportService.generateFilter();
+            const root = global.appRoot;
+            const fileName = moment().format('YYYYMMDDHHmmss')+'p2p.xlsx';
+            const filePath = path.join(root,'/assets/reports/pre-billing/',fileName);
+           
+
+            const isJobExists = await reportService.getReportLog({
+                id: job.id
+            })
+
+            if(isJobExists) {
+                return done();
+            }
 
             const report = await reportService.findReport({
                 report_name: 'p2p'
@@ -18,12 +30,10 @@ module.exports = () => {
                 id: job.id,
                 report_id: report.id,
                 report_status:'INPROGRESS',
+                file_path: filePath,
+                file_name: fileName
             })
 
-            const root = global.appRoot;
-            const fileName = moment().format('YYYYMMDDHHmmss')+'p2p.xlsx';
-            const filePath = path.join(root,'/assets/reports/pre-billing/',fileName);
-           
             const draftBills = await reportService.getDraftBill({
                 customer: '10005',
                 service_type:'2003',
@@ -32,7 +42,7 @@ module.exports = () => {
                 }
             });
 
-            const ascii = await asciiService.getSalesOrder(draftBills.length === 0 ?  draftBills.map(item => item.draft_bill_no) : '') 
+            const ascii = await asciiService.getSalesOrder(draftBills.length === 0 ? '' : draftBills.map(item => item.draft_bill_no))
 
             await reportService.p2p({
                 data: draftBills.filter(item => ascii.map(a => a.SO_CODE).includes(item.draft_bill_no)),
@@ -58,8 +68,6 @@ module.exports = () => {
             },
             data:{
                 report_status:'DONE',
-                file_path: job.returnvalue.filePath,
-                file_name: job.returnvalue.fileName
             }
         })
     })
