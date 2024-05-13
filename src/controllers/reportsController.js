@@ -14,19 +14,9 @@ const _ = require('lodash');
 
 exports.createPodReport = async(req,res,next) => {
     try{
-<<<<<<< HEAD
-        await REPORT_ACC_REVENUE.add(null,{
-            jobId:uuidv4(),
-            removeOnFail:true,
-            removeOnComplete:true,
-        })
-        
-        res.end()
-=======
 
         res.end()
         
->>>>>>> 04c4a9103386cdefe34d84f492b6d57c94ecd255
         // let draft_bill_header  = [];
         // let draft_bill_details = [];
         // let leak_header = [];
@@ -93,28 +83,6 @@ exports.createPodReportBuy = async(req,res,next) => {
             removeOnComplete:true,
         })
 
-<<<<<<< HEAD
-        // let draft_bill_header  = [];
-        // let draft_bill_details = [];
-        // let leak_header = [];
-        // let leak_details = [];
-
-        // const from = '2024-04-01'
-        // const to = '2024-04-26'
-
-        // const data = await podReportService.joinedInvoices({
-        //     from,
-        //     to
-        // })
-
-        // const draftBill = await podReportService.podBuy({
-        //     data,//: data.filter(item => item.tms_reference_no === 'BR002218422'),
-        //     from,
-        //     to
-        // })
-
-        
-=======
         
 
         res.end();
@@ -138,7 +106,6 @@ exports.createPodReportBuy = async(req,res,next) => {
         //     to
         // })
 
->>>>>>> 04c4a9103386cdefe34d84f492b6d57c94ecd255
         // for(let {details,...db} of  draftBill.draft_bill){
         //     draft_bill_header.push(db)
         //     draft_bill_details = draft_bill_details.concat(details)
@@ -172,11 +139,7 @@ exports.createPodReportBuy = async(req,res,next) => {
         //         to:             moment(to).format('MMMM DD, YYYY'),
         //     }
         // )
-<<<<<<< HEAD
-        res.status(200).json([])
-=======
         // res.status(200).json(draftBill)
->>>>>>> 04c4a9103386cdefe34d84f492b6d57c94ecd255
     }
     catch(e){
         next(e)
@@ -354,7 +317,6 @@ exports.downloadReport = async(req,res,next) => {
 
 exports.reverseLogistics = async(req,res,next) => {
     try{
-<<<<<<< HEAD
 
         await REPORT_REVERSE_LOGISTICS.add(null, {
             jobId:uuidv4(),
@@ -405,51 +367,6 @@ exports.reverseLogistics = async(req,res,next) => {
         // })
 
         res.status(200).end();
-=======
-        const draftBill = await reportService.getDraftBill({
-            service_type:'2004',
-            updatedAt: {
-                [sequelize.Op.between]:['2024-01-01 00:00:00', '2024-01-31 00:00:00']
-                //[sequelize.Op.between]:[filter.from,filter.to]
-            },
-        })
-
-        const ascii = await asciiService.getSalesOrder(draftBill.length === 0 ? '' : draftBill.map(item => item.draft_bill_no))
-        const root = global.appRoot;
-        const fileName = moment().format('YYYYMMDDHHmmss')+'reverse_logistics.xlsx';
-        const filePath = path.join( root,'/assets/reports/pre-billing/', fileName);
-
-        const asciiValidation = draftBill.filter(item => ascii.map(a => a.SO_CODE).includes(item.draft_bill_no))
-        const generateCount = _.uniq(asciiValidation.map(item => item.draft_bill_no)).map((item,index) => ({
-            draft_bill_no: item,
-            count: index + 1
-        }))
-
-        const asciiEventDetails = await reportService.getAsciiEvents(_.uniq(asciiValidation.map(item => item.trip_plan)))
-
-        const data = asciiValidation.map(item => {
-            const count = generateCount.find(a => a.draft_bill_no === item.draft_bill_no)
-            const eventDvry = asciiEventDetails.find(a => a.trip_log_id === item.trip_plan && a.to_location === item.to_stc && a.type === 'DELIVERY')
-            const eventPckp = asciiEventDetails.find(a => a.trip_log_id === item.trip_plan && a.from_location === item.ship_from && a.type === 'PICKUP')
-            return {
-                ...item,
-                ...count,
-                drvy_actual_datetime: eventDvry?.actual_datetime ?? null,
-                actual_datetime: eventPckp?.actual_datetime ?? null
-            }
-        })
-
-        await reportService.reverseLogistics({
-            data,
-            filePath,
-            dates:{
-                from: '2024-04-01',
-                to:'2024-04-15'
-            }
-        })
-
-        res.status(200).json(data);
->>>>>>> 04c4a9103386cdefe34d84f492b6d57c94ecd255
     }
     catch(e){
         next(e)
