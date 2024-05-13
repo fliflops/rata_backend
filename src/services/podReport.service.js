@@ -1064,7 +1064,7 @@ const draftBillIC = async({invoices}) => {
             const details = item.details;
             
             const planned_qty       = _.sumBy(details,i => isNaN(Number(i.planned_qty)) ? 0 : Number(i.planned_qty)) 
-            const actual_qty        = _.sumBy(details,i => isNaN(Number(i.actual_qty)) ? 0 : Number(i.actual_qty))     
+            const actual_qty        = getSum(details,item.tariff.min_billable_unit,'actual_qty')         
             const ic_qty            = _.sumBy(details,item => {
                 if(item.uom === 'PIECE') {
                     return 1
