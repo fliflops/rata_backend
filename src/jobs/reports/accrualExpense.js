@@ -14,77 +14,93 @@ module.exports = () => {
             let draft_bill_details = [];
             let leak_header = [];
             let leak_details = [];
-
             const from = moment().subtract(1,'month').startOf('month').format('YYYY-MM-DD');
             const to = moment().subtract(1,'month').endOf('month').format('YYYY-MM-DD')
+           
+            // const report = await reportService.findReport({
+            //     report_name: 'accrual_expense'
+            // })
 
-            const report = await reportService.findReport({
-                report_name: 'accrual_expense'
+            // await reportService.createReportLog({
+            //     id: job.id,
+            //     report_id: report.id,
+            //     report_status:'INPROGRESS',
+            // })
+
+
+            const data = await podReportService.joinedInvoices({
+                from,
+                to
             })
-
-            await reportService.createReportLog({
-                id: job.id,
-                report_id: report.id,
-                report_status:'INPROGRESS',
-            })
-
-
-        const data = await podReportService.joinedInvoices({
-            from,
-            to
-        })
-
-        const draftBill = await podReportService.podBuy({
-            data,
-            from,
-            to
-        })
-
         
-        for(let {details,...db} of  draftBill.draft_bill){
-            draft_bill_header.push(db)
-            draft_bill_details = draft_bill_details.concat(details)
-        }
-        
-        for(let {details,...leak} of  draftBill.revenue_leak){
-            leak_header.push({
-                ...leak,
-                draft_bill_type:'BUY',
+            const draftBill = await podReportService.podBuy({
+                data,
+                from,
+                to
             })
-            leak_details = leak_details.concat(details.map(items => ({
-                ...items,
-                class_of_store: leak.class_of_store,
-                draft_bill_type:'BUY'
-            })))
-        }
 
-        const root = global.appRoot;
-        const fileName = moment().format('YYYYMMDDHHmmss')+'expense_accrual_report.xlsx'
-        const filePath = path.join( root,'/assets/reports/accrual/', fileName);
-
-        await podReportExcelService.podAccrualTemplate(
-            {
-                header:         draft_bill_header,
-                details:        draft_bill_details,
-                leak_header:    leak_header,
-                leak_details:   leak_details,
-                filePath,
-                type:'BUY',
-                from: moment(from).format('MMMM DD, YYYY'),
-                to:moment(to).format('MMMM DD, YYYY'),
+            for(let {details,...db} of  draftBill.draft_bill){
+                draft_bill_header.push(db)
+                draft_bill_details = draft_bill_details.concat(details)
             }
-        )
-        
-        job.progress('completed')
-        done(null,{
-            filePath,
-            fileName
-        });
+            
+            for(let {details,...leak} of  draftBill.revenue_leak){
+                leak_header.push({
+                    ...leak,
+                    draft_bill_type:'BUY',
+                })
+                leak_details = leak_details.concat(details.map(items => ({
+                    ...items,
+                    class_of_store: leak.class_of_store,
+                    draft_bill_type:'BUY'
+                })))
+            }
+
+            const root = global.appRoot;
+            const fileName = moment().format('YYYYMMDDHHmmss')+'expense_accrual_report.xlsx'
+            const filePath = path.join( root,'/assets/reports/accrual/', fileName);
+
+            await podReportExcelService.podAccrualTemplate(
+                {
+                    header:         draft_bill_header,
+                    details:        draft_bill_details,
+                    leak_header:    leak_header,
+                    leak_details:   leak_details,
+                    filePath,
+                    type:'BUY',
+                    from: moment(from).format('MMMM DD, YYYY'),
+                    to:moment(to).format('MMMM DD, YYYY'),
+                }
+            )
+            
+            job.progress('completed')
+            done(null,{
+                filePath,
+                fileName
+            });
 
 
         }
         catch(e){
             done(e)
+        }
+    })
+
+    REPORT_ACC_EXPENSE.on('active', async(job) => {
+        const isJobExists = await reportService.getReportLog({
+            id: job.id
+        })
+
+        if(!isJobExists) {
+            const report = await reportService.findReport({
+                report_name: 'accrual_expense'
+            })
+    
+            await reportService.createReportLog({
+                id: job.id,
+                report_id: report.id,
+                report_status:'INPROGRESS',
+            })
         }
     })
 

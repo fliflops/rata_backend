@@ -236,7 +236,7 @@ const revenueColumns = [
     },
     {
         header:'Minimum Rate',
-        key:''
+        key:'min_rate'
     },
     {
         header:'Contracted Rate',
