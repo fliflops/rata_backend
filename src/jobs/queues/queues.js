@@ -18,7 +18,18 @@ module.exports = {
         }
     }),
     REPORT_P2P:             new Bull('rata:reports:p2p', connection),
-    REPORT_ACC_EXPENSE:     new Bull('rata:reports:accrual-expense', connection),
-    REPORT_ACC_REVENUE:     new Bull('rata:reports:accrual-revenue', connection)
+    REPORT_REVERSE_LOGISTICS: new Bull('rata:reports:reverse-logistics', connection),
+    REPORT_ACC_EXPENSE:     new Bull('rata:reports:accrual-expense', {
+        redis: redisConfig,
+        settings:{
+            lockDuration:1800000
+        }
+    }),
+    REPORT_ACC_REVENUE:     new Bull('rata:reports:accrual-revenue', {
+        redis: redisConfig,
+        settings:{
+            lockDuration:1800000
+        }
+    })
     
 }

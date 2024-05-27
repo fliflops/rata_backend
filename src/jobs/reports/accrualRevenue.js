@@ -17,17 +17,6 @@ module.exports = () => {
             const from = moment().subtract(1,'month').startOf('month').format('YYYY-MM-DD');
             const to = moment().subtract(1,'month').endOf('month').format('YYYY-MM-DD')
 
-            const report = await reportService.findReport({
-                report_name: 'accrual_revenue'
-            })
-
-            await reportService.createReportLog({
-                id: job.id,
-                report_id: report.id,
-                report_status:'INPROGRESS',
-            })
-
-
             const data = await podReportService.joinedInvoices({
                 from,
                 to
@@ -81,6 +70,24 @@ module.exports = () => {
         }
         catch(e){
             done(e)
+        }
+    })
+
+    REPORT_ACC_REVENUE.on('active', async(job) => {
+        const isJobExists = await reportService.getReportLog({
+            id: job.id
+        })
+
+        if(!isJobExists) {
+            const report = await reportService.findReport({
+                report_name: 'accrual_revenue'
+            })
+    
+            await reportService.createReportLog({
+                id: job.id,
+                report_id: report.id,
+                report_status:'INPROGRESS',
+            })
         }
     })
 

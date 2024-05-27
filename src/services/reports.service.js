@@ -1,11 +1,11 @@
 const excelJs   = require('exceljs');
 const models    = require('../models/rata')
+const kronos    = require('../models/datawarehouse').kronos
 const sequelize = require('sequelize');
 const moment    = require('moment');
 const _         = require('lodash');
 const round     = require('../helpers/round');
 const path      = require('path');
-const {Op}      = sequelize;
 
 const  borderStyles = {
     top: { style: "thin" },
@@ -130,6 +130,9 @@ exports.getDraftBill = async(filters={}) => {
                             },
                             {
                                 model: models.principal_tbl
+                            },
+                            {
+                                model: models.vendor_tbl
                             }
                         ]
                     }
@@ -150,6 +153,7 @@ exports.getDraftBill = async(filters={}) => {
     .then(data => JSON.parse(JSON.stringify(data)))
 
     data.forEach(({details,...draftBill}) => {
+   
         reportData = reportData.concat(details.map(({invoice,...item}) => {
             const invoiceDetails = invoice.helios_invoices_dtl_tbls.filter(value => String(value.class_of_store).toUpperCase() === String(item.class_of_store).toUpperCase())
             const actual_qty_pc = _.sum(invoiceDetails.filter(value => String(value.uom).toUpperCase() === 'PIECE').map(value => Number(value.actual_qty)))
@@ -185,6 +189,12 @@ exports.getDraftBill = async(filters={}) => {
                 ship_from:          invoice.stc_from,
                 customer_code:      null,
                 customer_name:      invoice.ship_point_to.stc_name,
+                to_stc:             invoice.ship_point_to.stc_code,
+                to_province:        invoice.ship_point_to.province,
+                from_name:          invoice.ship_point_from.stc_name,  
+                from_province:      invoice.ship_point_from.province,
+                from_city:          invoice.ship_point_from.city,
+                vendor_description: invoice.vendor_tbl?.vendor_description ?? null,
                 area_code:          null,
                 remarks:            null,
                 province:           invoice.ship_point_to.province,
@@ -226,6 +236,9 @@ exports.getDraftBill = async(filters={}) => {
                 truck_count:        1,
                 utilization:        null,
                 tons:               isNaN(tons) ? null : tons,
+                draft_bill_count:   _.uniq(details.map(item => item.ship_from)).length,
+                vat:                Number(draftBill.rate) * 0.12,
+                gross_amount:       Number(draftBill.rate) + (Number(draftBill.rate) * 0.12),
                 group_key:          `${draftBill.trip_date}-${invoice.principal_code}-${item.trip_plan}-${invoice.ship_point_to.stc_name}`
             }
         }))
@@ -245,6 +258,160 @@ exports.getDraftBill = async(filters={}) => {
     })
     
     return _.orderBy(reportData,['group_key'],'asc')
+}
+
+exports.getReporHeader = async(query) => {
+    const {
+        page,
+        totalPage,
+        search,
+        ...filters
+    } = query;
+
+    const where = {};
+
+    const {count,rows} = await models.report_schedule_tbl.findAndCountAll({
+        where:{
+            ...filters
+        },
+        order:[['createdAt','DESC']],
+        offset: parseInt(page) * parseInt(totalPage),
+        limit: parseInt(totalPage)
+    })
+    .then(result => JSON.parse(JSON.stringify(result)))
+
+    return {
+        count,
+        rows,
+        pageCount: Math.ceil(count/totalPage)
+    }
+}
+
+exports.findReport = async(filter) => {
+    return await models.report_schedule_tbl.findOne({
+        where:{
+            ...filter
+        }
+    })
+}
+
+exports.getReportLogs = async(query, report_id) => {
+    const {
+        page,
+        totalPage,
+        search,
+        ...filters
+    } = query;
+
+    const {count,rows} = await models.report_tbl.findAndCountAll({
+        where:{
+            ...filters,
+            '$report_schedule_tbl.report_name$':report_id
+        },
+        order:[['createdAt','DESC']],
+        offset: parseInt(page) * parseInt(totalPage),
+        limit: parseInt(totalPage),
+        include:[
+            {
+                model:models.report_schedule_tbl,
+            }
+        ]
+    })
+    .then(result => JSON.parse(JSON.stringify(result)))
+
+    return {
+        count,
+        rows,
+        pageCount: Math.ceil(count/totalPage)
+    }
+}
+
+exports.updateReport = async({
+    filter,
+    data
+}) => {
+    return await models.report_schedule_tbl.update({
+        ...data   
+    },
+    {
+        where:{
+            ...filter
+        }
+    })
+}
+
+exports.createReportLog = async(data) => {
+    await models.report_tbl.create({
+        ...data
+    })
+}
+
+exports.updateReportLog = async({filter,data}) => {
+    await models.report_tbl.update({
+        ...data
+    },
+    {
+        where:{
+            ...filter
+        }
+    })
+}
+
+exports.getKronosEvents = async(trip_nos = []) => {
+    return await kronos.query(`
+        Select  
+        a.trip_log_id,
+        a.actual_datetime,
+        a.event_description,
+        a.fk_event_description_id,
+        b.type,
+        c.from_location,
+        c.to_location
+        from event_detail a
+        left join event_description b on a.fk_event_description_id = b.id 
+        left join leg_detail c on a.fk_leg_detail_id = c.id
+        where a.fk_event_description_id in ('b0466faf-d316-4a82-ac6d-1c627fbb5468','f6d61655-47ef-43b0-b856-f0c7dda2508c')
+        and a.trip_log_id in (:trips)
+        `,{
+            replacements: {
+                trips: trip_nos.length === 0 ? '' : trip_nos
+            },
+            type: sequelize.QueryTypes.SELECT
+        })
+}       
+
+exports.generateFilter = () => {
+    let filter = {
+        from:null,
+        to:null
+    }
+    const today = moment();
+
+    if(today.date() <= 10){
+        filter = {
+            from: moment().subtract(33,'days').format('YYYY-MM-DD HH:mm:ss'), 
+            to: moment().subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
+        }
+    }
+    else if(today.date() <= 17){
+        filter = {
+            from: moment().subtract(33,'days').format('YYYY-MM-DD HH:mm:ss'), 
+            to: moment().subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
+        }
+    }
+    else if(today.date() <= 23){
+        filter = {
+            from: moment().subtract(33,'days').format('YYYY-MM-DD HH:mm:ss'), 
+            to: moment().subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
+        }
+    }
+    else{
+        filter = {
+            from: moment().subtract(33,'days').format('YYYY-MM-DD HH:mm:ss'), 
+            to: moment().subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
+        }
+    }
+    return filter
 }
 
 exports.crossDockSecondary = async({
@@ -598,7 +765,7 @@ exports.crossDockSecondary = async({
             horizontal:'right'
         }
     }
-    ws.getCell('BB'+String(lastRow+13)).value = 'Reported Printed By: RATA'+moment().format('MMDDYYYYHHmmsss')
+    ws.getCell('BB'+String(lastRow+13)).value = 'Reported Printed By: RATA'+moment().format('MMDDYYYYHHmmssSSS')
     ws.getCell('BB'+String(lastRow+13)).style = {
         alignment:{
             horizontal:'right'
@@ -945,7 +1112,7 @@ exports.p2p = async({data=[], filePath=null, dates={}}) => {
             horizontal:'right'
         }
     }
-    ws.getCell('AO'+String(lastRow+13)).value = 'Reported Printed By: RATA'+moment().format('MMDDYYYYHHmmsss')
+    ws.getCell('AO'+String(lastRow+13)).value = 'Reported Printed By: RATA'+moment().format('MMDDYYYYHHmmssSSS')
     ws.getCell('AO'+String(lastRow+13)).style = {
         alignment:{
             horizontal:'right'
@@ -1003,141 +1170,264 @@ exports.p2p = async({data=[], filePath=null, dates={}}) => {
     return await workbook.xlsx.writeFile(filePath)
 }
 
-exports.getReporHeader = async(query) => {
-    const {
-        page,
-        totalPage,
-        search,
-        ...filters
-    } = query;
-
-    const where = {};
-
-    const {count,rows} = await models.report_schedule_tbl.findAndCountAll({
-        where:{
-            ...filters
-        },
-        order:[['createdAt','DESC']],
-        offset: parseInt(page) * parseInt(totalPage),
-        limit: parseInt(totalPage)
+const getRLTotals = async(data=[]) => {
+    const uniqeData = _.uniq(data.map(item => item.draft_bill_no)).map(item => {
+        const draftbill = data.find(a => a.draft_bill_no === item)
+        return {
+            draft_bill_no: item,
+            trip_rate: draftbill.rate,
+            total_amount: draftbill.rate,
+            vat: draftbill.vat,
+            gross_amount: draftbill.gross_amount
+        }
     })
-    .then(result => JSON.parse(JSON.stringify(result)))
-
+  
     return {
-        count,
-        rows,
-        pageCount: Math.ceil(count/totalPage)
+        trip_rate:_.sumBy(uniqeData,'trip_rate'),
+        total_amount: _.sumBy(uniqeData,'total_amount'),
+        vat: _.sumBy(uniqeData,'vat'),
+        gross_amount: _.sumBy(uniqeData,'gross_amount')
     }
 }
 
-exports.getReportLog = async(filter) => {
-    return await models.report_tbl.findOne({
-        where:{
-            ...filter
-        }
+exports.reverseLogistics = async({data=[], filePath=null, dates={}}) => {
+    const workbook = new excelJs.Workbook();
+    const ws = workbook.addWorksheet('RL');
+   
+    const root = global.appRoot;
+    const kliLogo = workbook.addImage({
+        filename:path.join(root,'/assets/image/klilogo.png'),
+        extension:'png'
     })
-}
 
-exports.findReport = async(filter) => {
-    return await models.report_schedule_tbl.findOne({
-        where:{
-            ...filter
+    ws.addImage(kliLogo, 'T2:U5');
+    ws.getCell('A6').value = 'Billed by:'
+    ws.getCell('B6').value = 'Kerry Logistikus Philippines, Inc.'
+   
+    ws.getCell('A7').value = 'Address:'
+    ws.getCell('B7').value = '268 C. Raymundo Ave., Maybunga, Pasig City'
+ 
+    ws.getCell('A8').value = 'Email Add:'
+    ws.getCell('B8').value = 'customer.experience@logistikus.com'
+
+    ws.getCell('A10').value = 'Contact No:'
+    ws.getCell('B10').value = '+632 232-4550'
+    
+    ws.getCell('A11').value = 'TIN:'
+    ws.getCell('B11').value = '009-883-590-000'
+
+    ws.getCell('A13').value = 'Invoice No:'
+
+    ws.getCell('A15').value = 'Period Covered:'
+    ws.getCell('B15').value = `${moment(dates.from).format('YYYY-MM-DD')} to ${moment(dates.to).format('YYYY-MM-DD')}`
+    
+    ws.getCell('AF6').value = 'Billed To:'
+    ws.getCell('AF7').value = 'Address:'
+
+    ws.mergeCells('A17:AH17')
+    ws.getCell('A17').value = 'PRE-BILLING SUMMARY FOR REVERSE LOGISTICS';
+    ws.getCell('A17').alignment =  { vertical: 'middle', horizontal: 'center' };
+    ws.getCell('A17').font = {
+        bold:true,
+        color:{
+            argb: 'FFFFFF'
         }
-    })
-}
+    }
+    ws.getCell('A17').fill = {
+        type: 'pattern',
+        pattern:'solid',
+        fgColor:{argb:'000000'},
+    }
 
-exports.getReportLogs = async(query, report_id) => {
-    const {
-        page,
-        totalPage,
-        search,
-        ...filters
-    } = query;
-
-    const {count,rows} = await models.report_tbl.findAndCountAll({
-        where:{
-            ...filters,
-            '$report_schedule_tbl.report_name$':report_id
+    const columns = [ 
+        {
+            header:'Count',
+            key:'count'
         },
-        order:[['createdAt','DESC']],
-        offset: parseInt(page) * parseInt(totalPage),
-        limit: parseInt(totalPage),
-        include:[
-            {
-                model:models.report_schedule_tbl,
-            }
-        ]
+        {
+            header:'Draft Bill No',
+            key:'draft_bill_no'
+        },
+        {
+            header:'Transfer Date To BO WH',
+            key:'drvy_actual_datetime'
+        },
+        {
+            header:'Principal Reference No',
+            key:'manual_1'
+        },
+        {
+            header:'RTV Reference',
+            key:'manual_2'
+        },
+        {
+            header:'Delivery Order No',
+            key:'dr_no'
+        },
+        {
+            header:'Sales Invoice No',
+            key:'invoice_no'
+        },
+        {
+            header:'Shipment Manifest',
+            key:'shipment_manifest'
+        },
+        {
+            header:'Trip Date',
+            key:'trip_date'
+        },
+        {
+            header:'Principal',
+            key:'principal'
+        },
+        {
+            header:'Warehouse Location',
+            key:'location'
+        },
+        {
+            header:'Service Type',
+            key:'service_type'
+        },
+        {
+            header:'Pick Up Point',
+            key:'from_province'
+        },
+        {
+            header:'Area',
+            key:'from_city'
+        },
+        {
+            header:'Delivery Point',
+            key:'customer_name'
+        },
+        {
+            header:'Truck Type',
+            key:'vehicle_type'
+        },
+        {
+            header:'Trucker',
+            key:'vendor_description'
+        },
+        {
+            header:'Plate Number',
+            key:'vehicle_id'
+        },
+        {
+            header:'Trip Sheet No.',
+            key:'trip_plan'
+        },
+        {
+            header:'Customer Code',
+            key:'manual_3'
+        },
+        {
+            header:'Customer Name',
+            key:'from_name'
+        },
+        {
+            header:'Pick Up Date',
+            key:'actual_datetime'
+        },
+        {
+            header:'Reason',
+            key:'manual_4'
+        },
+        {
+            header:'Remarks',
+            key:'manual_5'
+        },
+        {
+            header:'Batch Number',
+            key:'manual_6'
+        },
+        {
+            header:'Drop',
+            key:'draft_bill_count'
+        },
+        {
+            header:'Additional Drop',
+            key:'manual_7'
+        },
+        {
+            header:'Trip Rate',
+            key:'trip_rate'
+        },
+        {
+            header:'Manos',
+            key:'manual_8'
+        },
+        {
+            header:'Demurrage',
+            key:'manual_9'
+        },
+        {
+            header:'Other Charges',
+            key:'manual_10'
+        },
+        {
+            header:'Total Amount',
+            key:'rate'
+        },
+        {
+            header:'VAT',
+            key:'vat'
+        },
+        {
+            header:'Gross Amount',
+            key:'gross_amount'
+        }
+    ]
+
+    ws.getRow(18).values = columns.map(item => item.header);
+    ws.columns = columns.map(item => item.key)
+    columns.forEach((item,index) => {
+        ws.getColumn(getColumnLetter(index)).key = item.key
     })
-    .then(result => JSON.parse(JSON.stringify(result)))
 
-    return {
-        count,
-        rows,
-        pageCount: Math.ceil(count/totalPage)
-    }
-}
-
-exports.updateReport = async({
-    filter,
-    data
-}) => {
-    return await models.report_schedule_tbl.update({
-        ...data   
-    },
-    {
-        where:{
-            ...filter
-        }
+    data.forEach((item) => {
+        ws.addRow({
+            ...item
+        })
     })
-}
 
-exports.createReportLog = async(data) => {
-    await models.report_tbl.create({
-        ...data
-    })
-}
+    const total = await getRLTotals(data);
+    
+    const lastRow = ws.rowCount+1;
+    ws.getCell('AB'+lastRow).value = total.trip_rate;
+    ws.getCell('AF'+lastRow).value = total.trip_rate;
+    ws.getCell('AG'+lastRow).value = total.vat;
+    ws.getCell('AH'+lastRow).value = total.gross_amount;
 
-exports.updateReportLog = async({filter,data}) => {
-    await models.report_tbl.update({
-        ...data
-    },
-    {
-        where:{
-            ...filter
-        }
-    })
-}
+    const fooRow1 = ws.rowCount+2;    
+    const date = moment();
+    ws.getCell('A'+fooRow1).value       = 'Prepared by:';
+    ws.getCell('AH'+fooRow1).value      = `Report Generation Date: ${date.format('MMMM DD, YYYY - h:mm:ss a')}`
+    ws.getCell('AH'+fooRow1).alignment  = {
+        horizontal: 'right'
+    }
+    
+    const fooRow2 = ws.rowCount+1
+    ws.getCell('AH'+fooRow2).value =`Reported Printed By: RATA${date.format('MMDDYYYYHHmmssSSS')}`;
+    ws.getCell('AH'+fooRow2).alignment = {
+        horizontal: 'right'
+    }
+    
+    const fooRow3 = ws.rowCount + 1;
+    ws.getCell('AH'+fooRow3).value = 'Source Systems: RATA, ASCII, Kronos';
+    ws.getCell('AH'+fooRow3).alignment = {
+        horizontal: 'right'
+    }
 
-exports.generateFilter = () => {
-    let filter = {
-        from:null,
-        to:null
+    const fooRow4 = ws.rowCount + 1;
+    ws.getCell('AH'+fooRow4).value = 'Printed via: RATA - Rating and Billing';
+    ws.getCell('AH'+fooRow4).alignment = {
+        horizontal: 'right'
     }
-    const today = moment();
 
-    if(today.date() <= 10){
-        filter = {
-            from: moment().subtract(33,'days').format('YYYY-MM-DD HH:mm:ss'), 
-            to: moment().subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
-        }
-    }
-    else if(today.date() <= 17){
-        filter = {
-            from: moment().subtract(33,'days').format('YYYY-MM-DD HH:mm:ss'), 
-            to: moment().subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
-        }
-    }
-    else if(today.date() <= 23){
-        filter = {
-            from: moment().subtract(33,'days').format('YYYY-MM-DD HH:mm:ss'), 
-            to: moment().subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
-        }
-    }
-    else{
-        filter = {
-            from: moment().subtract(33,'days').format('YYYY-MM-DD HH:mm:ss'), 
-            to: moment().subtract(3,'days').format('YYYY-MM-DD HH:mm:ss')
-        }
-    }
-    return filter
-}
+    ws.getCell('A'+fooRow4).value = 'Approved by:';
+
+
+
+    return await workbook.xlsx.writeFile(filePath)
+}   
+

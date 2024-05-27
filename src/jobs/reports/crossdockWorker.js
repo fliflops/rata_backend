@@ -13,9 +13,7 @@ module.exports = () => {
             const root = global.appRoot;
             const fileName = moment().format('YYYYMMDDHHmmss')+'crossdock-secondary.xlsx';
             const filePath = path.join(root,'/assets/reports/pre-billing/',fileName);
-            
             job.progress(10)
-
             const draftBills = await reportService.getDraftBill({
                 service_type: '2001',
                 updatedAt:{
