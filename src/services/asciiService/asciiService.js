@@ -16,9 +16,9 @@ exports.asciiSalesOrder = async (data) => {
     try{
         return data.map(header => {
             let SALES_ORDER_DETAIL;
-            const details = header.details
+            const details = header.details;
             //removed the standard rounding of numbers;
-            const SO_AMT  = Number(header.total_charges)
+            const SO_AMT  = Number(header.total_charges);
 
             const quantity = ['2002','2003','2004','2008'].includes(details[0].service_type) ? 1 : round(_.sumBy(details,(i)=>{
                 if(String(header.min_billable_unit).toLowerCase() === 'cbm'){
@@ -93,7 +93,6 @@ exports.asciiSalesOrder = async (data) => {
                 SALES_ORDER_DETAIL
             }
         })
-
     }
     catch(e){
         throw e
@@ -106,7 +105,8 @@ exports.asciiConfirmationReceipt = async(data) => {
             where:{
                 is_active: 1
             }
-        }).then(result => JSON.parse(JSON.stringify(result)))
+        })
+        .then(result => JSON.parse(JSON.stringify(result)))
 
         return data.map(header => {
             const isCostAlloc = hasCostAlloc.find(item => item.draft_bill_type === 'BUY' && header.service_type === item.service_type)
@@ -152,7 +152,6 @@ exports.asciiConfirmationReceipt = async(data) => {
                         EXTENDED_AMT:       defaultPrice,
                     }
                 }))
-    
             }
             else {
                 CONFIRMATION_RECEIPT_DETAIL = [{
@@ -186,7 +185,6 @@ exports.asciiConfirmationReceipt = async(data) => {
                 CONFIRMATION_RECEIPT_DETAIL
             }
         })
-
     }
     catch(e){
         throw e

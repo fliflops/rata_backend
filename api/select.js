@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const {principal,shipPoint,quickCode,location,tariff,geography,aggregation,vendor,roles} = require('../services')
 const models = require('../src/models/rata')
+const selectController = require('../src/controllers/select.controller')
 
 router.get('/transport-contract',async(req,res,next) => {
     try{
@@ -439,5 +440,7 @@ router.get('/roles',async(req,res)=>{
         })
     }
 })
+
+router.get('/department-code', selectController.getAsciiDepartmentCode)
 
 module.exports = router

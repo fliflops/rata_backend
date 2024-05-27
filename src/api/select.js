@@ -8,4 +8,6 @@ router.get('/province',authorize,controller.getProvince)
 router.get('/city',authorize, controller.getCity)
 router.get('/barangay', authorize, controller.getBrgy)
 
+router.get('/ascii/service-type',authorize, controller.getAsciiDepartmentCode )
+
 module.exports = router;
