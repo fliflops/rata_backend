@@ -346,3 +346,31 @@ exports.getPaginatedCrError = async(query) => {
         pageCount: Math.ceil(count/totalPage)
     }
 }
+
+exports.getAllCRHeader = async(filter) => {
+    return await models.cr_upload_header_tbl.findAll({
+        where:{
+            ...filter
+        }
+    })
+    .then(res => JSON.parse(JSON.stringify(res)))
+}
+
+exports.getAllCRDetails = async(filter) => {
+    return await models.cr_upload_details_tbl.findAll({
+        where:{
+            ...filter
+        }
+    })
+    .then(res => JSON.parse(JSON.stringify(res)))
+}
+
+exports.getAllCRErrors = async(filter) => {
+    return await models.cr_upload_errors_tbl.findAll({
+        where:{
+            ...filter
+        }
+    })
+    .then(res => JSON.parse(JSON.stringify(res)))
+}
+

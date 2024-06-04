@@ -4,7 +4,10 @@ const mime = require('mime');
 const fs = require('fs');
 const asciiService = require('../services/asciiService')
 
-const crUploadService = require('../services/crUploadService')
+const crUploadService = require('../services/crUploadService');
+const { generateExcel } = require('../services/dataExportService')
+
+const Sequelize = require('sequelize');
 
 exports.downloadTemplate = async(req,res,next) => {
     try{
@@ -139,3 +142,41 @@ exports.getPaginatedErrors = async(req,res,next) => {
     }
 }
 
+exports.exportCr = async(req,res,next)=>{
+    try{
+        const {
+            type,
+            from,
+            to
+        } = req.query;
+
+        const getHeader = await crUploadService.getAllCRHeader({
+            CR_DATE: {
+                [Sequelize.Op.between]: [from,to]
+            },
+            STATUS: type
+        })
+
+        const getDetails = await crUploadService.getAllCRDetails({
+            fk_header_id: getHeader.map(item => item.id)
+        })
+
+        const getErrors = await crUploadService.getAllCRErrors({
+            fk_header_id: getHeader.map(item => item.id)
+        })
+
+        const xlsx = await generateExcel({
+            header: getHeader,
+            details: getDetails.map(({id,...item}) => item),
+            errors: getErrors.map(({id,...item}) => item)
+        })
+
+        res.set('Content-disposition',`confirmtion_receipt.xlsx`);
+        res.set('Content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');    
+
+        res.send(xlsx)
+    }
+    catch(e){
+        next(e)
+    }
+}

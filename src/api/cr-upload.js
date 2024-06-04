@@ -10,6 +10,9 @@ router.route('/')
 .post(authorize,multer.upload.single('file'),controllers.uploadCR)
 .get(authorize,controllers.getPaginatedCr);
 
+router.route('/export')
+.post(controllers.exportCr)
+
 router.route('/header/:id')
 .get(authorize, controllers.getCr)
 
