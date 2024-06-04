@@ -5,6 +5,7 @@ const asciiService = require('../services/asciiService');
 const models = require('../models/rata');
 const {v4:uuidv4} = require('uuid');
 const useGlobalFilter = require('../helpers/filters');
+const Sequelize = require('sequelize');
 
 const readUploadedCR = async(filename) => {
     const workbook = new xlsx.Workbook();
@@ -94,6 +95,8 @@ const readUploadedCR = async(filename) => {
         return {
             ...item,
             id,
+            COMPANY_CODE:'00001',
+            ITEM_TYPE:'S',
             CONFIRMATION_RECEIPT_DETAIL
         }
     })
@@ -206,12 +209,12 @@ exports.getCR = async (query) => {
     Object.keys(filters).map(key => {
         
         if(key === 'CR_DATE'){
-            const dates = filters.trip_date.split(',')
+            const dates = filters.CR_DATE.split(',')
             const from = moment(dates[0]).isValid() ? dates[0] : null;
             const to = moment(dates[1]).isValid() ? dates[1] : null;
             
             if (from && to) {
-                return where.trip_date = {
+                return where.CR_DATE = {
                     [Sequelize.Op.and]: {
                         [Sequelize.Op.gte] : from,
                         [Sequelize.Op.lte] : to

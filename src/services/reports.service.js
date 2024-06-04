@@ -294,6 +294,14 @@ exports.findReport = async(filter) => {
         }
     })
 }
+exports.getReportLog = async(filter) => {
+    return await models.report_tbl.findOne({
+        where:{
+            ...filter
+        }
+    })
+}
+
 
 exports.getReportLogs = async(query, report_id) => {
     const {

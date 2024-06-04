@@ -10,6 +10,9 @@ class cr_upload_header_tbl extends Model {
             CR_CODE:{
                 type: DataTypes.STRING
             },
+            COMPANY_CODE:{
+                type: DataTypes.STRING
+            },
             REF_CODE:{
                 type: DataTypes.STRING
             },
