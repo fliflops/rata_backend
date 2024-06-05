@@ -215,10 +215,7 @@ exports.getCR = async (query) => {
             
             if (from && to) {
                 return where.CR_DATE = {
-                    [Sequelize.Op.and]: {
-                        [Sequelize.Op.gte] : from,
-                        [Sequelize.Op.lte] : to
-                    } 
+                    [Sequelize.Op.between]: [from,to]
                 }
             }
         }
