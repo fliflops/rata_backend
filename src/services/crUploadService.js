@@ -88,6 +88,7 @@ const readUploadedCR = async(filename) => {
         const CONFIRMATION_RECEIPT_DETAIL = details.filter(a => a.CR_CODE === item.CR_CODE).map(a => {
             return {
                 ...a,
+                COMPANY_CODE: '00001',
                 fk_header_id: id
             }
         })
@@ -212,14 +213,14 @@ exports.getCR = async (query) => {
             const dates = filters.CR_DATE.split(',')
             const from = moment(dates[0]).isValid() ? dates[0] : null;
             const to = moment(dates[1]).isValid() ? dates[1] : null;
-            
+        
             if (from && to) {
                 return where.CR_DATE = {
                     [Sequelize.Op.between]: [from,to]
                 }
             }
         }
-        return where[key] = filters[key]
+        else return where[key] = filters[key]
     })
 
     const globalFilter = useGlobalFilter.defaultFilter({
@@ -240,7 +241,7 @@ exports.getCR = async (query) => {
         offset: parseInt(page) * parseInt(totalPage),
         limit: parseInt(totalPage),
         where:{
-            ...filters,
+            ...where,
             ...globalFilter   
         }
     })
