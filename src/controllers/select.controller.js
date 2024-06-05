@@ -1,6 +1,6 @@
 
 const geoService = require  ('../services/geography.service');
-
+const serviceTypeService = require('../services/serviceType.service');
 
 exports.getRegion = async(req,res,next) => {
     try{
@@ -71,6 +71,22 @@ exports.getBrgy = async(req,res,next) => {
             value:item.barangay_code
         })))
 
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.getAsciiDepartmentCode = async(req,res,next) => {
+    try{
+        const data = await serviceTypeService.getServiceType()
+        
+        res.status(200).json({
+            data: data.map(item => ({
+            label: item.service_type_desc,
+            value: item.ascii_service_type
+        }))
+        })
     }
     catch(e){
         next(e)

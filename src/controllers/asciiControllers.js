@@ -13,7 +13,6 @@ const api = axios.create({
 
 const login = async() => {
     try{
-
         const username = process.env.ASCII_USER_NAME
         const password = process.env.ASCII_PASSWORD
         const apiKey = process.env.ASCII_API_KEY

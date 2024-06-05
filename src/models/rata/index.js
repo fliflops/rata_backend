@@ -42,7 +42,9 @@ const wms_draft_bill_hdr_tbl        = require('./wms_draft_bill_hdr_tbl');
 const wms_draft_bill_dtl_tbl        = require('./wms_draft_bill_dtl_tbl');
 
 const cost_alloc_setup_tbl          = require('./cost_alloc_setup_tbl');
-const vehicle_types_tbl          = require('./vehicle_types_tbl');
+const vehicle_types_tbl             = require('./vehicle_types_tbl');
+const cr_upload_details_tbl = require('./cr_upload_details_tbl');
+
 
 
 const sequelize = new Sequelize({
@@ -107,8 +109,11 @@ const models = {
     geo_country_tbl:                require('./geo_country_tbl').init(sequelize),
 
     report_schedule_tbl:            require('./report_schedule_tbl').init(sequelize),
-    report_tbl:                     require('./report_tbl').init(sequelize)
+    report_tbl:                     require('./report_tbl').init(sequelize),
 
+    cr_upload_details_tbl:          require('./cr_upload_details_tbl').init(sequelize),
+    cr_upload_header_tbl:           require('./cr_upload_header_tbl').init(sequelize),
+    cr_upload_errors_tbl:           require('./cr_upload_errors_tbl').init(sequelize)
 }
 
 //associations
