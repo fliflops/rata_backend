@@ -1,6 +1,6 @@
 const excelJs   = require('exceljs');
 const models    = require('../models/rata')
-const kronos    = require('../models/datawarehouse').kronos
+const kronos    = require('../models/kronos')
 const sequelize = require('sequelize');
 const moment    = require('moment');
 const _         = require('lodash');
