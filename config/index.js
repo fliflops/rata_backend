@@ -145,7 +145,7 @@ const dwPodConfig = {
 
 const kronosConfig = {
     host:       process.env.KRONOS_DB_HOST,
-    username:   process.env.KRONOS_DB_USER_NAME,
+    username:   process.env.KRONOS_DB_USER,
     password:   process.env.KRONOS_DB_PASSWORD,
     dialect:    'mysql',
     database:   process.env.KRONOS_DB,
