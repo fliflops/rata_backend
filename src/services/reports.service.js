@@ -1,6 +1,6 @@
 const excelJs   = require('exceljs');
 const models    = require('../models/rata')
-const kronos    = require('../models/kronos')
+const kronos    = require('../models/kronos');
 const sequelize = require('sequelize');
 const moment    = require('moment');
 const _         = require('lodash');
@@ -366,7 +366,7 @@ exports.updateReportLog = async({filter,data}) => {
 }
 
 exports.getKronosEvents = async(trip_nos = []) => {
-    return await kronos.query(`
+    return await kronos.sequelize.query(`
         Select  
         a.trip_log_id,
         a.actual_datetime,
