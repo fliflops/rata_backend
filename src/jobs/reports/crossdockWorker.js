@@ -16,6 +16,7 @@ module.exports = () => {
             job.progress(10)
             const draftBills = await reportService.getDraftBill({
                 service_type: '2001',
+                customer:'10005',
                 updatedAt:{
                     [sequelize.Op.between]: [filters.from,filters.to]
                 }
