@@ -5,11 +5,36 @@ const dataExportService = require('../services/dataExportService');
 
 exports.exportInvoice = async(req,res,next) => {
     try{
-        const {from,to} = req.query;
+        const {
+            trip_date_from,
+            trip_date_to,
+            cleared_date_from,
+            cleared_date_to
+        } = req.query;
 
         const headers= []
         let details = []
 
+        let filter = {}
+
+        if(trip_date_from && trip_date_to) {
+            filter = {
+                ...filter,
+                trip_date:{
+                    [Op.between]: [trip_date_from,trip_date_to]
+                }
+            }
+        }
+
+        if(cleared_date_from,cleared_date_to) {
+            filter = {
+                ...filter,
+                cleared_date:{
+                    [Op.between]: [cleared_date_from,cleared_date_to]
+                }
+            }
+        }
+    
         const headerLabel = {
             tms_reference_no: 'TMS Reference No',	
             trip_no:'Trip No',	
@@ -48,9 +73,7 @@ exports.exportInvoice = async(req,res,next) => {
 
         const getInvoices = await models.helios_invoices_hdr_tbl.getData({
             where:{
-                trip_date: {
-                    [Op.between]: [from,to]
-                }
+               ...filter
             },
             options: {
                 include: [

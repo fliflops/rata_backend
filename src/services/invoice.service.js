@@ -23,6 +23,11 @@ exports.getPaginatedInvoice = async(query) => {
                 [Sequelize.Op.between]: filters.trip_date.split(',')
             }
         }
+        if(key === 'cleared_date'){
+            return where.cleared_date = {
+                [Sequelize.Op.between]: filters.cleared_date.split(',')
+            }
+        }
         
         return where[key] = filters[key]
     })
