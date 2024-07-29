@@ -1220,7 +1220,7 @@ const sellValidation = async(draft_bill=[], revenue_leak=[], invoices=[], isRevL
                 job_id: invoice.job_id,
                 is_draft_bill: 0,
                 trip_date: invoice.trip_date,
-                details: isRevLeak ? invoice.tranport_rev_leak_dtl_tbls : invoice.helios_invoices_dtl_tbls.filter(i => i.class_of_store === dtl.class_of_store)
+                details: isRevLeak ? invoice.tranport_rev_leak_dtl_tbls : invoice.details
             }
         }))
     })
@@ -1347,7 +1347,7 @@ const sell = async ({
         draft_bill = draft_bill.concat(withAgg.data,withoutAgg.data)
         revenue_leak = revenue_leak.concat(withAgg.revenue_leak,withoutAgg.revenue_leak)
 
-        data = await sellValidation(draft_bill,revenue_leak,invoices,false);
+        data = await sellValidation(draft_bill,revenue_leak,raw_data,false);
         draft_bill = await assignDraftBillNo({draft_bill: data.draft_bill})
         revenue_leak = revenue_leak.concat(data.revenue_leak);
 
