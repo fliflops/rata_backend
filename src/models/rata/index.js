@@ -44,7 +44,7 @@ const wms_draft_bill_dtl_tbl        = require('./wms_draft_bill_dtl_tbl');
 const cost_alloc_setup_tbl          = require('./cost_alloc_setup_tbl');
 const vehicle_types_tbl             = require('./vehicle_types_tbl');
 const cr_upload_details_tbl = require('./cr_upload_details_tbl');
-
+const contract_tariff_history_tbl   = require('./contract_tariff_history_tbl');
 
 
 const sequelize = new Sequelize({
@@ -70,6 +70,7 @@ const models = {
     contract_hdr_tbl:               contract_hdr_tbl.init(sequelize),
     contract_tariff_dtl:            contract_tariff_dtl.init(sequelize),
     contract_history_tbl:           contract_history_tbl.init(sequelize),
+    contract_tariff_history_tbl:    contract_tariff_history_tbl.init(sequelize),
 
     tariff_sell_hdr_tbl:            tariff_sell_hdr_tbl.init(sequelize), 
     tariff_ic_algo_tbl:             tariff_ic_algo_tbl.init(sequelize),

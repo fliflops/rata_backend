@@ -169,3 +169,69 @@ exports.updateContractValidity = async(req,res,next) => {
         next(e)
     }
 }
+
+exports.getExtendRates = async(req,res,next) => {
+    try{
+        const {from,to} = req.query;
+        const {contract_id} = req.params;
+
+        const data = await contractService.getExtendedRates({
+            from,
+            to,
+            contract_id
+        })
+
+        res.status(200).json(data)
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.extendRates = async(req,res,next) => {
+    const t = await models.sequelize.transaction();
+    try{
+        const {from,to, new_valid_to} = req.body;
+        const {contract_id} = req.params;
+        const user = req.processor.id
+        
+         const rates = await contractService.getExtendedRates({
+            from,
+            to,
+            contract_id
+        })
+
+        await models.contract_tariff_dtl.update({
+            valid_to: new_valid_to,
+            updated_by: user
+        },{
+            transaction: t,
+            where:{
+                id: rates.map(item => item.id),
+            }
+        })
+
+        await models.contract_tariff_history_tbl.bulkCreate(rates.map(item => {
+            return {
+                fk_contract_tariff_id: item.id,
+                old_valid_to: item.valid_to,
+                new_valid_to: new_valid_to,
+                created_by: user
+            }
+        }),
+        {
+            transaction: t
+        })
+        
+        await t.commit();
+
+        res.end();
+
+
+    }
+    catch(e){
+        await t.rollback();
+        next(e)
+    }
+}
+

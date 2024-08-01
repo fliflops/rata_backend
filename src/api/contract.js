@@ -17,4 +17,8 @@ router.route('/contract-tariff')
 router.route('/validity/:contract_id')
 .post(authorize, controller.updateContractValidity)
 
+router.route('/contract-tariff/:contract_id')
+.get(authorize, controller.getExtendRates)
+.put(authorize, controller.extendRates)
+
 module.exports = router
