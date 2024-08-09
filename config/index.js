@@ -12,7 +12,8 @@ const podConfig = {
     dialect:        'mssql',
     dialectOptions : {
         options:{
-            requestTimeout: 3600000
+            requestTimeout: 3600000,
+            useUTC: false
         }
     },
     pool: { 
@@ -45,7 +46,7 @@ const dbConfig = {
 		dateStrings: true,
 		typeCast: true
 	},
-	//timezone: '+08:00' /**for writing to database**/,
+	timezone: '+08:00' /**for writing to database**/,
     // define:{
     //     version:true
     // }
