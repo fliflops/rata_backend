@@ -57,8 +57,6 @@ module.exports = () => {
                 id: job.id,
                 report_id: report.id,
                 report_status:'INPROGRESS',
-                // file_path: filePath,
-                // file_name: fileName
             })
         }
     })
