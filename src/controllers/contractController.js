@@ -16,7 +16,7 @@ exports.getContracts = async(req,res,next) => {
         const where={};
 
         const globalFilter = useGlobalFilter.defaultFilter({
-            model:models.contract_hdr_tbl.rawAttributes,
+            model:models.contract_hdr_tbl.getAttributes(),
             filters:{
                 search
             }
@@ -172,13 +172,12 @@ exports.updateContractValidity = async(req,res,next) => {
 
 exports.getExtendRates = async(req,res,next) => {
     try{
-        const {from,to} = req.query;
+        const query = req.query;
         const {contract_id} = req.params;
 
         const data = await contractService.getExtendedRates({
-            from,
-            to,
-            contract_id
+            contract_id,
+            ...query
         })
 
         res.status(200).json(data)
@@ -191,16 +190,22 @@ exports.getExtendRates = async(req,res,next) => {
 exports.extendRates = async(req,res,next) => {
     const t = await models.sequelize.transaction();
     try{
-        const {from,to, new_valid_to} = req.body;
+        const {new_valid_to,...body} = req.body;
         const {contract_id} = req.params;
         const user = req.processor.id
         
          const rates = await contractService.getExtendedRates({
-            from,
-            to,
-            contract_id
+            contract_id,
+            ...body,
         })
-
+        .then(result =>result.map(item => {
+            return {
+                ...item,
+                valid_until_validation: moment(item.valid_to).add(7,'days').diff(moment(),'days')
+            }
+        })
+        .filter(item => item.valid_until_validation >= 0))
+      
         await models.contract_tariff_dtl.update({
             valid_to: new_valid_to,
             updated_by: user

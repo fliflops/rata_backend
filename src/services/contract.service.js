@@ -72,17 +72,14 @@ exports.getContractDetails = async(query) => {
 }
 
 exports.getExtendedRates = async({
-    from,
-    to,
-    contract_id
+    contract_id,
+    ...filters
 }) => {
     return await models.contract_tariff_dtl.findAll({
         where:{
             contract_id,
             status: 'ACTIVE',
-            valid_to: {
-                [models.Sequelize.Op.between] : [from, to]
-            }
+            ...filters
         }
     })
     .then(result => JSON.parse(JSON.stringify(result)))

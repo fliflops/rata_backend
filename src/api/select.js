@@ -9,5 +9,6 @@ router.get('/city',authorize, controller.getCity)
 router.get('/barangay', authorize, controller.getBrgy)
 
 router.get('/ascii/service-type',authorize, controller.getAsciiDepartmentCode )
+router.get('/algorithm', authorize, controller.getAlgorithm)
 
 module.exports = router;

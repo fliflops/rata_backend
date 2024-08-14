@@ -1,7 +1,7 @@
 
 const geoService = require  ('../services/geography.service');
 const serviceTypeService = require('../services/serviceType.service');
-
+const models = require('../models/rata');
 exports.getRegion = async(req,res,next) => {
     try{
         const data = await geoService.getRegion({
@@ -60,7 +60,6 @@ exports.getCity = async(req,res,next) => {
 
 exports.getBrgy = async(req,res,next) => {
     try{
-
         const data = await geoService.getBrgy({
             ...req.query
         })
@@ -83,9 +82,25 @@ exports.getAsciiDepartmentCode = async(req,res,next) => {
         
         res.status(200).json({
             data: data.map(item => ({
-            label: item.service_type_desc,
-            value: item.ascii_service_type
-        }))
+                label: item.service_type_desc,
+                value: item.ascii_service_type
+            }))
+        })
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.getAlgorithm = async(req,res,next) => {
+    try{
+        const data = await models.agg_tbl.findAll().then(result => JSON.parse(JSON.stringify(result)));
+    
+        res.status(200).json({
+            data: data.map(item => ({
+                label: item.id,
+                value: item.id
+            }))
         })
     }
     catch(e){
