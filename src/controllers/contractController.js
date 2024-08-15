@@ -198,13 +198,22 @@ exports.extendRates = async(req,res,next) => {
             contract_id,
             ...body,
         })
-        .then(result =>result.map(item => {
+        
+
+        const for_update = rates.map(item => {
+            const today = moment().format('YYYY-MM-DD');
+            const new_valid = moment(new_valid_to).format('YYYY-MM-DD')
+            const old_valid = moment(item.valid_to).format('YYYY-MM-DD')
             return {
                 ...item,
-                valid_until_validation: moment(item.valid_to).add(7,'days').diff(moment(),'days')
+                today,
+                new_valid,
+                old_valid,
+                valid_until_validation: moment(new_valid).diff(old_valid,'days'),
+                new_valid_to_validation: moment(new_valid).diff(today, 'days')
             }
         })
-        .filter(item => item.valid_until_validation >= 0))
+        .filter(item => item.valid_until_validation > 0 && item.new_valid_to_validation >= 0)
       
         await models.contract_tariff_dtl.update({
             valid_to: new_valid_to,
@@ -212,11 +221,11 @@ exports.extendRates = async(req,res,next) => {
         },{
             transaction: t,
             where:{
-                id: rates.map(item => item.id),
+                id: for_update.map(item => item.id),
             }
         })
 
-        await models.contract_tariff_history_tbl.bulkCreate(rates.map(item => {
+        await models.contract_tariff_history_tbl.bulkCreate(for_update.map(item => {
             return {
                 fk_contract_tariff_id: item.id,
                 old_valid_to: item.valid_to,
@@ -230,7 +239,10 @@ exports.extendRates = async(req,res,next) => {
         
         await t.commit();
 
-        res.end();
+        res.status(200).json({
+            total_rates: rates.length,
+            updated_rates: for_update.length
+        });
 
 
     }
