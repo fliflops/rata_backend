@@ -1,4 +1,5 @@
 const models = require('../models/rata');
+const pod = require('../models/datawarehouse').pod;
 const useGlobalFilter = require('../helpers/filters')
 const {Sequelize} = models;
 
@@ -61,5 +62,9 @@ exports.getPaginatedInvoice = async(query) => {
         }),
         pageCount: Math.ceil(count/totalPage)
     }
+    
+}
+
+exports.getDailyPodData = async(query) => {
     
 }

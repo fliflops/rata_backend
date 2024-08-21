@@ -6,6 +6,8 @@ const p2pReport = require('./reports/p2pWorker');
 const accrualRevenue = require('./reports/accrualRevenue');
 const accrualExpense = require('./reports/accrualExpense');
 const reverseLogistics = require('./reports/reverseLogistics');
+const dailyAccrualExpense = require('../jobs/dwh.workers/expense.accrual.worker');
+const dailyAccrualRevenue = require('../jobs/dwh.workers/revenue.accrual.worker');
 
 const crons = require('./crons');
 
@@ -20,5 +22,7 @@ module.exports = () => {
     accrualExpense();
     accrualRevenue();
     reverseLogistics();
+    dailyAccrualExpense();
+    dailyAccrualRevenue();    
     crons();
 }

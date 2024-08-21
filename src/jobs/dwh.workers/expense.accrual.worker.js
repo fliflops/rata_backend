@@ -1,50 +1,44 @@
+const {DWH_ACC_EXPENSE} = require('../queues/queues')
+const reportService = require('../../services/reports.service');
 const podReportService = require('../../services/podReport.service')
 const podReportExcelService = require('../../services/podReport.excel.service')
-const reportService = require('../../services/reports.service');
+const {v4:uuidv4}           = require('uuid');
+
+
 const moment = require('moment')
 const path = require('path')
 
-const {REPORT_ACC_EXPENSE} = require('../queues/queues')
-
 module.exports = () => {
-
-    REPORT_ACC_EXPENSE.process(async(job, done) => {
+    DWH_ACC_EXPENSE.process(async(job, done) => {
         try{
             let draft_bill_header  = [];
             let draft_bill_details = [];
             let leak_header = [];
             let leak_details = [];
-            const from = moment().subtract(1,'month').startOf('month').format('YYYY-MM-DD');
-            const to = moment().subtract(1,'month').endOf('month').format('YYYY-MM-DD')
-           
-            // const report = await reportService.findReport({
-            //     report_name: 'accrual_expense'
-            // })
 
-            // await reportService.createReportLog({
-            //     id: job.id,
-            //     report_id: report.id,
-            //     report_status:'INPROGRESS',
-            // })
+            const trip_date = moment().format('YYYY-MM-DD');
 
+            const data = await podReportService.joinedHandedOverInvoices(trip_date);
 
-            const data = await podReportService.joinedInvoices({
-                from,
-                to
-            })
-        
             const draftBill = await podReportService.podBuy({
                 data,
-                from,
-                to
+                from: trip_date,
+                to: trip_date
             })
 
             for(let {details,...db} of  draftBill.draft_bill){
-                draft_bill_header.push(db)
-                draft_bill_details = draft_bill_details.concat(details)
+                const log_id = uuidv4();
+                draft_bill_header.push({
+                    ...db
+                })
+    
+                draft_bill_details = draft_bill_details.concat(details.map(item => ({
+                    ...item,
+                })))
             }
             
             for(let {details,...leak} of  draftBill.revenue_leak){
+                const log_id = uuidv4();
                 leak_header.push({
                     ...leak,
                     draft_bill_type:'BUY',
@@ -57,9 +51,9 @@ module.exports = () => {
             }
 
             const root = global.appRoot;
-            const fileName = moment().format('YYYYMMDDHHmmss')+'expense_accrual_report.xlsx'
+            const fileName = moment().format('YYYYMMDDHHmmss')+'expense_daily_accrual_report.xlsx'
             const filePath = path.join( root,'/assets/reports/accrual/', fileName);
-
+    
             await podReportExcelService.podAccrualTemplate(
                 {
                     header:         draft_bill_header,
@@ -68,31 +62,39 @@ module.exports = () => {
                     leak_details:   leak_details,
                     filePath,
                     type:'BUY',
-                    from: moment(from).format('MMMM DD, YYYY'),
-                    to:moment(to).format('MMMM DD, YYYY'),
+                    from: moment(trip_date).format('MMMM DD, YYYY'),
+                    to:moment(trip_date).format('MMMM DD, YYYY'),
                 }
             )
-            
+
+            await reportService.createDwhLogs({
+                draft_bill_header,
+                draft_bill_details,
+                leak_header,
+                leak_details,
+                job_id: job.id
+            })
+
             await job.progress('completed')
             done(null,{
                 filePath,
                 fileName
             });
-
+                       
         }
         catch(e){
             done(e)
         }
     })
 
-    REPORT_ACC_EXPENSE.on('active', async(job) => {
+    DWH_ACC_EXPENSE.on('active', async(job) => {
         const isJobExists = await reportService.getReportLog({
             id: job.id
         })
 
         if(!isJobExists) {
             const report = await reportService.findReport({
-                report_name: 'accrual_expense'
+                report_name: 'daily_accrual_expense'
             })
     
             await reportService.createReportLog({
@@ -101,9 +103,11 @@ module.exports = () => {
                 report_status:'INPROGRESS',
             })
         }
+
     })
 
-    REPORT_ACC_EXPENSE.on('completed', async(job) => {
+    DWH_ACC_EXPENSE.on('completed', async(job) => {
+        console.log(job.id)
         await reportService.updateReportLog({
             filter:{
                 id: job.id,
@@ -114,11 +118,10 @@ module.exports = () => {
                 file_name: job.returnvalue.fileName
             }
         })
-
-        console.log('Accrual Expense Report Done')
+        console.log('Daily Accrual Expense Report Done')
     })
 
-    REPORT_ACC_EXPENSE.on('failed', async(job,err) => {
+    DWH_ACC_EXPENSE.on('failed', async(job,err) => {
         console.log(err)
         await reportService.updateReportLog({
             filter:{
@@ -129,5 +132,7 @@ module.exports = () => {
                 err_message: err.message
             }
         })
+
+       
     })
 }
