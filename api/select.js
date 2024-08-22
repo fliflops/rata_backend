@@ -442,5 +442,6 @@ router.get('/roles',async(req,res)=>{
 })
 
 router.get('/department-code', selectController.getAsciiDepartmentCode)
+router.get('/algorithm', selectController.getAlgorithm)
 
 module.exports = router

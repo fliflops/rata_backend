@@ -3,7 +3,7 @@ const {podConfig} = require('../config');
 
 const db = {}
 const sequelize = new Sequelize({
-    ...podConfig
+    ...podConfig,
 })
 
 db.sequelize = sequelize;

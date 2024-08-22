@@ -70,3 +70,17 @@ exports.getContractDetails = async(query) => {
         }
     })
 }
+
+exports.getExtendedRates = async({
+    contract_id,
+    ...filters
+}) => {
+    return await models.contract_tariff_dtl.findAll({
+        where:{
+            contract_id,
+            status: 'ACTIVE',
+            ...filters
+        }
+    })
+    .then(result => JSON.parse(JSON.stringify(result)))
+}

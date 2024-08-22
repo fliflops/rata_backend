@@ -38,6 +38,7 @@ class wms_data_header_tbl extends Model {
             reason_code:{
                 type: DataTypes.STRING(255)
             },
+            
             createdAt:Sequelize.DATE,
             created_by:{
                 type: DataTypes.STRING(255)
