@@ -43,6 +43,7 @@ class rata_daily_accrual_leak_header extends Model {
             is_ic:DataTypes.STRING,
             fk_tms_reference_no :DataTypes.STRING,
             class_of_store :DataTypes.STRING,
+            draft_bill_type: DataTypes.STRING,
             created_at:DataTypes.DATE,
             updated_at:DataTypes.DATE,
         },

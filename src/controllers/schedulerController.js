@@ -225,7 +225,6 @@ exports.putEmail = async(req,res,next) => {
     }
 }
 
-
 // controllers for cron testing
 exports.cronTest = async(req,res,next) => {
     try{

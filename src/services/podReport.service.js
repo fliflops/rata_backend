@@ -242,47 +242,50 @@ const getHandedOverInvoices = async(trip_date) => {
     })
 
     const details = await pod.query(`
-    Select distinct    
-    a.tripPlan	      'trip_no',    
-    a.brNo			  'br_no',    
-    a.deliveryStatus  'delivery_status',
-    b.class_of_stores 'class_of_store',    
-    b.uom,    
-    b.planned_qty 'actual_qty',    
-    b.planned_weight 'actual_weight',    
-    b.planned_cbm 'actual_cbm',    
-    b.return_qty
-    from (    
-    select     
-    ax.tripPlan,    
-    ax.brNo,
-    cx.deliveryStatus
-    from trip_br_dtl_tbl ax    
-    inner join trip_plan_hdr_tbl bx on ax.tripPlan = bx.tripPlanNo and ax.isDeleted = 0    
-    left join booking_request_hdr_tbl cx on ax.brNo = cx.bookingRequestNo and ax.isDeleted = 0    
-    where brNo in (:br)
-    ) a    
-        
-    OUTER APPLY (    
-        Select     
-        bx.class_of_stores,    
-        ax.uom,    
-        SUM(ax.planned_qty) 'planned_qty',    
-        SUM(ax.weight) 'planned_weight',    
-        SUM(ax.cbm) 'planned_cbm',    
-        SUM(ax.actual_qty) 'actual_qty',    
-        SUM(ax.actual_weight) 'actual_weight',    
-        SUM(ax.actual_cbm) 'actual_cbm',    
-        SUM(ax.return_qty) 'return_qty',    
-        SUM(ax.damaged_qty) 'damaged_qty',    
-        SUM(ax.variance_qty) 'variance_qty',    
-        SUM(ax.short_landed_qty) 'short_landed_qty',    
-        SUM(ax.lost_qty) 'lost_qty'    
-        from dispatch_item_dtl ax    
-        left join booking_request_dtl_tbl bx on ax.br_no = bx.bookingRequestNo and ax.sku_code = bx.skuCode    
-        where ax.trip_plan_id = a.tripPlan and ax.br_no = a.brNo    
-        group by ax.uom,bx.class_of_stores    
-    ) b`
+        Select distinct    
+        a.tripPlan	      'trip_no',    
+        a.brNo			  'br_no',    
+        a.deliveryStatus  'delivery_status',
+        b.class_of_stores 'class_of_store',    
+        b.uom,   
+        b.planned_qty,    
+        b.planned_weight ,
+        b.planned_cbm,    
+        b.planned_qty       'actual_qty',    
+        b.planned_weight    'actual_weight',    
+        b.planned_cbm       'actual_cbm',    
+        b.return_qty
+        from (    
+        select     
+        ax.tripPlan,    
+        ax.brNo,
+        cx.deliveryStatus
+        from trip_br_dtl_tbl ax    
+        inner join trip_plan_hdr_tbl bx on ax.tripPlan = bx.tripPlanNo and ax.isDeleted = 0    
+        left join booking_request_hdr_tbl cx on ax.brNo = cx.bookingRequestNo and ax.isDeleted = 0    
+        where brNo in (:br)
+        ) a    
+            
+        OUTER APPLY (    
+            Select     
+            bx.class_of_stores,    
+            ax.uom,    
+            SUM(ax.planned_qty) 'planned_qty',    
+            SUM(ax.weight) 'planned_weight',    
+            SUM(ax.cbm) 'planned_cbm',    
+            SUM(ax.actual_qty) 'actual_qty',    
+            SUM(ax.actual_weight) 'actual_weight',    
+            SUM(ax.actual_cbm) 'actual_cbm',    
+            SUM(ax.return_qty) 'return_qty',    
+            SUM(ax.damaged_qty) 'damaged_qty',    
+            SUM(ax.variance_qty) 'variance_qty',    
+            SUM(ax.short_landed_qty) 'short_landed_qty',    
+            SUM(ax.lost_qty) 'lost_qty'    
+            from dispatch_item_dtl ax    
+            left join booking_request_dtl_tbl bx on ax.br_no = bx.bookingRequestNo and ax.sku_code = bx.skuCode    
+            where ax.trip_plan_id = a.tripPlan and ax.br_no = a.brNo    
+            group by ax.uom,bx.class_of_stores    
+        ) b`
     ,{
         type: Sequelize.QueryTypes.SELECT,
         replacements:{
