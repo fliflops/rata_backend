@@ -138,6 +138,7 @@ const dwbConfig = {
 		dateStrings: true,
 		typeCast: true
 	},
+    timezone: '+08:00'
 }
 
 
