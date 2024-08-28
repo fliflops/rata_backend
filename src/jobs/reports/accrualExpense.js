@@ -73,12 +73,11 @@ module.exports = () => {
                 }
             )
             
-            job.progress('completed')
+            await job.progress('completed')
             done(null,{
                 filePath,
                 fileName
             });
-
 
         }
         catch(e){

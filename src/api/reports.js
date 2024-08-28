@@ -13,7 +13,13 @@ router.route('/:report_name')
 .post(controllers.downloadReport)
 
 router.route('/pod/report/sell')
-    .get(controllers.createPodReport)
+.get(controllers.createPodReport)
 router.route('/pod/report/buy')
-    .get(controllers.createPodReportBuy)
+.get(controllers.createPodReportBuy)
+
+router.route('/pod/daily/sell/')
+.get(controllers.dailyPodSell)
+router.route('/pod/daily/buy/')
+.get(controllers.dailyPodBuy)
+
 module.exports = router;

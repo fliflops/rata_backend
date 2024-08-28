@@ -18,5 +18,4 @@ router.route('/email')
 router.route('/cron')
 .post(schedulerController.cronTest)
 
-
 module.exports = router;

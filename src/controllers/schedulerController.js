@@ -225,13 +225,12 @@ exports.putEmail = async(req,res,next) => {
     }
 }
 
-
 // controllers for cron testing
 exports.cronTest = async(req,res,next) => {
     try{
         const { reportName } = req.query;
 
-        await Queue.REPORT_ACC_REVENUE.add({
+        await Queue.DWH_ACC_REVENUE.add({
             isRepeatable: false,  
         },
         {

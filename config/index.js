@@ -106,7 +106,7 @@ const dwConfig = {
     password:   process.env.DW_DB_PASSWORD,
     dialect:    'mysql',
     //database:   process.env.DW_DB,
-    // logging: false,
+    //logging: false,
     pool:{
         max: 10,
         min: 1,
@@ -119,6 +119,29 @@ const dwConfig = {
 		typeCast: true
 	},
 }
+
+const dwbConfig = {
+    host:       process.env.DWB_DB_HOST,
+    username:   process.env.DWB_DB_USER_NAME,
+    password:   process.env.DWB_DB_PASSWORD,
+    dialect:    'mysql',
+    database:   process.env.DWB_DB,
+    //logging: false,
+    pool:{
+        max: 10,
+        min: 1,
+        idle: 2000000,
+        acquire: 2000000
+    },
+    dialectOptions: {
+		//useUTC: false, //for reading from database
+		dateStrings: true,
+		typeCast: true
+	},
+    timezone: '+08:00'
+}
+
+
 
 const dwPodConfig = {
     username:       process.env.DWPOD_DB_USER,
@@ -176,6 +199,7 @@ module.exports = {
     dwConfig,
     dwPodConfig,
     kronosConfig,
+    dwbConfig,
     ...vars,
-
+    
 }

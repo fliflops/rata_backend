@@ -7,6 +7,8 @@ const _         = require('lodash');
 const round     = require('../helpers/round');
 const path      = require('path');
 
+const dwhModels = require('../models/datawarehouse/index');
+
 const  borderStyles = {
     top: { style: "thin" },
     left: { style: "thin" },
@@ -301,7 +303,6 @@ exports.getReportLog = async(filter) => {
         }
     })
 }
-
 
 exports.getReportLog = async(filter) => {
     return await models.report_tbl.findOne({
@@ -1447,3 +1448,82 @@ exports.reverseLogistics = async({data=[], filePath=null, dates={}}) => {
     return await workbook.xlsx.writeFile(filePath)
 }   
 
+exports.createDwhLogs = async({
+    draft_bill_header=[],
+    draft_bill_details = [],
+    leak_header = [],
+    leak_details = [],
+    job_id = null
+}) => {
+    const t = await dwhModels.dwh.transaction();
+    try{
+
+        await dwhModels.rata_daily_accrual_header.bulkCreate(draft_bill_header.map(i => ({...i, job_id})),{
+            transaction: t
+        })
+       
+        await dwhModels.rata_daily_accrual_details.bulkCreate(draft_bill_details.map(i => ({
+            job_id,
+            "draft_bill_no":        i.draft_bill_no,
+			"tms_reference_no":     i.tms_reference_no,
+			"fk_tms_reference_no":  i.fk_tms_reference_no,
+			"principal_code":       i.principal_code,
+			"delivery_date":        i.delivery_date,
+			"trip_date":            i.trip_date,
+			"location":             i.location,
+			"trip_plan":            i.trip_plan,
+			"shipment_manifest":    i.shipment_manifest,
+			"dr_no":                i.dr_no,
+			"invoice_no":           i.invoice_no,
+			"delivery_status":      i.delivery_status,
+			"vehicle_type":         i.vehicle_type,
+			"tariff_id":            i.tariff_id,
+			"contract_id":          i.contract_id,
+			"service_type":         i.service_type,
+			"sub_service_type":     i.sub_service_type,
+			"min_billable_value":   i.min_billable_value,
+			"max_billable_value":   i.max_billable_value,
+			"min_billable_unit":    i.min_billable_unit,
+			"from_geo_type":        i.from_geo_type,
+			"ship_from":            i.ship_from,
+			"to_geo_type":          i.to_geo_type,
+			"ship_to":              i.ship_to,
+			"remarks":              i.remarks,
+			"class_of_store":       i.class_of_store,
+			"planned_trucker":      i.planned_trucker,
+			"planned_vehicle_type": i.planned_vehicle_type,
+			"planned_vehicle_id":   i.planned_vehicle_id,
+			"kronos_trip_status":   i.kronos_trip_status,
+			"br_status":            i.br_status,
+			"uom":                  i.uom,
+			"rud_status":           i.rud_status,
+			"planned_qty":          i.planned_qty,
+			"actual_qty":           isNaN(i.actual_qty) ? 0 : i.actual_qty,
+			"actual_weight":        isNaN(i.actual_weight,) ? 0 : i.actual_weight,
+			"actual_cbm":           isNaN(i.actual_cbm) ? 0 : i.actual_cbm,
+			"planned_weight":       i.planned_weight,
+			"planned_cbm":          i.planned_cbm,
+			"return_qty":           isNaN(i.return_qty) ? 0 : i.return_qty,
+			"ic_qty":               isNaN(i.ic_qty) ? 0 : i.ic_qty,
+            "billing":              isNaN(i.billing) ? 0 : i.billing,
+			"fk_header_id":         i.fk_header_id
+        })),{
+            transaction: t,
+            ignoreDuplicates: true
+        })
+
+        await dwhModels.rata_daily_accrual_leak_header.bulkCreate(leak_header.map(i => ({...i, job_id})),{
+            transaction: t
+        })
+
+        await dwhModels.rata_daily_accrual_leak_details.bulkCreate(leak_details.map(i => ({...i, job_id})), {
+            transaction: t
+        })
+
+        await t.commit();
+    }
+    catch(e){
+        await t.rollback();
+        throw e
+    }
+}
