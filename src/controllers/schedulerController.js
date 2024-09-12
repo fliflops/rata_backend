@@ -225,6 +225,55 @@ exports.putEmail = async(req,res,next) => {
     }
 }
 
+exports.manualDailyAccrualTriggerRevenue = async(req,res,next) => {
+    try{
+        const {trip_date} = req.body;
+        await Queue.DWH_ACC_REVENUE.add({
+            trip_date
+        },
+        {
+            jobId:uuidv4(),
+            removeOnFail:true,
+            removeOnComplete:true
+         })
+        res.end();
+    }
+    catch(e){
+        next(e)
+    }
+}
+
+exports.manualDailyAccrualTriggerExpense = async(req,res,next) => {
+    try{
+        const {trip_date} = req.body;
+
+        await Queue.DWH_ACC_EXPENSE.add({
+            trip_date
+        },
+        {
+            jobId:uuidv4(),
+            removeOnFail:true,
+            removeOnComplete:true
+        })
+
+        // if(type === 'SELL') {
+
+     
+        // }
+        // else{
+
+   
+
+        // }
+
+        res.end();
+
+    }
+    catch(e){
+        next(e)
+    }
+}
+
 // controllers for cron testing
 exports.cronTest = async(req,res,next) => {
     try{

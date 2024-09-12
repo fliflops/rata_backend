@@ -1506,7 +1506,9 @@ exports.createDwhLogs = async({
 			"return_qty":           isNaN(i.return_qty) ? 0 : i.return_qty,
 			"ic_qty":               isNaN(i.ic_qty) ? 0 : i.ic_qty,
             "billing":              isNaN(i.billing) ? 0 : i.billing,
-			"fk_header_id":         i.fk_header_id
+			"fk_header_id":         i.fk_header_id,
+            "outlier_status":       i.outlier_status,
+            "overall_volume":       isNaN(i.overall_volume) ? 0 : i.overall_volume
         })),{
             transaction: t,
             ignoreDuplicates: true

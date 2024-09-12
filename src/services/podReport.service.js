@@ -1,9 +1,9 @@
-const Sequelize  = require('sequelize');
+const Sequelize     = require('sequelize');
 const {kronos, pod} = require('../models/datawarehouse');
-const models = require('../models/rata')
-const round = require('../helpers/round');
-const moment = require('moment');
-const _ = require('lodash');
+const models        = require('../models/rata');
+const round         = require('../helpers/round');
+const moment        = require('moment');
+const _             = require('lodash');
 
 const getSum = (details,uom,field) => {
     return _.sumBy(details.filter(item => item.uom === uom), item => isNaN(parseFloat(item[field])) ? 0 : parseFloat(item[field]))
@@ -192,7 +192,8 @@ const getPodInvoices = async({from,to}) => {
 
 const getHandedOverInvoices = async(trip_date) => {
     const header =  await pod.query(`               
-        Select     
+        Select  
+        top 100   
         c.bookingRequestNo	    'tms_reference_no',    
         b.tripPlanNo			'trip_no',    
         b.trip_date			    'trip_date',    
@@ -1448,6 +1449,82 @@ const tripValidation = async(draft_bill=[], revenue_leak=[], invoices=[], isRevL
     }
 }
 
+exports.getKronosVehicleTypes = async() => {
+    return await kronos.query('Select * from vehicle_type',{
+        type: Sequelize.QueryTypes.SELECT
+    })
+}
+
+exports.outlierTagging = async(draft_bill_details = [], vehicleTypes = []) => {
+    let trips  = [];
+    
+    const groupedDetails = _.groupBy(draft_bill_details, i => i.trip_plan)
+    Object.keys(groupedDetails).map(tripPlanNo => {
+        const trip = (groupedDetails[tripPlanNo])[0]
+        const allTrips = groupedDetails[tripPlanNo]
+        const vehicle_type =vehicleTypes.find(i => String(i.type).toUpperCase() === String(trip.vehicle_type).toUpperCase())
+
+        const overall_volume =  vehicle_type ? Number(vehicle_type.overall_volume) : null;
+        const threshold_base_cap = overall_volume * 1.1;
+        const planned_volume = _.sum(allTrips.map(i => Number(i.planned_cbm)))
+
+        let outlier_status = !vehicle_type ? 'NOT_APPLICABLE' : 
+        planned_volume >  threshold_base_cap ? 'OUTLIER' : 'NON_OUTLIER';
+
+        trips = trips.concat(
+            allTrips.map(item => ({
+                ...item,
+                overall_volume,
+                outlier_status
+            }))
+        )
+
+        // trips.push({
+        //     trip_plan_no: tripPlanNo,
+        //     vehicle_type: trip.vehicle_type, 
+        //     overall_volume,
+        //     threshold_base_cap,
+        //     planned_volume,
+        //     outlier_status
+        // })
+    });
+
+    return trips
+
+}
+
+exports.outlierTaggingLeak = async(leak_header=[], leak_details=[], vehicleTypes = []) => {
+    let trips  = [];
+    const groupedDetails = _.groupBy(leak_header, i => i.trip_no);
+    Object.keys(groupedDetails).map(tripPlanNo => {
+        const trip = (groupedDetails[tripPlanNo])[0]
+        const allTrips = groupedDetails[tripPlanNo]
+        const vehicle_type =vehicleTypes.find(i => String(i.type).toUpperCase() === String(trip.vehicle_type).toUpperCase())
+        const overall_volume = !vehicle_type ? null : Number(vehicle_type.overall_volume)
+        const threshold_base_cap = overall_volume * 1.1;
+        const planned_volume = _.sum(leak_details.map(i => Number(i.planned_cbm)))
+
+        let outlier_status = !vehicle_type ? 'NOT_APPLICABLE' : 
+        planned_volume >  threshold_base_cap ? 'OUTLIER' : 'NON_OUTLIER';
+
+        // if(trip.tms_reference_no === 'BR002515272'){
+        //     console.log(vehicle_type)
+        //     console.log(overall_volume)
+            
+        // }
+        
+        trips = trips.concat(allTrips.map(i => ({
+            ...i,
+            overall_volume,
+            outlier_status
+        })))
+    })
+
+    //    console.log(trips.filter(i => i.tms_reference_no === 'BR002515272'))
+
+    return trips
+}
+
 exports.joinedInvoices = async({from, to}) => {
     const pod = await getPodInvoices({
         from,
@@ -1487,7 +1564,7 @@ exports.joinedHandedOverInvoices = async(trip_date) => {
     })
 }
 
-exports.podSell = async({
+exports.podSell = async({ 
     data = [],
     from = null,
     to = null
@@ -1565,24 +1642,24 @@ exports.podBuy = async({
         let temp_draft_bill = []; 
         let temp_rev_leak  = [];
 
-        raw = await getBillableInvoices(raw)
-        temp_rev_leak = temp_rev_leak.concat(raw.revenue_leak)
+        raw             = await getBillableInvoices(raw)
+        temp_rev_leak   = temp_rev_leak.concat(raw.revenue_leak)
 
-        raw = await assignContract({ invoices: raw.data, contracts})
-        temp_rev_leak = temp_rev_leak.concat(raw.revenue_leak)
+        raw             = await assignContract({ invoices: raw.data, contracts})
+        temp_rev_leak   = temp_rev_leak.concat(raw.revenue_leak)
 
-        raw = await assignTariff({invoices: raw.data, contracts, contract_type: 'BUY'})
-        temp_rev_leak = temp_rev_leak.concat(raw.revenue_leak)
+        raw             = await assignTariff({invoices: raw.data, contracts, contract_type: 'BUY'})
+        temp_rev_leak   = temp_rev_leak.concat(raw.revenue_leak)
 
-        const ic = await draftBillIC({invoices: raw.data})
-        const withAgg = await draftBillWithAgg({invoices: raw.data, contract_type: 'BUY'})
+        const ic        = await draftBillIC({invoices: raw.data})
+        const withAgg   = await draftBillWithAgg({invoices: raw.data, contract_type: 'BUY'})
         const withoutAgg =  await draftBillWithoutAgg({invoices: raw.data, contract_type:'BUY'})
  
-        temp_rev_leak = temp_rev_leak.concat(withAgg.revenue_leak,withoutAgg.revenue_leak, ic.revenue_leak)
+        temp_rev_leak   = temp_rev_leak.concat(withAgg.revenue_leak,withoutAgg.revenue_leak, ic.revenue_leak)
 
-        raw = await tripValidation([].concat(ic.data, withAgg.data, withoutAgg.data), temp_rev_leak, assignVGroup, false)
-        draft_bill = draft_bill.concat(await assignDraftBillNo(raw.draft_bill, draft_bill.length));
-        revenue_leak = revenue_leak.concat(temp_rev_leak,raw.revenue_leak)
+        raw             = await tripValidation([].concat(ic.data, withAgg.data, withoutAgg.data), temp_rev_leak, assignVGroup, false)
+        draft_bill      = draft_bill.concat(await assignDraftBillNo(raw.draft_bill, draft_bill.length));
+        revenue_leak    = revenue_leak.concat(temp_rev_leak,raw.revenue_leak)
     }
    
     return {
