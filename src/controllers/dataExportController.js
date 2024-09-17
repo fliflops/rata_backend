@@ -5,11 +5,36 @@ const dataExportService = require('../services/dataExportService');
 
 exports.exportInvoice = async(req,res,next) => {
     try{
-        const {from,to} = req.query;
+        const {
+            trip_date_from,
+            trip_date_to,
+            cleared_date_from,
+            cleared_date_to
+        } = req.query;
 
         const headers= []
         let details = []
 
+        let filter = {}
+
+        if(trip_date_from && trip_date_to) {
+            filter = {
+                ...filter,
+                trip_date:{
+                    [Op.between]: [trip_date_from,trip_date_to]
+                }
+            }
+        }
+
+        if(cleared_date_from,cleared_date_to) {
+            filter = {
+                ...filter,
+                cleared_date:{
+                    [Op.between]: [cleared_date_from,cleared_date_to]
+                }
+            }
+        }
+    
         const headerLabel = {
             tms_reference_no: 'TMS Reference No',	
             trip_no:'Trip No',	
@@ -41,6 +66,7 @@ exports.exportInvoice = async(req,res,next) => {
             is_processed_sell: 'Is Processed Sell?',	
             is_processed_buy: 'Is Processed Buy?',	
             cleared_date: 'Cleared Date',	
+            trucker_cleared_date: 'Trucker Cleared Date',
             job_id: 'Job ID',	
             createdAt: 'Created At',	
             updatedAt: 'Updated At'
@@ -48,9 +74,7 @@ exports.exportInvoice = async(req,res,next) => {
 
         const getInvoices = await models.helios_invoices_hdr_tbl.getData({
             where:{
-                trip_date: {
-                    [Op.between]: [from,to]
-                }
+               ...filter
             },
             options: {
                 include: [
@@ -169,7 +193,7 @@ exports.exportDraftBill = async(req,res,next) => {
             sub_service_type:   'Sub Service Type',
             job_id:             'Job ID',
             createdAt:          'Created Date',
-            updatedAt:          'Updated Date'
+            updatedAt:          'Updated Date',
         };
 
         getDraftBills.map(item => {
@@ -187,7 +211,9 @@ exports.exportDraftBill = async(req,res,next) => {
                 return {
                     ...itms,
                     planned_vehicle_type: invoice.planned_vehicle_type,
-                    principal_code
+                    principal_code,
+                    cleared_date: invoice.cleared_date,
+                    trucker_cleared_date: invoice.trucker_cleared_date
                 }
             }))
 

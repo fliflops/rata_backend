@@ -12,7 +12,8 @@ const podConfig = {
     dialect:        'mssql',
     dialectOptions : {
         options:{
-            requestTimeout: 3600000
+            requestTimeout: 3600000,
+            useUTC: false
         }
     },
     pool: { 

@@ -399,7 +399,8 @@ exports.uploadTariff = async (req,res,next) => {
             .map(item => {
                 return {
                     ...item,
-                    min_value: item.min_value === 0 ? null : item.min_value,
+                    min_value: item.min_value === 0 ? null : round(item.min_value,2),
+                    max_value: round(item.max_value,2),
                     tariff_status:'DRAFT',
                     tariff_id:String(item.tariff_id).trim(),
                     from_geo:String(item.from_geo).trim(),
@@ -483,7 +484,7 @@ exports.uploadContract=async(req,res,next)=>{
                 })
             }
 
-            if(!dbContract){
+            if(!dbContract){    
                 continue;
             }
 
@@ -564,6 +565,7 @@ exports.uploadContract=async(req,res,next)=>{
                 return{
                     ...item,
                     tariff_rate: round(item.tariff_rate,2),
+                    min_rate: round(item.min_rate,2),
                     created_by:req.processor.id,
                     updated_by:req.processor.id
                 }

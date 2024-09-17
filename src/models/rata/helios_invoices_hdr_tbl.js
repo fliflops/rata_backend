@@ -92,6 +92,9 @@ class  helios_invoices_hdr_tbl extends Model {
             cleared_date:           {
                 type: DataTypes.DATE
             },  
+            trucker_cleared_date:{
+                type: DataTypes.DATE
+            },
             job_id:{
                 type:DataTypes.STRING
             },
