@@ -192,8 +192,7 @@ const getPodInvoices = async({from,to}) => {
 
 const getHandedOverInvoices = async(trip_date) => {
     const header =  await pod.query(`               
-        Select  
-        top 100   
+        Select     
         c.bookingRequestNo	    'tms_reference_no',    
         b.tripPlanNo			'trip_no',    
         b.trip_date			    'trip_date',    
@@ -1489,8 +1488,9 @@ exports.outlierTagging = async(draft_bill_details = [], vehicleTypes = []) => {
         // })
     });
 
-    return trips
+    
 
+    return trips
 }
 
 exports.outlierTaggingLeak = async(leak_header=[], leak_details=[], vehicleTypes = []) => {
@@ -1502,24 +1502,20 @@ exports.outlierTaggingLeak = async(leak_header=[], leak_details=[], vehicleTypes
         const vehicle_type =vehicleTypes.find(i => String(i.type).toUpperCase() === String(trip.vehicle_type).toUpperCase())
         const overall_volume = !vehicle_type ? null : Number(vehicle_type.overall_volume)
         const threshold_base_cap = overall_volume * 1.1;
-        const planned_volume = _.sum(leak_details.map(i => Number(i.planned_cbm)))
+        const planned_volume = _.sum(leak_details.filter(i => i.trip_no === tripPlanNo).map(i => Number(i.planned_cbm)))
 
         let outlier_status = !vehicle_type ? 'NOT_APPLICABLE' : 
         planned_volume >  threshold_base_cap ? 'OUTLIER' : 'NON_OUTLIER';
 
-        // if(trip.tms_reference_no === 'BR002515272'){
-        //     console.log(vehicle_type)
-        //     console.log(overall_volume)
-            
-        // }
-        
         trips = trips.concat(allTrips.map(i => ({
             ...i,
+            //planned_volume,
             overall_volume,
             outlier_status
         })))
     })
 
+    //console.log(trips.filter(i => i.trip_no === 'TRP000301792'))
     //    console.log(trips.filter(i => i.tms_reference_no === 'BR002515272'))
 
     return trips
