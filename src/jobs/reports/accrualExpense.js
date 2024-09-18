@@ -38,7 +38,7 @@ module.exports = () => {
                 from,
                 to
             })
-
+    
             for(let {details,...db} of  draftBill.draft_bill){
                 draft_bill_header.push(db)
                 draft_bill_details = draft_bill_details.concat(details)

@@ -383,11 +383,12 @@ exports.dailyPodSell = async(req,res,next) => {
         const trip_date = req.query.trip_date;
 
         const data = await podReportService.joinedHandedOverInvoices(trip_date);
+        const vehicle_types = await podReportService.getKronosVehicleTypes();
 
         const draftBill = await podReportService.podSell({
             data,
-            from: trip_date,
-            to: trip_date
+            from:   trip_date,
+            to:     trip_date
         })
 
         for(let {details,...db} of  draftBill.draft_bill){
@@ -418,6 +419,9 @@ exports.dailyPodSell = async(req,res,next) => {
             })))
         }
 
+        //add outlier tagging
+        draft_bill_details = await podReportService.outlierTagging(draft_bill_details,vehicle_types);
+        leak_header = await podReportService.outlierTaggingLeak(leak_header,leak_details,vehicle_types)
         // const root = global.appRoot;
         // const fileName = moment().format('YYYYMMDDHHmmss')+'revenue_daily_accrual_report.xlsx'
         // const filePath = path.join( root,'/assets/reports/accrual/', fileName);
@@ -433,19 +437,20 @@ exports.dailyPodSell = async(req,res,next) => {
         //     to:moment(trip_date).format('MMMM DD, YYYY'),
         // })
 
-        await reportService.createDwhLogs({
-            draft_bill_header,
-            draft_bill_details,
-            leak_header,
-            leak_details,
-            job_id: null
-        })
+        // await reportService.createDwhLogs({
+        //     draft_bill_header,
+        //     draft_bill_details,
+        //     leak_header,
+        //     leak_details,
+        //     job_id: null
+        // })
         
         res.status(200).json({
             draft_bill_header,
             draft_bill_details,
             leak_header,
-            leak_details
+            leak_details,
+            
         })
     }
     catch(e){

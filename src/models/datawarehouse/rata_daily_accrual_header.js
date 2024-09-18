@@ -34,7 +34,7 @@ class rata_daily_accrual_header extends Model {
         planned_trucker: DataTypes.STRING,
         planned_vehicle_type:DataTypes.STRING,
         planned_vehicle_id:DataTypes.STRING,
-        kronos_trip_status:DataTypes.STRING,
+        kronos_trip_status:DataTypes.STRING, 
         vehicle_id:DataTypes.STRING,
         stc_from:DataTypes.STRING,
         stc_to :DataTypes.STRING,

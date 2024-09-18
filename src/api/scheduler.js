@@ -18,4 +18,8 @@ router.route('/email')
 router.route('/cron')
 .post(schedulerController.cronTest)
 
+router.post('/daily_accrual_expense',schedulerController.manualDailyAccrualTriggerExpense)
+router.post('/daily_accrual_revenue',schedulerController.manualDailyAccrualTriggerRevenue)
+
+
 module.exports = router;
