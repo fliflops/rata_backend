@@ -44,6 +44,12 @@ class rata_daily_accrual_leak_header extends Model {
             fk_tms_reference_no :DataTypes.STRING,
             class_of_store :DataTypes.STRING,
             draft_bill_type: DataTypes.STRING,
+            revenue_leak_reason: DataTypes.STRING,
+            outlier_status: DataTypes.STRING,
+            overall_volume:{
+                type: DataTypes.DECIMAL,
+                allowNull: true
+            },
             created_at:DataTypes.DATE,
             updated_at:DataTypes.DATE,
         },

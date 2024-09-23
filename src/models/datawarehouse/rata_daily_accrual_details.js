@@ -53,6 +53,8 @@ class rata_daily_accrual_details extends Model {
             uom:                    DataTypes.STRING,
             return_qty:             DataTypes.STRING,
             billing:                DataTypes.STRING,
+            outlier_status:         DataTypes.STRING,
+            overall_volume:         DataTypes.DECIMAL,
             created_at:             DataTypes.DATE,
             updated_at:             DataTypes.DATE 
         },

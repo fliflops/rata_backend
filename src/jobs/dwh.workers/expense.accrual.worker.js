@@ -16,7 +16,9 @@ module.exports = () => {
             let leak_header = [];
             let leak_details = [];
 
-            const trip_date = moment().format('YYYY-MM-DD');
+            const vehicle_types = await podReportService.getKronosVehicleTypes();
+
+            const trip_date = job.data?.trip_date ? job.data.trip_date : moment().format('YYYY-MM-DD');
 
             const data = await podReportService.joinedHandedOverInvoices(trip_date);
 
@@ -29,11 +31,13 @@ module.exports = () => {
             for(let {details,...db} of  draftBill.draft_bill){
                 const log_id = uuidv4();
                 draft_bill_header.push({
+                    id:log_id,
                     ...db
                 })
     
                 draft_bill_details = draft_bill_details.concat(details.map(item => ({
-                    ...item,
+                    fk_header_id: log_id,
+                    ...item
                 })))
             }
             
@@ -41,15 +45,21 @@ module.exports = () => {
                 const log_id = uuidv4();
                 leak_header.push({
                     ...leak,
+                    id:log_id,
                     draft_bill_type:'BUY',
                 })
                 leak_details = leak_details.concat(details.map(items => ({
                     ...items,
+                    fk_header_id: log_id,
                     class_of_store: leak.class_of_store,
                     draft_bill_type:'BUY'
                 })))
             }
 
+            //add outlier tagging
+            draft_bill_details = await podReportService.outlierTagging(draft_bill_details,vehicle_types);
+            leak_header = await podReportService.outlierTaggingLeak(leak_header,leak_details,vehicle_types)
+            
             const root = global.appRoot;
             const fileName = moment().format('YYYYMMDDHHmmss')+'expense_daily_accrual_report.xlsx'
             const filePath = path.join( root,'/assets/reports/accrual/', fileName);
@@ -79,8 +89,7 @@ module.exports = () => {
             done(null,{
                 filePath,
                 fileName
-            });
-                       
+            });            
         }
         catch(e){
             done(e)
@@ -118,6 +127,8 @@ module.exports = () => {
                 file_name: job.returnvalue.fileName
             }
         })
+        
+        console.log(job.id)
         console.log('Daily Accrual Expense Report Done')
     })
 
