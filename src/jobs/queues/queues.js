@@ -45,5 +45,17 @@ module.exports = {
             lockDuration:1800000
         }
     }),
+    RATA_DRAFT_BILL_SELL_RANGED: new Bull('rata:transport_draft_bill_sell_ranged', {
+        redis: redisConfig,
+        settings:{
+            lockDuration:1800000
+        }
+    }),
+    RATA_DRAFT_BILL_BUY_RANGED: new Bull('rata:transport_draft_bill_buy_ranged', {
+        redis: redisConfig,
+        settings:{
+            lockDuration:1800000
+        }
+    })
     
 }

@@ -26,9 +26,9 @@ module.exports = async() => {
             console.log('Connected to POD DB')
         });
 
-        await scmdb.sequelize.authenticate().then(()=>{
-            console.log('Connected to SCMDB')
-        })       
+        // await scmdb.sequelize.authenticate().then(()=>{
+        //     console.log('Connected to SCMDB')
+        // })       
         
         await asciiModels.sequelize.authenticate().then(()=>{
             console.log('Connected to ASCII')
