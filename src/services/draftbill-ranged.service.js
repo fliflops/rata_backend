@@ -373,9 +373,9 @@ exports.buy = async(from, to, job_id = null) => {
         //draft_bill = draft_bill.concat(await draftBillCostAlloc(raw.draft_bill, vehicleTypes, hasCostAlloc))
     }
 
-    //draft_bill = await draftBillCostAlloc(draft_bill, vehicleTypes, hasCostAlloc)
+    draft_bill = await draftBillCostAlloc(draft_bill, vehicleTypes, hasCostAlloc)
 
-    for(let {details,...db} of  draft_bill){
+    for(let {details,cost_allocation_details,...db} of  draft_bill){
         draft_bill_header.push({
             ...db
         })
@@ -384,7 +384,7 @@ exports.buy = async(from, to, job_id = null) => {
             ...item,
         })))
 
-        //cost_allocation_details = cost_allocation_details.concat(cost_allocation_details)
+        cost_allocation_details = cost_allocation_details.concat(cost_allocation_details)
     }
     
 
@@ -413,7 +413,7 @@ exports.buy = async(from, to, job_id = null) => {
         invoices,
         draft_bill_header,
         draft_bill_details,
-        //cost_allocation_details,
+        cost_allocation_details,
         leak_header,
         leak_details
     })
