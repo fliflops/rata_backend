@@ -143,7 +143,9 @@ exports.transportController = async(req,res,next) => {
     const stx = await models.sequelize.transaction();
     try{
       
-        const {date,location,type,isRetransmit} = req.query;
+        const {from,to,type,isRetransmit,...filters} = req.query;
+        console.log(req.query)
+
         let data;
         let result;
         
@@ -188,11 +190,13 @@ exports.transportController = async(req,res,next) => {
                 ]
             },
             where:{
-                trip_date: date,
-                location: location,
+                trip_date: {
+                    [models.Sequelize.Op.between] : [from,to]
+                },
                 contract_type: type,
                 status: 'DRAFT_BILL',
-                is_transmitted: isRetransmit === 'true' ? true : false 
+                is_transmitted: isRetransmit === 'true' ? true : false,
+                ...filters
             }
         })
         .then(result => {
