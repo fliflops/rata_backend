@@ -1,4 +1,4 @@
-const models = require('../models/rata');
+    const models = require('../models/rata');
 const moment = require('moment');
 const {v4:uuidv4} = require('uuid');
 const Queue = require('../jobs/queues/queues');
@@ -314,7 +314,7 @@ exports.cronTest = async(req,res,next) => {
 exports.draftBillSellRange = async(req,res,next) => {
     try{
         const {date} = req.body;
-        const from = moment(date).subtract(7,'days').format('YYYY-MM-DD')
+        const from = moment(date).subtract(30,'days').format('YYYY-MM-DD')
         const to =  moment(date).format('YYYY-MM-DD')
 
         //const data = await draftBillRangedService.sell(from,to)
@@ -348,7 +348,7 @@ exports.draftBillBuyRange = async(req,res,next) => {
 
         await Queue.RATA_DRAFT_BILL_BUY_RANGED.add({
             isRepeatable: false,
-            from: moment(date).subtract(7,'days').format('YYYY-MM-DD'), 
+            from: moment(date).subtract(30,'days').format('YYYY-MM-DD'), 
             to: moment(date).format('YYYY-MM-DD'), 
         },
         {
