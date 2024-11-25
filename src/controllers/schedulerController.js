@@ -127,7 +127,7 @@ exports.postManualTrigger = async(req,res,next) => {
         if(['RATA_DRAFT_BILL_BUY_RANGED', 'RATA_DRAFT_BILL_SELL_RANGED'].includes(id)){
             await Queue[id].add({
                 isRepeatable: false,
-                from: moment(date).subtract(15,'days').format('YYYY-MM-DD'), 
+                from: moment(date).subtract(7,'days').format('YYYY-MM-DD'), 
                 to: moment(date).format('YYYY-MM-DD')
             },
             {
