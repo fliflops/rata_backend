@@ -2,9 +2,9 @@ const models = require('../models/rata');
 const moment = require('moment');
 const {v4:uuidv4} = require('uuid');
 const Queue = require('../jobs/queues/queues');
-
 const redis = require('../../config').redis;
 
+const draftBillRangedService = require('../services/draftbill-ranged.service');
 
 exports.getScheduler = async(req,res,next) => {
     try{
@@ -123,16 +123,31 @@ exports.postManualTrigger = async(req,res,next) => {
                 message:'Invalid Date'
             })
         }   
+
+        if(['RATA_DRAFT_BILL_BUY_RANGED', 'RATA_DRAFT_BILL_SELL_RANGED'].includes(id)){
+            await Queue[id].add({
+                isRepeatable: false,
+                from: moment(date).subtract(7,'days').format('YYYY-MM-DD'), 
+                to: moment(date).format('YYYY-MM-DD')
+            },
+            {
+                jobId:uuidv4(),
+                removeOnFail:true,
+                removeOnComplete:true
+            })
+        }
+        else {
+            await Queue[id].add({
+                isRepeatable: false,
+                date: moment(date).format('YYYY-MM-DD') 
+            },
+            {
+                jobId:uuidv4(),
+                removeOnFail:true,
+                removeOnComplete:true
+            })
+        }
         
-        await Queue[id].add({
-            isRepeatable: false,
-            date: moment(date).format('YYYY-MM-DD') 
-        },
-        {
-            jobId:uuidv4(),
-            removeOnFail:true,
-            removeOnComplete:true
-        })
 
         res.status(200).json(id)
 
@@ -294,4 +309,58 @@ exports.cronTest = async(req,res,next) => {
         next(e)
     }
 
+}
+
+exports.draftBillSellRange = async(req,res,next) => {
+    try{
+        const {date} = req.body;
+        const from = moment(date).subtract(7,'days').format('YYYY-MM-DD')
+        const to =  moment(date).format('YYYY-MM-DD')
+
+        //const data = await draftBillRangedService.sell(from,to)
+
+        await Queue.RATA_DRAFT_BILL_SELL_RANGED.add({
+            isRepeatable: false,
+            from, 
+            to, 
+        },
+        {
+            jobId:uuidv4(),
+            removeOnFail:true,
+            removeOnComplete:true
+        })
+
+        res.status(200).end();
+    }   
+    catch(e){
+        next(e)
+    }
+}
+
+exports.draftBillBuyRange = async(req,res,next) => {
+    try{
+
+        const {date} = req.body;
+        const from = moment(date).subtract(7,'days').format('YYYY-MM-DD')
+        const to =  moment(date).format('YYYY-MM-DD')
+
+        //const data = await draftBillRangedService.buy(from,to)
+
+        await Queue.RATA_DRAFT_BILL_BUY_RANGED.add({
+            isRepeatable: false,
+            from: moment(date).subtract(7,'days').format('YYYY-MM-DD'), 
+            to: moment(date).format('YYYY-MM-DD'), 
+        },
+        {
+            jobId:uuidv4(),
+            removeOnFail:true,
+            removeOnComplete:true
+        })
+
+        res.status(200).end()
+
+    }
+    catch(e){
+        next(e)
+    }
 }
