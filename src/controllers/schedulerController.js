@@ -271,16 +271,6 @@ exports.manualDailyAccrualTriggerExpense = async(req,res,next) => {
             removeOnComplete:true
         })
 
-        // if(type === 'SELL') {
-
-     
-        // }
-        // else{
-
-   
-
-        // }
-
         res.end();
 
     }
