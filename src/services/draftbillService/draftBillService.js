@@ -1524,5 +1524,17 @@ module.exports = {
     buy,
     sell,
     replanBuy,
-    replanSell
+    replanSell,
+
+    formatByClassOfStore,
+    getBillableInvoices,
+    assignContract,
+    assignTariff,
+    draftBillWithAgg,
+    draftBillWithoutAgg,
+    sellValidation,
+    assignDraftBillNo,
+    draftBillIC,
+    tripValidation,
+    
 }

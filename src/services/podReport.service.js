@@ -1665,3 +1665,17 @@ exports.podBuy = async({
     }   
 }
 
+module.exports = {
+    getContract,
+    groupByTripDate,
+    formatByClassOfStore,
+    getBillableInvoices,
+    assignContract,
+    assignTariff,
+    draftBillWithAgg,
+    draftBillWithoutAgg,
+    sellValidation,
+    assignVendorGroup,
+    draftBillCostAlloc
+}
+
