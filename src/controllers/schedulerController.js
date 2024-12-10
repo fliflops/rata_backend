@@ -317,8 +317,6 @@ exports.draftBillSellRange = async(req,res,next) => {
         const from = moment(date).subtract(7,'days').format('YYYY-MM-DD')
         const to =  moment(date).format('YYYY-MM-DD')
 
-        //const data = await draftBillRangedService.sell(from,to)
-
         await Queue.RATA_DRAFT_BILL_SELL_RANGED.add({
             isRepeatable: false,
             from, 
@@ -343,8 +341,6 @@ exports.draftBillBuyRange = async(req,res,next) => {
         const {date} = req.body;
         const from = moment(date).subtract(7,'days').format('YYYY-MM-DD')
         const to =  moment(date).format('YYYY-MM-DD')
-
-        //const data = await draftBillRangedService.buy(from,to)
 
         await Queue.RATA_DRAFT_BILL_BUY_RANGED.add({
             isRepeatable: false,

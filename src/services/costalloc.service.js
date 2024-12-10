@@ -113,6 +113,8 @@ exports.draftBillCostAlloc = async(draft_bills=[]) => {
         const isCostAlloc = hasCostAlloc.find(item => draft_bill.contract_type === item.draft_bill_type && draft_bill.service_type === item.service_type)
         const vehicleType = vehicleTypes.find(item => item.vehicle_type === draft_bill.vehicle_type)
         let cost_allocation_details = [];
+
+        
         
         if(isCostAlloc) {
             Object.keys(_.groupBy(draft_bill.details,'principal_code')).map(principal => {
