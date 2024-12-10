@@ -329,7 +329,9 @@ exports.draftBillBuyRange = async(req,res,next) => {
     try{
 
         const {date} = req.body;
-    
+        const from = moment(date).subtract(7,'days').format('YYYY-MM-DD')
+        const to =  moment(date).format('YYYY-MM-DD')
+
         await Queue.RATA_DRAFT_BILL_BUY_RANGED.add({
             isRepeatable: false,
             from: moment(date).subtract(7,'days').format('YYYY-MM-DD'), 

@@ -368,14 +368,13 @@ exports.buy = async(from, to, job_id = null) => {
 
         raw             = await tripValidation([].concat(ic.data, withAgg.data, withoutAgg.data), revenue_leak,invoices, false)
         draft_bill      = draft_bill.concat(await assignDraftBillNo(raw.draft_bill, current+draft_bill.length));
-        revenue_leak    = revenue_leak.concat(raw.revenue_leak)
-
-        //draft_bill = draft_bill.concat(await draftBillCostAlloc(raw.draft_bill, vehicleTypes, hasCostAlloc))
+        revenue_leak    = revenue_leak.concat(raw.revenue_leak);
     }
 
     draft_bill = await draftBillCostAlloc(draft_bill, vehicleTypes, hasCostAlloc)
 
-    for(let {details,cost_allocation_details,...db} of  draft_bill){
+
+    for(let {details,...db} of  draft_bill){
         draft_bill_header.push({
             ...db
         })
@@ -384,7 +383,7 @@ exports.buy = async(from, to, job_id = null) => {
             ...item,
         })))
 
-        cost_allocation_details = cost_allocation_details.concat(cost_allocation_details)
+        cost_allocation_details = cost_allocation_details.concat(db.cost_allocation_details)
     }
     
 
@@ -417,7 +416,6 @@ exports.buy = async(from, to, job_id = null) => {
         leak_header,
         leak_details
     })
-
-
+    
     return draft_bill
 }
