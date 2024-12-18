@@ -223,7 +223,7 @@ exports.sell = async(from, to , job_id = null) => {
         leak_header.push({
             tms_reference_no: leak.tms_reference_no,
             fk_tms_reference_no: leak.fk_tms_reference_no,
-            draft_bill_type: 'SELL',
+            draft_bill_type:'SELL',
             rdd:  leak.rdd,
             class_of_store: leak.class_of_store,
             job_id,
